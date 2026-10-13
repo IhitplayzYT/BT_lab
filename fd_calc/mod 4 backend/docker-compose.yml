@@ -1,0 +1,58 @@
+version: "3.9"
+
+services:
+
+  # ── FD Calculator Service ──────────────────────────────────────────────
+  fd-calculator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: fd-calculator
+    ports:
+      - "8084:8084"
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SERVER_PORT: 8084
+      DB_URL: jdbc:mysql://fd-mysql:3306/fd_calculator?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      DB_USER: fd_user
+      DB_PASSWORD: ${DB_PASSWORD:-fd_secret}
+      DB_DRIVER: com.mysql.cj.jdbc.Driver
+      JWT_SECRET: ${JWT_SECRET:-ChangeThisInProductionMustBe32CharsMinimum!}
+      JWT_ISSUER: ${JWT_ISSUER:-http://localhost:8081}
+      JWT_AUDIENCE: fd-calculator-service
+      JWT_ROLES_CLAIM: roles
+      PRODUCT_SERVICE_URL: ${PRODUCT_SERVICE_URL:-http://localhost:8083}
+      CUSTOMER_SERVICE_URL: ${CUSTOMER_SERVICE_URL:-http://localhost:8082}
+    depends_on:
+      fd-mysql:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8084/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # ── MySQL ──────────────────────────────────────────────────────────────
+  fd-mysql:
+    image: mysql:8.0
+    container_name: fd-mysql
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_DATABASE: fd_calculator
+      MYSQL_USER: fd_user
+      MYSQL_PASSWORD: ${DB_PASSWORD:-fd_secret}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_secret}
+    volumes:
+      - fd_mysql_data:/var/lib/mysql
+      - ./src/main/resources/db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "fd_user", "--password=${DB_PASSWORD:-fd_secret}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+volumes:
+  fd_mysql_data:

@@ -1,0 +1,140 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# FD Calculator Service — Base configuration (active profile overrides below)
+# All secrets and URLs MUST be provided via environment variables.
+# ══════════════════════════════════════════════════════════════════════════════
+
+spring:
+  application:
+    name: fd-calculator-service
+
+  profiles:
+    active: dev          # override via -Dspring.profiles.active=prod
+
+  # ── JPA ────────────────────────────────────────────────────────────────────
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate   # prod: validate; dev profile overrides to create-drop
+    properties:
+      hibernate:
+        format_sql: false
+
+  # ── Datasource (overridden per profile) ────────────────────────────────────
+  datasource:
+    url: ${DB_URL:jdbc:h2:mem:fd_calc_db;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE}
+    username: ${DB_USER:sa}
+    password: ${DB_PASSWORD:}
+    driver-class-name: ${DB_DRIVER:org.h2.Driver}
+
+  # ── H2 console (dev only; disabled in prod profile) ────────────────────────
+  h2:
+    console:
+      enabled: false
+
+  # ── Security / OAuth2 resource server ──────────────────────────────────────
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # In dev, this is a symmetric HMAC-256 secret.
+          # For production switch to an external JWKS URI:
+          #   issuer-uri: ${JWT_ISSUER_URI}
+          # The SecurityConfig is already designed for that swap.
+          issuer-uri: ${JWT_ISSUER_URI:http://localhost:8081}
+
+# ── Server ─────────────────────────────────────────────────────────────────
+server:
+  port: ${SERVER_PORT:8084}
+  error:
+    include-message: never   # never expose internal stack traces
+    include-stacktrace: never
+    include-exception: false
+
+# ── Actuator ───────────────────────────────────────────────────────────────
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, metrics, prometheus
+  endpoint:
+    health:
+      show-details: when-authorized
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+# ── Springdoc / Swagger ────────────────────────────────────────────────────
+springdoc:
+  swagger-ui:
+    path: /swagger-ui/index.html
+    try-it-out-enabled: true
+    tags-sorter: alpha
+    operations-sorter: alpha
+  api-docs:
+    path: /v3/api-docs
+  packages-to-scan: com.bank.calculator.controller
+
+# ── Internal service base URLs ─────────────────────────────────────────────
+services:
+  product:
+    base-url: ${PRODUCT_SERVICE_URL:http://localhost:8083}
+    connect-timeout-ms: ${PRODUCT_CONNECT_TIMEOUT:3000}
+    read-timeout-ms: ${PRODUCT_READ_TIMEOUT:5000}
+  customer:
+    base-url: ${CUSTOMER_SERVICE_URL:http://localhost:8082}
+    connect-timeout-ms: ${CUSTOMER_CONNECT_TIMEOUT:3000}
+    read-timeout-ms: ${CUSTOMER_READ_TIMEOUT:5000}
+
+# ── Calculator business rules ───────────────────────────────────────────────
+calculator:
+  category-bonus:
+    bonuses:
+      SENIOR_CITIZEN: 1.00
+      EMPLOYEE: 0.50
+      PREMIUM: 1.00
+    max-total-bonus: 2.00
+
+# ── JWT validation properties (custom) ─────────────────────────────────────
+app:
+  jwt:
+    # HMAC-256 secret. MUST be provided via environment variable.
+    # Minimum 256-bit (32+ chars) required.
+    secret: ${JWT_SECRET}
+    issuer: ${JWT_ISSUER:http://localhost:8081}
+    audience: ${JWT_AUDIENCE:fd-calculator-service}
+    roles-claim: ${JWT_ROLES_CLAIM:roles}
+
+# ── Logging ─────────────────────────────────────────────────────────────────
+logging:
+  level:
+    com.bank.calculator: INFO
+    org.springframework.security: WARN
+    org.hibernate.SQL: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%X{correlationId}] [%thread] %-5level %logger{36} - %msg%n"
+
+# ── Kafka Configuration for Batch Processing and Logging ───────────────────
+spring:
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.add.type.headers: false
+    consumer:
+      group-id: fd-calculator-group
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
+    listener:
+      ack-mode: manual
+
+# ── Kafka Topics ───────────────────────────────────────────────────────────
+app:
+  kafka:
+    topics:
+      batch-calculations: fd-calculator-batch-calculations
+      audit-logs: fd-calculator-audit-logs

@@ -1,0 +1,43 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# Profile: dev  – local development without dependent services
+# ══════════════════════════════════════════════════════════════════════════════
+
+spring:
+  # ── MySQL datasource ──────────────────────────────────────────────────────
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/fd_calculator_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}
+    username: ${DB_USER:root}
+    password: ${DB_PASSWORD:12345678}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    database-platform: org.hibernate.dialect.MySQLDialect
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+
+# ── Mock client flags ──────────────────────────────────────────────────────
+# When true, MockProductClient / MockCustomerClient beans replace Feign stubs.
+mock:
+  product-client: true
+  customer-client: true
+
+# ── JWT – relaxed for local testing ────────────────────────────────────────
+app:
+  jwt:
+    secret: ${JWT_SECRET:DevOnlyHmacSecretMustBeAtLeast32CharsLong!Dev}
+    issuer: ${JWT_ISSUER:http://localhost:8081}
+    audience: ${JWT_AUDIENCE:fd-calculator-service}
+    roles-claim: ${JWT_ROLES_CLAIM:roles}
+
+# ── Service URLs (not used when mocks are active) ──────────────────────────
+services:
+  product:
+    base-url: http://localhost:8083
+  customer:
+    base-url: http://localhost:8082
+
+logging:
+  level:
+    com.bank.calculator: DEBUG
+    org.springframework.security: DEBUG

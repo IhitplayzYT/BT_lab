@@ -1,0 +1,30 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# Profile: dev  – local development
+# ══════════════════════════════════════════════════════════════════════════════
+
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/banking_product_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}
+    username: ${DB_USER:root}
+    password: ${DB_PASSWORD:12345678}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    database-platform: org.hibernate.dialect.MySQLDialect
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+
+# ── JWT – relaxed for local testing ────────────────────────────────────────
+app:
+  security:
+    jwt:
+      secret: ${JWT_SECRET:DevOnlyHmacSecretMustBeAtLeast32CharsLong!Dev}
+      issuer: ${JWT_ISSUER:http://localhost:8081}
+      audience: ${JWT_AUDIENCE:product-service}
+      roles-claim: ${JWT_ROLES_CLAIM:roles}
+
+logging:
+  level:
+    com.bank.product: DEBUG
+    org.springframework.security: DEBUG

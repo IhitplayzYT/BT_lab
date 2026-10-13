@@ -1,0 +1,132 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# Product Service — Base configuration (active profile overrides below)
+# All secrets and URLs MUST be provided via environment variables.
+# ══════════════════════════════════════════════════════════════════════════════
+
+spring:
+  application:
+    name: product-service
+
+  profiles:
+    active: dev          # override via -Dspring.profiles.active=prod
+
+  # ── JPA ────────────────────────────────────────────────────────────────────
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate   # prod: validate; dev profile overrides to update
+    properties:
+      hibernate:
+        format_sql: false
+
+  # ── Datasource (overridden per profile) ────────────────────────────────────
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/banking_product_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}
+    username: ${DB_USER:root}
+    password: ${DB_PASSWORD:}
+    driver-class-name: ${DB_DRIVER:com.mysql.cj.jdbc.Driver}
+
+  # ── H2 console (dev only; disabled in prod profile) ────────────────────────
+  h2:
+    console:
+      enabled: false
+
+  # ── Security / OAuth2 resource server ──────────────────────────────────────
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # In dev, this is a symmetric HMAC-256 secret.
+          # For production switch to an external JWKS URI:
+          #   issuer-uri: ${JWT_ISSUER_URI}
+          # The SecurityConfig is already designed for that swap.
+          issuer-uri: ${JWT_ISSUER_URI:http://localhost:8081}
+
+  # ── SQL initialization ─────────────────────────────────────────────────────
+  sql:
+    init:
+      mode: never
+
+# ── Server ─────────────────────────────────────────────────────────────────
+server:
+  port: ${SERVER_PORT:8080}
+  error:
+    include-message: never   # never expose internal stack traces
+    include-stacktrace: never
+    include-exception: false
+
+# ── Actuator ───────────────────────────────────────────────────────────────
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, metrics, prometheus
+  endpoint:
+    health:
+      show-details: when-authorized
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+# ── Springdoc / Swagger ────────────────────────────────────────────────────
+springdoc:
+  swagger-ui:
+    path: /swagger-ui/index.html
+    try-it-out-enabled: true
+    tags-sorter: alpha
+    operations-sorter: alpha
+  api-docs:
+    path: /v3/api-docs
+  packages-to-scan: com.bank.product.controller
+
+# ── Application-specific configuration ───────────────────────────────────────
+app:
+  # CORS configuration (to be removed when API Gateway is implemented)
+  cors:
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:4200,http://127.0.0.1:4200}
+
+  # JWT validation properties (custom)
+  security:
+    jwt:
+      # HMAC-256 secret. MUST be provided via environment variable.
+      # Minimum 256-bit (32+ chars) required.
+      secret: ${JWT_SECRET}
+      issuer: ${JWT_ISSUER:http://localhost:8081}
+      audience: ${JWT_AUDIENCE:product-service}
+      roles-claim: ${JWT_ROLES_CLAIM:roles}
+
+# ── Logging ─────────────────────────────────────────────────────────────────
+logging:
+  level:
+    com.bank.product: INFO
+    org.springframework.security: WARN
+    org.hibernate.SQL: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%X{correlationId}] [%thread] %-5level %logger{36} - %msg%n"
+
+# ── Kafka Configuration for Batch Processing and Logging ───────────────────
+spring:
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.add.type.headers: false
+    consumer:
+      group-id: product-service-group
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
+    listener:
+      ack-mode: manual
+
+# ── Kafka Topics ───────────────────────────────────────────────────────────
+app:
+  kafka:
+    topics:
+      batch-products: product-service-batch-products
+      audit-logs: product-service-audit-logs
+

@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <property name="LOGS" value="./logs" />
+    
+    <appender name="ConsoleJsonAppender" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <fieldNames>
+                <timestamp>timestamp</timestamp>
+                <level>level</level>
+                <logger>logger</logger>
+                <message>message</message>
+                <context>context</context>
+            </fieldNames>
+            <includeContext>true</includeContext>
+            <includeMdc>true</includeMdc>
+            <includeStructuredArguments>true</includeStructuredArguments>
+        </encoder>
+    </appender>
+
+    <appender name="RollingFileJsonAppender" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOGS}/fd-calculator.log</file>
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <fieldNames>
+                <timestamp>timestamp</timestamp>
+                <level>level</level>
+                <logger>logger</logger>
+                <message>message</message>
+                <context>context</context>
+            </fieldNames>
+            <includeContext>true</includeContext>
+            <includeMdc>true</includeMdc>
+            <includeStructuredArguments>true</includeStructuredArguments>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOGS}/fd-calculator-%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="ConsoleJsonAppender" />
+        <appender-ref ref="RollingFileJsonAppender" />
+    </root>
+
+    <logger name="com.bank.calculator" level="INFO" additivity="false">
+        <appender-ref ref="ConsoleJsonAppender" />
+        <appender-ref ref="RollingFileJsonAppender" />
+    </logger>
+
+    <logger name="org.springframework.security" level="WARN" additivity="false">
+        <appender-ref ref="ConsoleJsonAppender" />
+        <appender-ref ref="RollingFileJsonAppender" />
+    </logger>
+
+    <logger name="org.hibernate.SQL" level="WARN" additivity="false">
+        <appender-ref ref="ConsoleJsonAppender" />
+        <appender-ref ref="RollingFileJsonAppender" />
+    </logger>
+</configuration>

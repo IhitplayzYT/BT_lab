@@ -1,0 +1,248 @@
+{
+  "info": {
+    "name": "FD Calculator Service",
+    "description": "Banking Technology Lab – FD Calculator microservice API collection.\n\nSet the `baseUrl` collection variable (default: http://localhost:8084).\nSet the `token` variable with a valid JWT (CUSTOMER role).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "fd-calculator-v1"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8084" },
+    { "key": "token",   "value": "<paste-jwt-here>" },
+    { "key": "calcId",  "value": "CALC-20260911-0001" }
+  ],
+  "item": [
+    {
+      "name": "Infrastructure",
+      "item": [
+        {
+          "name": "Health Check (public)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/actuator/health",
+            "description": "Public health endpoint — no JWT required."
+          }
+        },
+        {
+          "name": "Swagger UI",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/swagger-ui/index.html"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Product",
+      "item": [
+        {
+          "name": "Preview Product FD001",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/fd/products/FD001/preview",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "description": "Returns calculator-safe product constraints."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Calculations – Happy Paths",
+      "item": [
+        {
+          "name": "Calculate – Compound Monthly 12m",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/fd/calculations",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type",   "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"principal\": 100000.00,\n  \"term\": { \"value\": 12, \"unit\": \"MONTHS\" },\n  \"productCode\": \"FD001\",\n  \"payoutMode\": \"CUMULATIVE\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Calculate – 2 Years Term",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/fd/calculations",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type",   "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"principal\": 500000.00,\n  \"term\": { \"value\": 2, \"unit\": \"YEARS\" },\n  \"productCode\": \"FD001\",\n  \"payoutMode\": \"CUMULATIVE\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Calculate – Max Principal",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/fd/calculations",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type",   "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"principal\": 10000000.00,\n  \"term\": { \"value\": 36, \"unit\": \"MONTHS\" },\n  \"productCode\": \"FD001\",\n  \"payoutMode\": \"CUMULATIVE\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Compare – 2 Options",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/fd/calculations/compare",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type",   "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"principal\": 100000.00,\n  \"options\": [\n    { \"productCode\": \"FD001\", \"term\": { \"value\": 12, \"unit\": \"MONTHS\" } },\n    { \"productCode\": \"FD001\", \"term\": { \"value\": 24, \"unit\": \"MONTHS\" } }\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Calculation by ID",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/fd/calculations/{{calcId}}",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+          }
+        },
+        {
+          "name": "Export Calculation CSV",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/fd/calculations/{{calcId}}/export?format=csv",
+              "query": [{ "key": "format", "value": "csv" }]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+          }
+        },
+        {
+          "name": "Explain Calculation",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/fd/calculations/{{calcId}}/explain",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Error Scenarios",
+      "item": [
+        {
+          "name": "Missing JWT → 401",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/fd/calculations",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"principal\": 100000,\n  \"term\": { \"value\": 12, \"unit\": \"MONTHS\" },\n  \"productCode\": \"FD001\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Wrong Role (ADMIN) → 403",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/fd/calculations",
+            "header": [
+              { "key": "Authorization", "value": "Bearer <admin-jwt>" },
+              { "key": "Content-Type",   "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"principal\": 100000,\n  \"term\": { \"value\": 12, \"unit\": \"MONTHS\" },\n  \"productCode\": \"FD001\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Null Principal → 400",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/fd/calculations",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type",   "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"term\": { \"value\": 12, \"unit\": \"MONTHS\" },\n  \"productCode\": \"FD001\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Negative Principal → 400",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/fd/calculations",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type",   "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"principal\": -1000,\n  \"term\": { \"value\": 12, \"unit\": \"MONTHS\" },\n  \"productCode\": \"FD001\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Term Below Min → 422",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/fd/calculations",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type",   "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"principal\": 100000,\n  \"term\": { \"value\": 1, \"unit\": \"MONTHS\" },\n  \"productCode\": \"FD001\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Inactive Product → 422",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/fd/calculations",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type",   "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"principal\": 100000,\n  \"term\": { \"value\": 12, \"unit\": \"MONTHS\" },\n  \"productCode\": \"INACTIVE001\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Product Not Found → 404",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/fd/calculations",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type",   "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"principal\": 100000,\n  \"term\": { \"value\": 12, \"unit\": \"MONTHS\" },\n  \"productCode\": \"NOTFOUND999\"\n}"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

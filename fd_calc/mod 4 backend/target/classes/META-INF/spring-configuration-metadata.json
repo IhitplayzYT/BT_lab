@@ -1,0 +1,54 @@
+{
+  "groups": [
+    {
+      "name": "app.jwt",
+      "type": "com.bank.calculator.security.JwtProperties",
+      "sourceType": "com.bank.calculator.security.JwtProperties"
+    },
+    {
+      "name": "calculator.category-bonus",
+      "type": "com.bank.calculator.config.CategoryBonusProperties",
+      "sourceType": "com.bank.calculator.config.CategoryBonusProperties"
+    }
+  ],
+  "properties": [
+    {
+      "name": "app.jwt.audience",
+      "type": "java.lang.String",
+      "description": "Expected {@code aud} claim value.",
+      "sourceType": "com.bank.calculator.security.JwtProperties"
+    },
+    {
+      "name": "app.jwt.issuer",
+      "type": "java.lang.String",
+      "description": "Expected {@code iss} claim value.",
+      "sourceType": "com.bank.calculator.security.JwtProperties"
+    },
+    {
+      "name": "app.jwt.roles-claim",
+      "type": "java.lang.String",
+      "description": "Name of the claim that carries the comma-separated roles list.",
+      "sourceType": "com.bank.calculator.security.JwtProperties",
+      "defaultValue": "roles"
+    },
+    {
+      "name": "app.jwt.secret",
+      "type": "java.lang.String",
+      "description": "HMAC-256 secret (minimum 32 characters \/ 256 bits). Must be provided via environment variable in non-dev environments.",
+      "sourceType": "com.bank.calculator.security.JwtProperties"
+    },
+    {
+      "name": "calculator.category-bonus.bonuses",
+      "type": "java.util.Map<java.lang.String,java.math.BigDecimal>",
+      "description": "Map of category name → bonus percentage. Keys must match {@link com.bank.calculator.model.enums.CustomerCategory} names.",
+      "sourceType": "com.bank.calculator.config.CategoryBonusProperties"
+    },
+    {
+      "name": "calculator.category-bonus.max-total-bonus",
+      "type": "java.math.BigDecimal",
+      "description": "Maximum combined category bonus that can be applied. Default 2.00 %.",
+      "sourceType": "com.bank.calculator.config.CategoryBonusProperties"
+    }
+  ],
+  "hints": []
+}
