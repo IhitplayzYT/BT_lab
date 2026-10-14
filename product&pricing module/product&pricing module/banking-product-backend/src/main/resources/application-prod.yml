@@ -1,0 +1,39 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# Profile: prod  – all values MUST be provided as environment variables
+# ══════════════════════════════════════════════════════════════════════════════
+
+spring:
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+    show-sql: false
+
+  h2:
+    console:
+      enabled: false
+
+# ── JWT production configuration ──────────────────────────────────────────
+app:
+  jwt:
+    secret: ${JWT_SECRET}
+    issuer: ${JWT_ISSUER}
+    audience: ${JWT_AUDIENCE:product-service}
+    roles-claim: ${JWT_ROLES_CLAIM:roles}
+
+logging:
+  level:
+    com.bank.product: INFO
+    org.springframework.security: WARN

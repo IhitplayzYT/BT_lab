@@ -1,0 +1,117 @@
+# Local MySQL + Kafka for the FD platform: `docker compose up -d` (instead of installing both by hand).
+# The whole platform in containers (the same images you would push to Azure): `docker compose --profile full up -d --build`
+# (needs JWT_SECRET (32+ random characters) in the environment or in a .env file next to this file; auth-service refuses to start without it).
+# Stop with `docker compose down` (keeps data); `down -v` deletes the database volume.
+# MySQL is on host port 3308 so it doesn't clash with a local MySQL (3306) or fd-prototype (3307).
+# The SQL scripts run once, in name order, when the volume is first created.
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: "${DB_PASSWORD:-12345}"
+      TZ: Asia/Kolkata
+    ports:
+      - "3310:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./scripts/init-local-databases.sql:/docker-entrypoint-initdb.d/01-databases.sql:ro
+      - ./fd-account-service/sql/l12_l13_setup.sql:/docker-entrypoint-initdb.d/02-l12_l13_setup.sql:ro
+      - ./fd-account-service/sql/l16_fd_transactions.sql:/docker-entrypoint-initdb.d/03-l16_fd_transactions.sql:ro
+      - ./fd-account-service/sql/l14_l17_interest.sql:/docker-entrypoint-initdb.d/04-l14_l17_interest.sql:ro
+      - ./fd-account-service/sql/l18_clock_contacts_seed.sql:/docker-entrypoint-initdb.d/05-l18_clock_contacts_seed.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -p\"$$MYSQL_ROOT_PASSWORD\""]
+      interval: 5s
+      retries: 30
+
+  kafka:
+    image: apache/kafka:4.3.1 # single-node KRaft broker
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      # PLAINTEXT (9092) is for programs on your PC; INTERNAL (19092) is for the containers of the `full` profile.
+      KAFKA_LISTENERS: PLAINTEXT://:9092,INTERNAL://:19092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,INTERNAL://kafka:19092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,INTERNAL:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+
+  # ---- the platform itself (opt-in: --profile full) ----------------------------------------------------------
+  auth-service:
+    profiles: ["full"]
+    build: { context: ., target: auth-service }
+    ports: ["8090:8090"]
+    environment:
+      JWT_SECRET: "${JWT_SECRET:-}"
+
+  fd-account-service:
+    profiles: ["full"]
+    build: { context: ., target: fd-account-service }
+    ports: ["8086:8086"]
+    depends_on: { mysql: { condition: service_healthy }, kafka: { condition: service_started } }
+    environment:
+      FD_DB_URL: jdbc:mysql://mysql:3306/banking_technology_lab?serverTimezone=Asia/Kolkata
+      DB_USER: root
+      DB_PASSWORD: "${DB_PASSWORD:-12345}"
+      KAFKA_BOOTSTRAP_SERVERS: kafka:19092
+      JWT_SECRET: "${JWT_SECRET:-}"
+      APP_TIME_TRAVEL_ENABLED: "${APP_TIME_TRAVEL_ENABLED:-false}"
+    volumes: ["extracts:/app/extracts"]
+
+  interest-batch-service:
+    profiles: ["full"]
+    build: { context: ., target: interest-batch-service }
+    ports: ["8081:8081"]
+    depends_on: { mysql: { condition: service_healthy }, kafka: { condition: service_started } }
+    environment:
+      SERVICE_DB_URL: jdbc:mysql://mysql:3306/fd_batch?serverTimezone=Asia/Kolkata
+      DB_USER: root
+      DB_PASSWORD: "${DB_PASSWORD:-12345}"
+      KAFKA_BOOTSTRAP_SERVERS: kafka:19092
+      JWT_SECRET: "${JWT_SECRET:-}"
+      APP_TIME_TRAVEL_MAX_DAYS_AHEAD: "${APP_TIME_TRAVEL_MAX_DAYS_AHEAD:-0}"
+
+  statement-service:
+    profiles: ["full"]
+    build: { context: ., target: statement-service }
+    ports: ["8082:8082"]
+    depends_on: { mysql: { condition: service_healthy }, kafka: { condition: service_started } }
+    environment:
+      SERVICE_DB_URL: jdbc:mysql://mysql:3306/fd_statements?serverTimezone=Asia/Kolkata
+      DB_USER: root
+      DB_PASSWORD: "${DB_PASSWORD:-12345}"
+      KAFKA_BOOTSTRAP_SERVERS: kafka:19092
+      JWT_SECRET: "${JWT_SECRET:-}"
+
+  notification-service:
+    profiles: ["full"]
+    build: { context: ., target: notification-service }
+    ports: ["8083:8083"]
+    depends_on: { mysql: { condition: service_healthy }, kafka: { condition: service_started } }
+    environment:
+      SERVICE_DB_URL: jdbc:mysql://mysql:3306/fd_notifications?serverTimezone=Asia/Kolkata
+      DB_USER: root
+      DB_PASSWORD: "${DB_PASSWORD:-12345}"
+      KAFKA_BOOTSTRAP_SERVERS: kafka:19092
+      JWT_SECRET: "${JWT_SECRET:-}"
+      # Real e-mail / WhatsApp only if you pass these in; otherwise the channels run in mock mode.
+      SPRING_MAIL_HOST: "${SPRING_MAIL_HOST:-}"
+      SPRING_MAIL_PORT: "${SPRING_MAIL_PORT:-587}"
+      SPRING_MAIL_USERNAME: "${SPRING_MAIL_USERNAME:-}"
+      SPRING_MAIL_PASSWORD: "${SPRING_MAIL_PASSWORD:-}"
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: "true"
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: "true"
+      NOTIFY_EMAIL_FROM: "${NOTIFY_EMAIL_FROM:-noreply@fd-bank.local}"
+      NOTIFY_EMAIL_MOCK_ONLY: "${NOTIFY_EMAIL_MOCK_ONLY:-false}"
+      NOTIFY_WHATSAPP_MOCK_ONLY: "${NOTIFY_WHATSAPP_MOCK_ONLY:-false}"
+      TWILIO_SID: "${TWILIO_SID:-}"
+      TWILIO_TOKEN: "${TWILIO_TOKEN:-}"
+
+volumes:
+  extracts:
+  mysql-data:

@@ -2,6 +2,7 @@
 /home/ihitplayzyt/Downloads/BT_LAB/product&pricing module/product&pricing module/banking-product-backend/src/main/java/com/bank/product/config/DatabaseConfig.java
 /home/ihitplayzyt/Downloads/BT_LAB/product&pricing module/product&pricing module/banking-product-backend/src/main/java/com/bank/product/config/MetricsConfig.java
 /home/ihitplayzyt/Downloads/BT_LAB/product&pricing module/product&pricing module/banking-product-backend/src/main/java/com/bank/product/config/OpenApiConfig.java
+/home/ihitplayzyt/Downloads/BT_LAB/product&pricing module/product&pricing module/banking-product-backend/src/main/java/com/bank/product/controller/InternalProductController.java
 /home/ihitplayzyt/Downloads/BT_LAB/product&pricing module/product&pricing module/banking-product-backend/src/main/java/com/bank/product/controller/ProductController.java
 /home/ihitplayzyt/Downloads/BT_LAB/product&pricing module/product&pricing module/banking-product-backend/src/main/java/com/bank/product/dto/AuthRequestDTO.java
 /home/ihitplayzyt/Downloads/BT_LAB/product&pricing module/product&pricing module/banking-product-backend/src/main/java/com/bank/product/dto/AuthResponseDTO.java

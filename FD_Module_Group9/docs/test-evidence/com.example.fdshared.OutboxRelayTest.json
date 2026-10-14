@@ -1,0 +1,15 @@
+{
+  "class": "com.example.fdshared.OutboxRelayTest",
+  "tests": 5,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0,
+  "seconds": "2.773",
+  "methods": [
+    "unavailableBrokerRemainsPending",
+    "outboxRequiresTransaction",
+    "failedAcknowledgmentRemainsPending",
+    "acknowledgedPublishMarked",
+    "invalidTopicRemainsPending"
+  ]
+}

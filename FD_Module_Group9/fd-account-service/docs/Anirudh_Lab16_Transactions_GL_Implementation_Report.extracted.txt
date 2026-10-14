@@ -1,0 +1,747 @@
+
+BANKING TECHNOLOGY LAB
+FIXED DEPOSIT MODULE
+Lab 16 — Transactions & GL Implementation Report
+FD Account Creation with Initial DEPOSIT Transaction Logging,
+fd_transactions Schema and Double-Entry GL Initialisation
+Made by : Anirudh Syam Menon
+Group 9 — Banking Technology Lab
+Item | Detail
+Project folder | fd-module-l16 (extends fd-module-l12-l13)
+Baseline codebase | Vritika Vinod — Lab 12/13 FD account creation (unchanged)
+Lab reference | Banking Technology Lab Manual — Lab L16
+Report date | 9 October 2026
+Status | Backend implemented; 21/21 automated tests passed; MySQL end-to-end run passed for all Lab 16 checks. Angular UI not implemented (no frontend in codebase, see Section 14).
+
+Table of Contents
+1.  Title Page1
+2.  Objective and Scope3
+3.  Assigned Responsibilities4
+4.  Existing Project Architecture4
+5.  FD Account Creation Workflow5
+6.  fd_transactions Database Schema7
+7.  Transaction Entity, Repository, and Service9
+8.  Automatic Initial DEPOSIT Logging11
+9.  Integration with FD Account Creation12
+10.  GL Double Bookkeeping — Debit and Credit13
+11.  Transaction Atomicity and Rollback14
+12.  Duplicate Prevention and Idempotency15
+13.  API Request and Response15
+14.  Angular Success UI17
+15.  Transaction History Integration17
+16.  Files Created and Modified18
+17.  Explanation of Important Implementation Decisions20
+18.  Database Setup and Configuration20
+19.  Testing Performed and Actual Results22
+20.  Known Limitations and Unresolved Issues24
+21.  Integration Points with Other Team Members24
+22.  Assumptions and Their Justification25
+23.  Handover Instructions for the Next Developer25
+24.  Conclusion26
+
+How to read labels:  [Lab Manual] = an official requirement from the Banking Technology Lab Manual. [Team ER] / [Team sheet] = the team's ER diagram or Group 9 work distribution. [Industry practice] = standard practice used where the Manual is silent. [Assumption] = a value or design chosen because no source defines it (all listed in Section 22).
+
+2. Objective and Scope
+2.1 Objective
+Lab 16 extends Fixed Deposit (FD) account creation so that every new FD starts its life with a recorded financial transaction. The Lab Manual (L16 §1) states the objective as:
+Automated recording of the initial deposit transaction during account creation.
+Ensuring the transaction history is initialized properly for future auditing and reporting.
+Associating the FD account with a transaction lifecycle right from creation.
+L16 §2 adds that the initial DEPOSIT establishes the opening balance and links the account to the general ledger, capturing audit metadata: who created the account, when, and for what amount.
+2.2 Scope
+In scope (this report) | Out of scope (other team members / existing code)
+fd_transactions table, entity and repositoryInitial DEPOSIT logging inside the account-creation transactionGL debit/credit accounts for the DEPOSITAPI response with account number, transaction ID and history linkTransaction-history endpoint | FD validation, rate and account-number logic (L12/L13, reused unchanged)Interest accrual and statements (L14/L17)Premature withdrawal and penalty (L15)Maturity batch, payout and closure (L18/L19)Notifications, reporting, JWT security, Angular frontend
+
+2.3 Sources used
+Team lead guidance: follow the Lab Manual wherever it specifies a requirement; where it does not, use industry-standard practice and document the choice as an assumption.
+Source | Used for
+Vritika's L12/L13 implementation (fd-module-l12-l13) | Current codebase and conventions (source of truth for existing behaviour)
+Group 9 work distribution (Work_Distribution_TEAM_1.xlsx, "Group 9" sheet) | Ownership of the four tasks
+Banking Technology Lab Manual — L16 (also L12, L15, L19, L20) | Required behaviour, endpoint, response, security
+Team ER diagram (ER_Diagram.pdf, team repository) and FD module ER diagram | fd_transactions columns and relationships
+SWAGGER_API_DOCUMENTATION.md, Swagger_API.yaml | API contract reference (history endpoint path)
+FD module functioning.md, L12/L13 compiled report | Reference architecture (GL account names, idempotency ideas)
+
+3. Assigned Responsibilities
+The four tasks below are assigned to Anirudh Syam Menon in the "Group 9" sheet of the team work distribution.
+# | Task (Group 9 sheet) | Lab | Sheet remark | Delivered as | Status
+1 | DB Schema (fd_transactions) | L16 | Define fields for deposit/withdrawal events | sql/l16_fd_transactions.sql, FDTransaction entity | Implemented, tested
+2 | Initial Deposit Logging | L16 | @Transactional insert upon account creation | FDTransactionService.createFDAccountWithTransaction, recordInitialDeposit | Implemented, tested
+3 | Double Bookkeeping / GL Init | General | Internal accounts for GL debit/credit | GLAccounts + debit/credit columns on every ledger row | Implemented, tested
+4 | Success UI & Txn History Link | L16 (Angular) | Show FD Account No, Txn ID, History link | Backend: response fields + GET .../{fdAccountNo}/transactions | Backend done, tested. Angular UI not implemented
+
+Ownership caveat:  the same workbook also contains a "TEAM 1 Detailed Timeline" sheet that assigns L16 (atomic account creation with deposit logging) to Parth Gupta and L18/L19 to Anirudh. This report follows the "Group 9" sheet. The team lead should confirm ownership so L16 is not implemented twice.
+4. Existing Project Architecture
+Lab 16 is built inside Vritika's L12/L13 Spring Boot project without changing any of its classes. The relevant parts of that architecture are:
+Layer / technology | Existing L12/L13 element
+Runtime | Java 17, Spring Boot 3.5.5, Maven
+Web | FDAccountController (/api/fd/account), ApiExceptionHandler (IllegalArgumentException → 400)
+Security | SecurityConfig: HTTP Basic, in-memory users officer1 (BANK_OFFICER), customer1 (CUSTOMER), admin1 (ADMIN), @EnableMethodSecurity
+Service | FDAccountService, ProductValidationService, RateService, FDAccountNumberGenerator
+Persistence | Spring Data JPA / Hibernate, MySQL, spring.jpa.hibernate.ddl-auto=validate
+Entities | FixedDepositAccount (fd_accounts), Product (products), CustomerProfile (customer_profile)
+
+4.1 Package structure after Lab 16
+com.example.fdmodule
+├── config/SecurityConfig.java                         (L12/L13, unchanged)
+├── controller/
+│   ├── FDAccountController.java                       (L12/L13, unchanged)
+│   ├── FDTransactionController.java                   (NEW - Lab 16)
+│   ├── HealthController.java, ApiExceptionHandler.java (L12/L13, unchanged)
+├── dto/
+│   ├── FDAccountRequest.java, FDAccountResponse.java  (L12/L13, unchanged)
+│   ├── FDAccountCreationResponse.java                 (NEW - Lab 16)
+│   └── FDTransactionResponse.java                     (NEW - Lab 16)
+├── entity/
+│   ├── FixedDepositAccount.java, Product.java, CustomerProfile.java (unchanged)
+│   └── FDTransaction.java                             (NEW - Lab 16)
+├── repository/
+│   ├── FixedDepositAccountRepository.java ... (unchanged)
+│   └── FDTransactionRepository.java                   (NEW - Lab 16)
+└── service/
+    ├── FDAccountService.java ... (unchanged)
+    ├── FDTransactionService.java                      (NEW - Lab 16)
+    └── GLAccounts.java                                (NEW - Lab 16)
+4.2 Conventions followed
+Class names use the existing FD prefix (FDAccountService → FDTransactionService, FDTransactionController).
+Constructor injection, @Service, @RestController, and @PreAuthorize role checks, as in FDAccountController.
+Related records referenced by key (String fdAccountNo), like FixedDepositAccount.customerId / productCode, with the foreign key enforced in SQL.
+Money as BigDecimal / DECIMAL(18,2), matching fd_accounts.principal_amount.
+Business-rule failures thrown as IllegalArgumentException, which the existing ApiExceptionHandler turns into HTTP 400.
+Schema created by SQL script (no Flyway); Hibernate only validates it.
+5. FD Account Creation Workflow
+5.1 Existing L13 creation chain (unchanged)
+POST /api/fd/account/create            (BANK_OFFICER or ADMIN)
+ -> FDAccountController.create
+ -> FDAccountService.create            @Transactional
+     -> CustomerProfileRepository.existsById
+     -> ProductValidationService.validate     (exists, ACTIVE, effective date, term, min deposit)
+     -> RateService.determineFinalRate
+     -> FDAccountNumberGenerator.generate     (branch + 6-digit sequence + check digit)
+     -> FixedDepositAccountRepository.save    (fd_accounts)
+ <- FDAccountResponse
+5.2 Lab 16 creation workflow
+Figure 1 shows the implemented flow. Everything inside the dashed box runs in one database transaction.
+
+Figure 1 — Lab 16 FD creation with initial DEPOSIT and GL entry
+5.3 Mapping to the Lab Manual workflow (L16 §3)
+Lab Manual step | Implementation
+Submit FD Account Creation Request | POST /api/fd/account/create-with-txn → FDTransactionController.createWithTransaction
+Validate Product and Customer | Reused: FDAccountService.create (customer, product, term, minimum deposit, rate)
+Create FD Account Record in MySQL | Reused: FDAccountService.create → fd_accounts; then FixedDepositAccountRepository.flush()
+Generate Initial DEPOSIT Transaction | FDTransactionService.recordInitialDeposit → fd_transactions
+Save Both Records in a Single Database Transaction | @Transactional on createFDAccountWithTransaction; L13 method and deposit join it
+Return Account Number and Initial Transaction ID | FDAccountCreationResponse(fdAccountNo, initialTransactionId, message, transactionHistoryUrl)
+
+6. fd_transactions Database Schema
+File: sql/l16_fd_transactions.sql. The table is the append-only ledger of FD financial events. Lab 16 writes DEPOSIT rows; the columns also support the withdrawal, interest and maturity events of later labs (task remark: "Define fields for deposit/withdrawal events").
+6.1 Columns
+Column | Type / null | Purpose | Basis
+txn_id | BIGINT PK AUTO_INCREMENT | Transaction ID, returned as initialTransactionId | Lab Manual (txn_id) / Team ER (BIGINT)
+fd_account_no | VARCHAR(20) NOT NULL, FK | Owning FD account → fd_accounts.fd_account_no | Lab Manual, Team ER
+txn_type | VARCHAR(20) NOT NULL | DEPOSIT for Lab 16 | Lab Manual, Team ER
+amount | DECIMAL(18,2) NOT NULL | Transaction amount (= principal for DEPOSIT) | Team ER (Manual: DOUBLE)
+currency | VARCHAR(3) NULL | Copied from fd_accounts.currency | Team ER
+debit_gl_account | VARCHAR(50) NOT NULL | GL account debited | Team ER
+credit_gl_account | VARCHAR(50) NOT NULL | GL account credited | Team ER
+status | VARCHAR(20) NOT NULL | POSTED for committed entries | Team ER (value: Assumption)
+txn_timestamp | TIMESTAMP NOT NULL | When the entry was executed | Team ER (Manual: txn_date)
+remarks | VARCHAR(500) NULL | Initial Deposit | Team ER (Manual: VARCHAR(255))
+uuid | VARCHAR(255) NOT NULL, UNIQUE | Globally unique reference | Team ER
+created_by | VARCHAR(50) NULL | Authenticated user who created the FD | Team ER; Lab Manual L16 §2 audit
+created_at | TIMESTAMP NOT NULL | Row creation time | Team ER
+updated_by | VARCHAR(50) NULL | Present in team ER; never set (append-only) | Team ER
+deposit_guard | VARCHAR(20) generated, STORED | Technical column: fd_account_no for DEPOSIT rows, else NULL | Industry practice (Section 12)
+
+6.2 Constraints and indexes
+Name | Definition | Purpose
+PRIMARY KEY | txn_id | Transaction identity
+uk_fd_txn_uuid | UNIQUE(uuid) | No two rows share a reference
+uk_fd_txn_one_deposit | UNIQUE(deposit_guard) | At most one DEPOSIT per FD account (NULLs are not compared)
+idx_fd_txn_account_time | INDEX(fd_account_no, txn_timestamp) | Fast, ordered history lookup
+fk_fd_txn_account | FOREIGN KEY → fd_accounts(fd_account_no) | No ledger row without an account; default RESTRICT (no cascade)
+chk_fd_txn_amount_non_negative | CHECK (amount >= 0) | No negative amounts (enforced by MySQL 8.0.16+)
+
+6.3 DDL (from the final script)
+sql/l16_fd_transactions.sql
+CREATE TABLE IF NOT EXISTS fd_transactions (
+    txn_id             BIGINT        NOT NULL AUTO_INCREMENT,
+    fd_account_no      VARCHAR(20)   NOT NULL,
+    txn_type           VARCHAR(20)   NOT NULL,   -- DEPOSIT (L16); WITHDRAWAL / INTEREST / MATURITY_PAYOUT etc. per Lab Manual
+    amount             DECIMAL(18,2) NOT NULL,
+    currency           VARCHAR(3)    NULL,       -- copied from fd_accounts.currency
+    debit_gl_account   VARCHAR(50)   NOT NULL,   -- double entry: debit leg (see GLAccounts.java)
+    credit_gl_account  VARCHAR(50)   NOT NULL,   -- double entry: credit leg
+    status             VARCHAR(20)   NOT NULL,   -- POSTED for committed entries
+    txn_timestamp      TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    remarks            VARCHAR(500)  NULL,
+    uuid               VARCHAR(255)  NOT NULL,
+    created_by         VARCHAR(50)   NULL,       -- authenticated user who triggered the event
+    created_at         TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_by         VARCHAR(50)   NULL,       -- in team ER; never set (ledger is append-only)
+ 
+    -- Technical guard (not a business field): holds fd_account_no only for
+    -- DEPOSIT rows, NULL otherwise. The unique key below therefore allows at
+    -- most ONE initial DEPOSIT per FD account at database level, while any
+    -- number of other transaction types remain allowed.
+    deposit_guard      VARCHAR(20) GENERATED ALWAYS AS
+                       (CASE WHEN txn_type = 'DEPOSIT' THEN fd_account_no ELSE NULL END) STORED,
+ 
+    PRIMARY KEY (txn_id),
+    UNIQUE KEY uk_fd_txn_uuid (uuid),
+    UNIQUE KEY uk_fd_txn_one_deposit (deposit_guard),
+    KEY idx_fd_txn_account_time (fd_account_no, txn_timestamp),
+    -- Default RESTRICT actions: MySQL forbids CASCADE/SET NULL on base
+    -- columns of a stored generated column, and a ledger must never cascade.
+    CONSTRAINT fk_fd_txn_account FOREIGN KEY (fd_account_no)
+        REFERENCES fd_accounts (fd_account_no),
+    CONSTRAINT chk_fd_txn_amount_non_negative CHECK (amount >= 0)
+);
+6.4 Lab Manual schema vs. team ER diagram
+The Lab Manual (L16 §4.2) gives a minimal sample table; the team ER diagram extends it. Where they differ, the team ER was followed, matching the precedent already set by the L12/L13 code for fd_accounts (it uses the ER's principal_amount DECIMAL(18,2), not the Manual's principal DOUBLE).
+Field | Lab Manual L16 §4.2 | Implemented (team ER) | Reason
+txn_id | INT PK | BIGINT PK | Team ER; avoids INT range limit on a ledger
+amount | DOUBLE | DECIMAL(18,2) | Exact money arithmetic; same as fd_accounts
+txn_date | TIMESTAMP | txn_timestamp TIMESTAMP | Team ER column name
+remarks | VARCHAR(255) | VARCHAR(500) | Team ER
+(not in Manual) | — | currency, debit/credit GL, status, uuid, audit columns | Team ER; needed for GL and audit requirements
+Pending confirmation:  the team lead's rule is to follow the Manual where it specifies. This schema choice therefore needs explicit sign-off. Teammates copying the Manual's sample SQL must use txn_timestamp, not txn_date.
+7. Transaction Entity, Repository, and Service
+7.1 Entity — FDTransaction
+File: src/main/java/com/example/fdmodule/entity/FDTransaction.java. Maps fd_transactions. It is append-only by construction: every column is updatable = false, there are no setters, and objects are built through one constructor. @PrePersist fills the timestamp, creation time, UUID and default status.
+FDTransaction.java — mapping and constants (excerpt)
+@Entity
+@Table(name = "fd_transactions")
+public class FDTransaction {
+ 
+    /** Lab Manual L16 transaction type for the opening deposit. */
+    public static final String TYPE_DEPOSIT = "DEPOSIT";
+ 
+    /** Status of a committed ledger entry (industry-standard "posted"; not defined by the Lab Manual). */
+    public static final String STATUS_POSTED = "POSTED";
+ 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "txn_id", updatable = false)
+    private Long txnId;
+ 
+    @Column(name = "fd_account_no", length = 20, nullable = false, updatable = false)
+    private String fdAccountNo;
+FDTransaction.java — constructor and @PrePersist
+public FDTransaction(String fdAccountNo, String txnType, BigDecimal amount, String currency,
+                     String debitGlAccount, String creditGlAccount, String remarks, String createdBy) {
+    this.fdAccountNo = fdAccountNo;
+    this.txnType = txnType;
+    this.amount = amount;
+    this.currency = currency;
+    this.debitGlAccount = debitGlAccount;
+    this.creditGlAccount = creditGlAccount;
+    this.remarks = remarks;
+    this.createdBy = createdBy;
+    this.status = STATUS_POSTED;
+}
+ 
+@PrePersist
+void prePersist() {
+    LocalDateTime now = LocalDateTime.now();
+    if (txnTimestamp == null) txnTimestamp = now;
+    if (createdAt == null) createdAt = now;
+    if (uuid == null) uuid = UUID.randomUUID().toString();
+    if (status == null) status = STATUS_POSTED;
+}
+7.2 Repository — FDTransactionRepository
+File: src/main/java/com/example/fdmodule/repository/FDTransactionRepository.java. It extends Spring Data's minimal Repository interface instead of JpaRepository, so no update or delete operation is available to application code.
+public interface FDTransactionRepository extends Repository<FDTransaction, Long> {
+ 
+    FDTransaction save(FDTransaction transaction);
+ 
+    Optional<FDTransaction> findById(Long txnId);
+ 
+    /** Transaction history for one FD account, oldest first. */
+    List<FDTransaction> findByFdAccountNoOrderByTxnTimestampAscTxnIdAsc(String fdAccountNo);
+ 
+    /** Used for duplicate protection of the single initial DEPOSIT. */
+    Optional<FDTransaction> findFirstByFdAccountNoAndTxnTypeOrderByTxnIdAsc(String fdAccountNo, String txnType);
+ 
+    long countByFdAccountNo(String fdAccountNo);
+}
+7.3 Service — FDTransactionService
+File: src/main/java/com/example/fdmodule/service/FDTransactionService.java. Dependencies (constructor-injected): FDAccountService, FixedDepositAccountRepository, FDTransactionRepository.
+Method | Transaction | Responsibility
+createFDAccountWithTransaction(FDAccountRequest, String) | @Transactional (REQUIRED) — boundary | Lab Manual L16 §5.2 method: create FD via L13 service, flush, record DEPOSIT, build response
+recordInitialDeposit(FixedDepositAccount, String) | @Transactional(propagation = MANDATORY) | Return existing DEPOSIT or insert one with GL legs
+getTransactions(String) | @Transactional(readOnly = true) | History for one account, oldest first; 400 if account unknown
+
+7.4 DTOs
+dto/FDAccountCreationResponse.java
+public record FDAccountCreationResponse(
+        String fdAccountNo,
+        Long initialTransactionId,
+        String message,
+        String transactionHistoryUrl
+) {}
+dto/FDTransactionResponse.java (mapping method body elided)
+public record FDTransactionResponse(
+        Long txnId,
+        String fdAccountNo,
+        String txnType,
+        BigDecimal amount,
+        String currency,
+        String debitGlAccount,
+        String creditGlAccount,
+        String status,
+        LocalDateTime txnTimestamp,
+        String remarks,
+        String uuid,
+        String createdBy
+) {
+    public static FDTransactionResponse from(FDTransaction t) { ... }   // maps entity getters
+}
+8. Automatic Initial DEPOSIT Logging
+What: when an FD is created through create-with-txn, a DEPOSIT row is written to fd_transactions automatically. Why: Lab Manual L16 §1–§3 requires the initial deposit to be recorded during account creation so that the account has a transaction history from day one. How: recordInitialDeposit builds the row from the saved FixedDepositAccount, not from the raw request, so the ledger always matches what was stored.
+FDTransactionService.recordInitialDeposit
+@Transactional(propagation = Propagation.MANDATORY)
+public FDTransaction recordInitialDeposit(FixedDepositAccount fd, String createdBy) {
+    return transactionRepository
+            .findFirstByFdAccountNoAndTxnTypeOrderByTxnIdAsc(fd.getFdAccountNo(), FDTransaction.TYPE_DEPOSIT)
+            .orElseGet(() -> transactionRepository.save(new FDTransaction(
+                    fd.getFdAccountNo(),
+                    FDTransaction.TYPE_DEPOSIT,
+                    fd.getPrincipalAmount(),
+                    fd.getCurrency(),
+                    GLAccounts.ASSET_CUSTOMER_REMITTANCE,
+                    GLAccounts.LIABILITY_FD_DEPOSITS,
+                    INITIAL_DEPOSIT_REMARKS,
+                    createdBy)));
+}
+8.1 Field values recorded
+Column | Value | Taken from
+fd_account_no | account number generated by L13 | fd.getFdAccountNo()
+txn_type | DEPOSIT | FDTransaction.TYPE_DEPOSIT [Lab Manual]
+amount | FD principal | fd.getPrincipalAmount()
+currency | product currency stored on the FD | fd.getCurrency()
+debit_gl_account | ASSET_CUSTOMER_REMITTANCE | GLAccounts [Industry practice / Assumption]
+credit_gl_account | LIABILITY_FD_DEPOSITS | GLAccounts [Industry practice / Assumption]
+status | POSTED | constructor default [Assumption]
+remarks | Initial Deposit | INITIAL_DEPOSIT_REMARKS [Lab Manual sample]
+created_by | authenticated username | Authentication.getName() [Lab Manual audit]
+txn_timestamp, created_at, uuid | now / now / random UUID | @PrePersist
+
+8.2 Actual row from the MySQL end-to-end run
+txn_id | fd_account_no | txn_type | amount | currency | debit / credit | status | remarks | created_by
+1 | BR0010000016 | DEPOSIT | 200000.00 | INR | ASSET_CUSTOMER_REMITTANCE / LIABILITY_FD_DEPOSITS | POSTED | Initial Deposit | officer1
+The amount equalled fd_accounts.principal_amount (200000.00) for that account and uuid was populated (Section 19.2).
+9. Integration with FD Account Creation
+Lab 16 reuses the L13 creation logic instead of copying or modifying it. createFDAccountWithTransaction calls FDAccountService.create(...), so customer, product, term, minimum-deposit and rate validation and account-number generation behave exactly as in Vritika's code. No L12/L13 source file was modified (verified by checksum comparison against the original project).
+FDTransactionService.createFDAccountWithTransaction
+@Transactional
+public FDAccountCreationResponse createFDAccountWithTransaction(FDAccountRequest request, String createdBy) {
+    FDAccountResponse created = fdAccountService.create(request, createdBy);
+ 
+    // Write the pending fd_accounts INSERT now so the fd_transactions foreign key is satisfied
+    // and any account-level constraint error surfaces before the ledger row is written.
+    fdRepository.flush();
+ 
+    FixedDepositAccount fd = fdRepository.findById(created.fdAccountNo())
+            .orElseThrow(() -> new IllegalStateException(
+                    "FD account not found after creation: " + created.fdAccountNo()));
+ 
+    FDTransaction deposit = recordInitialDeposit(fd, createdBy);
+ 
+    return new FDAccountCreationResponse(
+            fd.getFdAccountNo(),
+            deposit.getTxnId(),
+            CREATION_MESSAGE,
+            transactionHistoryUrl(fd.getFdAccountNo()));
+}
+9.1 Why each step is there
+Step | Why
+fdAccountService.create(request, createdBy) | Single source of truth for L13 rules; joins the outer transaction (both use REQUIRED).
+fdRepository.flush() | Executes the pending fd_accounts INSERT before the ledger INSERT so the foreign key is always satisfied, and surfaces account-level constraint errors early.
+fdRepository.findById(...) | Loads the managed, saved entity so the ledger row uses stored values (principal, currency).
+recordInitialDeposit(fd, createdBy) | Writes the DEPOSIT and GL legs in the same transaction.
+return FDAccountCreationResponse | Lab Manual L16 §6.2 response plus history link.
+
+9.2 Separate endpoint and controller
+The Lab Manual keeps L13 POST /fd/account/create and adds L16 POST /fd/account/create-with-txn. The implementation does the same: the new endpoint lives in a new FDTransactionController that shares the /api/fd/account base path, so FDAccountController is untouched and there is no route overlap. Consequence: FDs created through the old /create endpoint do not get a DEPOSIT row (verified by test, see Section 20).
+controller/FDTransactionController.java — create endpoint
+@PostMapping("/create-with-txn")
+@PreAuthorize("hasRole('BANK_OFFICER')")
+public ResponseEntity<FDAccountCreationResponse> createWithTransaction(
+        @Valid @RequestBody FDAccountRequest request,
+        Authentication authentication) {
+    return ResponseEntity.ok(
+            fdTransactionService.createFDAccountWithTransaction(request, authentication.getName()));
+}
+10. GL Double Bookkeeping — Debit and Credit
+Requirement basis. [Lab Manual] L16 §2: the initial DEPOSIT links the account to the general ledger; course outcome: "Apply debit/credit operations with correct balance classifications and GL mappings"; L19 §5 names the "FD Liabilities GL". The Manual does not define GL account codes or the DEPOSIT mapping, so those follow industry practice and are documented as assumptions.
+10.1 Internal GL accounts
+service/GLAccounts.java (Javadoc comments omitted)
+public final class GLAccounts {
+ 
+    public static final String ASSET_CUSTOMER_REMITTANCE = "ASSET_CUSTOMER_REMITTANCE";
+ 
+    public static final String LIABILITY_FD_DEPOSITS = "LIABILITY_FD_DEPOSITS";
+ 
+    private GLAccounts() {
+    }
+}
+Leg | GL account | Classification | Why
+Debit | ASSET_CUSTOMER_REMITTANCE | Asset / clearing | Funds received from the customer to open the FD. The L13 request has no funding-source account, so one internal remittance account is used.
+Credit | LIABILITY_FD_DEPOSITS | Liability | The bank now owes the principal to the customer (the Lab Manual's "FD Liabilities GL").
+
+10.2 Journal for the tested deposit
+Account | Debit (INR) | Credit (INR)
+ASSET_CUSTOMER_REMITTANCE | 200,000.00 | 
+LIABILITY_FD_DEPOSITS |  | 200,000.00
+Total | 200,000.00 | 200,000.00
+
+10.3 How the GL entry is stored and associated
+The team ER has no GL master table; GL accounts are VARCHAR(50) codes on each fd_transactions row (debit_gl_account, credit_gl_account).
+One row therefore is one balanced double entry: one amount, debited from one account and credited to another. Debits always equal credits by construction.
+The GL entry and the FD transaction are the same record, sharing txn_id, uuid, fd_account_no and txn_timestamp; no separate link is needed.
+GLAccounts is a shared team contract: later postings must reuse these codes (e.g. L19 maturity payout debits LIABILITY_FD_DEPOSITS).
+Scope note:  only the DEPOSIT mapping is implemented. Interest, withdrawal, penalty and maturity GL entries belong to other team members (Section 21).
+11. Transaction Atomicity and Rollback
+[Lab Manual] L16 §3 requires both records to be saved in a single database transaction. The transaction boundary is FDTransactionService.createFDAccountWithTransaction.
+Method | Annotation | Behaviour
+FDTransactionService.createFDAccountWithTransaction | @Transactional | Starts the transaction (boundary)
+FDAccountService.create (L13) | @Transactional | Joins (REQUIRED)
+FDTransactionService.recordInitialDeposit | @Transactional(propagation = MANDATORY) | Joins; throws IllegalTransactionStateException if called with no transaction
+
+Spring rolls back on any RuntimeException. All L13 validation failures are IllegalArgumentException, so a rejected request leaves no fd_accounts row and no fd_transactions row.
+11.1 Error handling
+Situation | Handled by | HTTP result
+Missing/invalid request fields (@Valid) | ApiExceptionHandler.validation | 400 with field errors map
+Business rule (customer, product, term, minimum deposit) | L13 IllegalArgumentException → ApiExceptionHandler.badRequest | 400 {"status":"error","message":...}, full rollback
+History for unknown account | getTransactions throws IllegalArgumentException | 400 "FD account not found: …"
+Wrong role | @PreAuthorize | 403
+No credentials | Spring Security HTTP Basic | 401
+DB constraint violation at commit | not mapped by ApiExceptionHandler | 500 (rollback still correct) — see Section 20
+
+11.2 Rollback evidence
+FDTransactionRollbackIntegrationTest.ledgerWriteFailure_rollsBackTheFdAccount: forces the ledger save to fail after the account row was written (1 row visible inside the transaction) and asserts 0 fd_accounts rows afterwards — PASSED.
+MySQL run, case 5g: request with principal 5000 returned 400 "Minimum deposit is 10000.00"; row counts were unchanged before and after.
+12. Duplicate Prevention and Idempotency
+A financial operation must not create duplicate entries when repeated. Three layers protect the initial DEPOSIT:
+Layer | Mechanism | Basis
+Application | recordInitialDeposit first calls findFirstByFdAccountNoAndTxnTypeOrderByTxnIdAsc(no, "DEPOSIT"); if a DEPOSIT exists it is returned and nothing is written. | Industry practice
+Database | deposit_guard = fd_account_no only when txn_type = 'DEPOSIT'; UNIQUE KEY uk_fd_txn_one_deposit. A second DEPOSIT for the same account is rejected even if the service is bypassed. Other types are unaffected because NULLs are not compared. | Industry practice
+Transaction contract | Propagation.MANDATORY prevents the deposit being written outside the account-creation transaction. | Industry practice
+
+sql/l16_fd_transactions.sql — database guard
+deposit_guard VARCHAR(20) GENERATED ALWAYS AS
+              (CASE WHEN txn_type = 'DEPOSIT' THEN fd_account_no ELSE NULL END) STORED,
+UNIQUE KEY uk_fd_txn_one_deposit (deposit_guard),
+12.1 Evidence
+Test recordInitialDeposit_calledAgain_returnsExistingDepositAndWritesNothing — PASSED (same txn_id returned, row count stays 1).
+Test recordInitialDeposit_outsideATransaction_isRejected — PASSED.
+MySQL: manual second DEPOSIT insert for BR0010000016 failed with ERROR 1062 (23000) … Duplicate entry 'BR0010000016' for key 'fd_transactions.uk_fd_txn_one_deposit'; rows afterwards: 1.
+Not guaranteed:  if a client re-submits the whole create-with-txn request (e.g. after a timeout), L13 generates a new account number, so a second FD with its own DEPOSIT is created. Preventing this needs a client idempotency key in FDAccountRequest, which is the L13 contract. "Exactly once" is therefore not claimed.
+13. API Request and Response
+Method & path | Roles | Request | Response
+POST /api/fd/account/create-with-txn | BANK_OFFICER only [Lab Manual L16 §5.1, §7] | FDAccountRequest (unchanged L13 DTO) | FDAccountCreationResponse
+GET /api/fd/account/{fdAccountNo}/transactions | BANK_OFFICER, ADMIN, CUSTOMER | path variable | List<FDTransactionResponse>
+
+13.1 Request (Lab Manual L16 §6.1)
+POST http://localhost:8080/api/fd/account/create-with-txn
+Authorization: Basic (officer1)
+Content-Type: application/json
+ 
+{
+  "customerId": "CUST001",
+  "productCode": "FDSTD",
+  "principalAmount": 200000,
+  "termMonths": 12,
+  "branchCode": "BR001"
+}
+13.2 Actual success response (MySQL run, 9 Oct 2026)
+HTTP 200
+{
+  "fdAccountNo": "BR0010000016",
+  "initialTransactionId": 1,
+  "message": "Account and initial deposit created.",
+  "transactionHistoryUrl": "/api/fd/account/BR0010000016/transactions"
+}
+13.3 Contract comparison
+Source | Contract | Implemented?
+Lab Manual L16 §6.2 | fdAccountNo, initialTransactionId, message ("Account and initial deposit created.") | Yes — identical field names and message
+(addition) | transactionHistoryUrl | Added [Assumption]: backend form of the "history link" requirement; additive, does not break the Manual contract
+SWAGGER_API_DOCUMENTATION.md §4.1 | POST /api/fd/account/create itself logs the DEPOSIT and returns a full account object with initialTransactionId | Not followed: Lab Manual specifies a separate create-with-txn endpoint; L13 /create left unchanged
+SWAGGER_API_DOCUMENTATION.md §4.5 | GET /api/fd/account/{fdAccountNo}/transactions | Yes — same path
+Swagger_API.yaml (team repo) | /api/v1/accounts/..., type PRINCIPAL_DEPOSIT | Not adopted — describes a different external-services design not used by the codebase; Lab Manual type DEPOSIT used
+
+13.4 Actual error responses
+Case | Status | Body / result
+Principal 5000 (below FDSTD minimum) | 400 | Minimum deposit is 10000.00; no rows created
+Unknown account history NOPE000000 | 400 | FD account not found: NOPE000000
+customer1 or admin1 calls create-with-txn | 403 | Forbidden
+No credentials | 401 | Unauthorized
+
+14. Angular Success UI
+Status: NOT IMPLEMENTED.  No Angular code was written for this task.
+[Lab Manual] L16 §8 requires the Angular FD creation form to submit to create-with-txn and, on success, show the FD Account No and Transaction ID and provide a link to View Transaction History. The Group 9 sheet lists this as an Angular task.
+14.1 Why it is not implemented
+The codebase received (fdmod.zip, Docs/fdmod) contains only the Spring Boot backend: no package.json, angular.json, .ts or .html files.
+The team repository (kashvikumaar/BT-Team-1) contains only ER_Diagram.pdf, Swagger_API.yaml and the work-distribution workbook — no frontend code.
+Vritika's "Account Creation UI" (the form this success view would extend) was therefore not available to modify.
+It was confirmed during development that this module is to be delivered as backend-only.
+14.2 What the backend already provides for the UI
+UI requirement (L16 §8) | Backend support delivered
+Submit via create-with-txn | POST /api/fd/account/create-with-txn
+Show FD Account No | fdAccountNo in FDAccountCreationResponse
+Show Transaction ID | initialTransactionId in FDAccountCreationResponse
+Link to View Transaction History | transactionHistoryUrl, served by GET /api/fd/account/{fdAccountNo}/transactions
+Show errors | 400 / 403 / 401 responses (Section 13.4)
+
+Remaining work for whoever owns the frontend: point the existing creation form at create-with-txn, render the two values, and turn transactionHistoryUrl into a router link to a history view. No Angular snippets are included because none exist in the project.
+15. Transaction History Integration
+The history endpoint is the target of the success link and the place where every later transaction type (withdrawal, interest, maturity) will appear automatically once teammates insert into fd_transactions.
+controller/FDTransactionController.java — history endpoint
+@GetMapping("/{fdAccountNo}/transactions")
+@PreAuthorize("hasAnyRole('BANK_OFFICER','ADMIN','CUSTOMER')")
+public ResponseEntity<List<FDTransactionResponse>> getTransactions(@PathVariable String fdAccountNo) {
+    return ResponseEntity.ok(fdTransactionService.getTransactions(fdAccountNo));
+}
+FDTransactionService.getTransactions
+@Transactional(readOnly = true)
+public List<FDTransactionResponse> getTransactions(String fdAccountNo) {
+    if (!fdRepository.existsById(fdAccountNo)) {
+        throw new IllegalArgumentException("FD account not found: " + fdAccountNo);
+    }
+    return transactionRepository.findByFdAccountNoOrderByTxnTimestampAscTxnIdAsc(fdAccountNo)
+            .stream()
+            .map(FDTransactionResponse::from)
+            .toList();
+}
+Ordering: txn_timestamp ascending, then txn_id (stable for same-timestamp rows).
+Scoping: only rows for the requested account (test history_isScopedToTheRequestedAccount — PASSED).
+Roles: same as the existing GET /api/fd/account/{fdAccountNo} (BANK_OFFICER, ADMIN, CUSTOMER).
+Unknown account: HTTP 400, consistent with the existing L13 getById behaviour.
+Actual MySQL result: one item — DEPOSIT, 200000.00, ASSET_CUSTOMER_REMITTANCE → LIABILITY_FD_DEPOSITS, POSTED, txnId 1.
+Gap:  Lab Manual L12 §5 says customers may view only their own FD records. No per-customer ownership check is applied (the in-memory HTTP Basic users are not linked to a customer_id; the existing L13 GET has the same gap). See Section 20.
+16. Files Created and Modified
+Project root: C:\Anirudh Lab\fd-module-l16 (a copy of Vritika's project; the original under Docs was not modified). Paths are relative to the project root.
+16.1 New files
+File | Purpose
+sql/l16_fd_transactions.sql | Lab 16 table, constraints, indexes
+sql/l12_l13_setup.sql | Recreated base schema + test data (Vritika's referenced script was missing; see Section 18)
+src/main/java/com/example/fdmodule/entity/FDTransaction.java | Ledger entity
+src/main/java/com/example/fdmodule/repository/FDTransactionRepository.java | Append-only repository
+src/main/java/com/example/fdmodule/service/FDTransactionService.java | Creation-with-deposit, deposit recording, history
+src/main/java/com/example/fdmodule/service/GLAccounts.java | Internal GL account codes
+src/main/java/com/example/fdmodule/dto/FDAccountCreationResponse.java | create-with-txn response
+src/main/java/com/example/fdmodule/dto/FDTransactionResponse.java | History item
+src/main/java/com/example/fdmodule/controller/FDTransactionController.java | Lab 16 endpoints
+src/test/java/com/example/fdmodule/service/FDTransactionServiceTest.java | 6 unit tests
+src/test/java/com/example/fdmodule/integration/FDTransactionApiIntegrationTest.java | 14 integration tests
+src/test/java/com/example/fdmodule/integration/FDTransactionRollbackIntegrationTest.java | 1 rollback test
+src/test/java/com/example/fdmodule/integration/TestData.java | Shared fixtures (CUST001, FDSTD)
+src/test/resources/application-test.properties | H2 test profile
+docs/LAB16_HANDOVER.md | Developer handover notes
+
+16.2 Modified files
+File | Change | Why
+pom.xml | Added com.h2database:h2 and spring-security-test, both test scope | Run integration tests without MySQL; httpBasic() in MockMvc. Not packaged into the application
+README.md | Appended a Lab 16 section | Setup and run instructions
+src/main/resources/application.properties | Added a comment block marking where each developer enters their MySQL username/password | Local credentials differ per developer
+
+pom.xml — added test dependencies
+<!-- Lab 16 (Anirudh): test-only dependencies. H2 runs the integration/rollback tests
+     without MySQL; spring-security-test provides httpBasic() for MockMvc. Versions are
+     managed by the Spring Boot parent. Not packaged into the application. -->
+<dependency>
+    <groupId>com.h2database</groupId>
+    <artifactId>h2</artifactId>
+    <scope>test</scope>
+</dependency>
+<dependency>
+    <groupId>org.springframework.security</groupId>
+    <artifactId>spring-security-test</artifactId>
+    <scope>test</scope>
+</dependency>
+16.3 Unchanged L12/L13 files
+All 18 original source files under src/main/java (controllers, DTOs, entities, repositories, services, SecurityConfig) are byte-identical to Vritika's original (file comparison).
+16.4 File created during local testing (not part of the deliverable)
+sql/local_test_setup.sql was created by an automated local test run as a stand-in for the then-missing base script. It does the same job as sql/l12_l13_setup.sql; one of the two should be removed before merging (Section 20).
+17. Explanation of Important Implementation Decisions
+Decision | Chosen | Why | Basis
+Where to add deposit logging | New endpoint create-with-txn + new FDTransactionService; L13 /create untouched | Manual defines create-with-txn separately; avoids editing another member's code | Lab Manual L16 §5
+Who may call create-with-txn | BANK_OFFICER only (L13 /create also allows ADMIN) | Manual: "Only BANK_OFFICER role can create new FD accounts" | Lab Manual L16 §5.1, §7
+Reuse vs. re-implement creation | Call FDAccountService.create | One source of truth for validation and numbering | Team convention
+Schema columns/types | Team ER (BIGINT, DECIMAL(18,2), txn_timestamp, VARCHAR(500), GL/status/uuid/audit) | Agreed team design; L12/L13 precedent; exact money | Team ER (pending sign-off)
+GL representation | Codes on each ledger row; constants in GLAccounts | No GL table in ER; one row = one balanced entry | Team ER + Industry practice
+DEPOSIT status value | POSTED | Manual silent; standard term for a committed ledger entry | Assumption
+Business/value date column | Not added | Not in Manual, ER or code; equals DATE(txn_timestamp) for an opening deposit | Assumption
+Append-only enforcement | updatable = false, no setters, minimal Repository | Financial history must not be edited | Industry practice
+Propagation of recordInitialDeposit | MANDATORY | Cannot be written outside the creation transaction | Industry practice
+Explicit flush before ledger insert | fdRepository.flush() | Deterministic FK order, early error surfacing | Industry practice
+Duplicate DEPOSIT protection | App check + deposit_guard unique key | Defence in depth | Industry practice
+History link | transactionHistoryUrl in response | Backend form of the L16 §8 link | Assumption
+History roles | Same as existing L13 GET | Consistency with current security model | Team convention
+Test database | H2 (MySQL mode) in profile test | Fast, no external DB; MySQL-only constraints verified manually | Industry practice
+
+18. Database Setup and Configuration
+18.1 Prerequisites
+MySQL 8.0.16 or later (CHECK constraints; tested on 8.0.43).
+JDK 17 and Maven 3.9+ (tested on Eclipse Adoptium 17.0.19, Maven 3.9.6).
+18.2 Run order
+Enter your MySQL username and password in src/main/resources/application.properties (marked block, below).
+Run sql/l12_l13_setup.sql — creates database banking_technology_lab, tables users, customer_profile, products, fd_accounts, and test rows CUST001 / FDSTD.
+Run sql/l16_fd_transactions.sql — creates fd_transactions.
+Start the application: mvn spring-boot:run.
+Both scripts are re-runnable (CREATE … IF NOT EXISTS, INSERT IGNORE; nothing is dropped). They are required before start-up because ddl-auto=validate makes Hibernate check, not create, the tables.
+About l12_l13_setup.sql:  Vritika's README refers to this script but it was not included in the project. It was recreated from the FD ER diagram and checked column-by-column against her JPA entities. It has not yet been executed on MySQL; the end-to-end run used the equivalent local_test_setup.sql. Replace it with Vritika's original if she has one.
+18.3 application.properties (credentials shown as placeholders)
+src/main/resources/application.properties
+spring.application.name=fd-module-l12-l13
+ 
+# MySQL database address (normally no need to change).
+spring.datasource.url=jdbc:mysql://localhost:3306/banking_technology_lab?useSSL=false&serverTimezone=Asia/Kolkata&allowPublicKeyRetrieval=true
+ 
+# =====================================================================
+#  YOUR MySQL LOGIN - edit the two lines below
+#  Use the same username/password you use to log in to MySQL Workbench.
+#  Example: if your MySQL user is root and password is myPass@1
+#     spring.datasource.username=root
+#     spring.datasource.password=myPass@1
+#  (No quotes, no spaces around the = sign.)
+# =====================================================================
+# >>> YOUR MySQL USERNAME:
+spring.datasource.username=root
+# >>> YOUR MySQL PASSWORD:
+spring.datasource.password=<your MySQL password>
+ 
+spring.jpa.hibernate.ddl-auto=validate
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.format_sql=true
+spring.jpa.open-in-view=false
+ 
+server.port=8080
+ 
+Security:  do not commit a real password. Replace your local value with a placeholder before pushing or sharing the project.
+18.4 Test configuration
+src/test/resources/application-test.properties
+# Lab 16 test profile: in-memory H2 (MySQL mode) instead of the local MySQL server.
+# ddl-auto=create-drop builds the schema from the entities for tests only; the real
+# database still uses ddl-auto=validate with sql/l16_fd_transactions.sql.
+spring.datasource.url=jdbc:h2:mem:fdtest;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1
+spring.datasource.driver-class-name=org.h2.Driver
+spring.datasource.username=sa
+spring.datasource.password=
+spring.jpa.hibernate.ddl-auto=create-drop
+spring.jpa.show-sql=false
+19. Testing Performed and Actual Results
+19.1 Automated tests — executed
+Command mvn clean test, run on the developer's machine: Windows 11, Eclipse Adoptium JDK 17.0.19, Maven 3.9.6. Results below are taken from the Maven Surefire reports (target/surefire-reports).
+Test class | Type | Tests | Failures | Errors | Skipped | Time (s)
+FDTransactionServiceTest | Unit (Mockito) | 6 | 0 | 0 | 0 | 0.482
+FDTransactionApiIntegrationTest | Spring Boot + MockMvc + H2 | 14 | 0 | 0 | 0 | 14.293
+FDTransactionRollbackIntegrationTest | Spring Boot + H2, mocked ledger repo | 1 | 0 | 0 | 0 | 2.675
+Total |  | 21 | 0 | 0 | 0 | BUILD SUCCESS
+
+# | Class | Test method | Verifies | Result
+1 | Service | recordInitialDeposit_writesDepositWithBothGlLegsForThePrincipal | Type, amount, currency, both GL legs, status, remarks, created_by | PASS
+2 | Service | recordInitialDeposit_existingDeposit_isReturnedAndNothingIsWritten | Idempotent re-call: no second save | PASS
+3 | Service | createFDAccountWithTransaction_usesL13CreationThenLogsDepositAndReturnsIds | Order L13 create → flush → ledger save; response fields | PASS
+4 | Service | createFDAccountWithTransaction_l13ValidationFailure_writesNoTransaction | No ledger interaction when L13 rejects | PASS
+5 | Service | getTransactions_unknownAccount_throws | Unknown account rejected | PASS
+6 | Service | getTransactions_mapsLedgerRowsToResponses | Entity → DTO mapping incl. GL | PASS
+7 | API | createWithTxn_createsAccountAndExactlyOneBalancedDeposit | One DEPOSIT, correct account, amount = principal, GL legs, txn ID matches | PASS
+8 | API | createWithTxn_responseMatchesLabManualContractPlusHistoryLink | Response contract + history URL | PASS
+9 | API | historyLink_returnsTheInitialDeposit | History returns the created transaction | PASS
+10 | API | history_isScopedToTheRequestedAccount | Two FDs → separate histories | PASS
+11 | API | history_unknownAccount_returns400 | 400 + message | PASS
+12 | API | createWithTxn_belowMinimumDeposit_createsNothing | Rollback on business rule: 0 rows | PASS
+13 | API | createWithTxn_unknownCustomer_createsNothing | Rollback on unknown customer: 0 rows | PASS
+14 | API | recordInitialDeposit_calledAgain_returnsExistingDepositAndWritesNothing | Duplicate protection (row count 1) | PASS
+15 | API | recordInitialDeposit_outsideATransaction_isRejected | MANDATORY propagation enforced | PASS
+16 | API | createWithTxn_customer_isForbidden | CUSTOMER → 403, no rows | PASS
+17 | API | createWithTxn_admin_isForbidden | ADMIN → 403, no rows | PASS
+18 | API | createWithTxn_unauthenticated_isUnauthorized | No credentials → 401 | PASS
+19 | API | history_customerRole_canRead | CUSTOMER can read history | PASS
+20 | API | existingL13Create_stillWorks_andIsNotChangedByLab16 | L13 /create unchanged; no DEPOSIT row | PASS
+21 | Rollback | ledgerWriteFailure_rollsBackTheFdAccount | Ledger failure after account insert → account rolled back | PASS
+
+19.2 MySQL end-to-end run — executed
+Run on 9 October 2026 against local MySQL 8.0.43 with the application started via mvn spring-boot:run (started in 7.8 s). Base tables came from sql/local_test_setup.sql; the Lab 16 table from sql/l16_fd_transactions.sql.
+Check | Expected | Actual | Result
+Constraints present | uk_fd_txn_one_deposit, fk_fd_txn_account, CHECK | All three present (SHOW CREATE TABLE) | PASS
+5a create-with-txn (officer1) | 200 + contract | 200, BR0010000016, initialTransactionId 1 | PASS
+5b history (officer1) | 1 DEPOSIT matching 5a | 1 item, DEPOSIT 200000.00, GL legs, POSTED, txnId 1 | PASS
+5c history (customer1) | 200 | 200 | PASS
+5d create-with-txn (customer1) | 403 | 403 | PASS
+5e create-with-txn (admin1) | 403 | 403 | PASS
+5f create-with-txn (no login) | 401 | 401 | PASS
+5g principal 5000 | 400, no new rows | 400 "Minimum deposit is 10000.00"; counts unchanged | PASS
+5h unknown account history | 400 | 400 "FD account not found: NOPE000000" | PASS
+5i L13 /create | 200, unchanged shape, no ledger row | 200 with termMonths, createdBy; 0 ledger rows | PASS
+6 ledger row | matches API and account | txn_id 1, 200000.00 = principal, INR, Initial Deposit, officer1, uuid set | PASS
+6 duplicate DEPOSIT insert | ERROR 1062 | ERROR 1062 on uk_fd_txn_one_deposit; rows stay 1 | PASS
+4 /health without login | 200 (per L12/L13 README) | 401 — requires login | FAIL (pre-existing, not Lab 16)
+
+The single failure is in Vritika's SecurityConfig (only /error is public), which Lab 16 did not change.
+19.3 Not tested
+Angular success UI (not implemented).
+sql/l12_l13_setup.sql has not been executed on MySQL (equivalent local_test_setup.sql was used).
+The deposit_guard constraint inside automated tests (H2 tables are generated from entities; verified manually on MySQL instead).
+Concurrency / load behaviour.
+20. Known Limitations and Unresolved Issues
+# | Issue | Impact | Suggested action / owner
+1 | Angular success UI not implemented | L16 §8 frontend part missing | Frontend owner, using the response fields (Section 14)
+2 | L16 ownership differs between the two Group 9 tables in the workbook | Risk of duplicate implementation | Team lead to confirm
+3 | Schema follows team ER, not Manual §4.2 sample (txn_date, DOUBLE) | Teammates using the Manual's SQL will fail | Team lead sign-off; teammates use txn_timestamp
+4 | No per-customer ownership check on history | A customer can read any account's history | Add once team JWT with customerId replaces HTTP Basic
+5 | Whole-request retry creates a second FD | Possible duplicate FDs on client retry | Idempotency key in FDAccountRequest (L13 owner)
+6 | L13 /create does not log a DEPOSIT | FDs created there have no ledger entry | Route clients to create-with-txn or retire /create (team decision)
+7 | No business/value-date column | Back-dated postings cannot record a separate value date | Add by migration if L17/L20 time travel needs it
+8 | txn_type is VARCHAR(20) | Names > 20 chars (e.g. INTEREST_CAPITALIZATION) will not fit | Use Manual names or widen column
+9 | DB constraint errors at commit return 500; error format differs from Swagger envelope | Less helpful client errors | Extend ApiExceptionHandler (shared file)
+10 | /health requires authentication | Contradicts L12/L13 README | Vritika: permit /health in SecurityConfig
+11 | Two equivalent base-schema scripts | Confusion for next developer | Keep l12_l13_setup.sql, remove local_test_setup.sql (after a MySQL run of the former)
+12 | A local database bt_lab_bank with fd_accounts / fd_transactions exists (origin unknown) | Possible conflicting team schema | Compare columns before merging to any shared DB
+13 | L20 test table lists GET /fd/transactions; implemented path is per account | Possible mismatch in L20 testing | Align with L20 owner
+14 | Timestamps are server-local LocalDateTime (JDBC serverTimezone=Asia/Kolkata), not UTC | Ambiguity across time zones | Accept for lab scope or migrate to UTC
+
+21. Integration Points with Other Team Members
+Team member (Group 9 sheet) | Their task | Touches Lab 16 by | Needs agreement on
+Vritika Vinod | L12/L13 schema, creation API, Account Creation UI | Lab 16 calls FDAccountService.create; success UI extends her form | Keep signature and @Transactional; /create vs create-with-txn; /health
+Niranjan Subhash Nair | L15 withdrawal, penalty, status update | Writes WITHDRAWAL / penalty rows to fd_transactions | Use FDTransaction constructor, txn_timestamp, GL codes
+Parth Gupta | L14/L17 interest, statements | Writes interest rows; statements read the ledger | Type names ≤ 20 chars; GL codes
+Pratham P Shetty | L18/L19 maturity, payout, GL payout entry | Writes MATURITY_PAYOUT; "Debit FD Liabilities GL" | Debit GLAccounts.LIABILITY_FD_DEPOSITS; add new codes to GLAccounts
+Krishna Gupta | L18 alerts, L21 reports, L20 testing | Reads fd_transactions and history endpoint | Column names; endpoint path
+
+22. Assumptions and Their Justification
+Assumption | Manual / sources | Justification | How to change
+DEPOSIT debits ASSET_CUSTOMER_REMITTANCE, credits LIABILITY_FD_DEPOSITS | Manual names "FD Liabilities GL" (L19) only; codes from FD module functioning.md | Standard bank entry for receiving a term deposit | Edit GLAccounts (shared)
+Single internal remittance (debit) account | L13 request has no funding account | Only source of funds available | Add funding account to request (L13 owner)
+Ledger status = POSTED | Column in ER; value undefined | Industry term for a committed entry | FDTransaction.STATUS_POSTED
+No business/value date | Absent from Manual, ER and code | Equal to DATE(txn_timestamp) for opening deposit | Add column by migration
+Team ER columns over Manual §4.2 sample | Conflict between sources | Team design; L12/L13 precedent; exact money | Rename txn_timestamp→txn_date if team lead requires
+transactionHistoryUrl added to response | L16 §8 requires a history link (UI) | Backend-only module; additive field | Remove field; client builds URL
+History readable by BANK_OFFICER, ADMIN, CUSTOMER | Manual: customers see own records only | Mirrors existing L13 GET; ownership needs JWT | Tighten @PreAuthorize / add ownership check
+Base schema recreated as l12_l13_setup.sql | Vritika's script missing | Needed to run with ddl-auto=validate | Replace with her original
+created_by = authenticated username | L16 §2 "who created the account" | Same value L13 stores in fd_accounts.created_by | —
+
+23. Handover Instructions for the Next Developer
+Read this report and docs/LAB16_HANDOVER.md.
+Confirm with the team lead: L16 ownership (Section 3) and the schema choice (Section 6.4).
+Set your MySQL credentials in application.properties; run sql/l12_l13_setup.sql, then sql/l16_fd_transactions.sql (Section 18).
+Run mvn clean test — expect 21 tests, 0 failures.
+Run mvn spring-boot:run; POST create-with-txn as officer1; follow transactionHistoryUrl.
+Remove one of the duplicate base scripts (local_test_setup.sql or l12_l13_setup.sql).
+Never update or delete ledger rows; correct mistakes with a new, reversing entry.
+23.1 Adding a new transaction type (for teammates)
+Inside your own @Transactional service method, create new FDTransaction(fdAccountNo, type, amount, currency, debitGl, creditGl, remarks, createdBy) and save it with FDTransactionRepository.save.
+Use the Lab Manual type names (WITHDRAWAL, INTEREST, MATURITY_PAYOUT) — at most 20 characters.
+Add any new GL account codes to GLAccounts rather than hard-coding strings.
+Rows appear automatically in GET /api/fd/account/{fdAccountNo}/transactions.
+23.2 Checklist before merging to the team repository
+Real MySQL password removed from application.properties.
+Ownership and schema sign-off obtained.
+Compare with any existing shared fd_transactions table (e.g. bt_lab_bank).
+Frontend owner briefed on the response fields for the success UI.
+24. Conclusion
+Lab 16 is implemented on top of Vritika's L12/L13 FD module without modifying any of her classes. Creating an FD through POST /api/fd/account/create-with-txn now records an initial DEPOSIT in the new append-only fd_transactions ledger, in the same database transaction as the account, with a balanced debit/credit GL entry and audit metadata. The response returns the FD account number, the initial transaction ID and a link to the account's transaction history.
+All 21 automated tests passed, and a MySQL end-to-end run confirmed the contract, role restrictions, rollback, and the database-level duplicate guard. The one failed check (/health requiring login) is a pre-existing L12/L13 configuration issue.
+Open items are the Angular success UI (no frontend exists in the project), team-lead confirmation of task ownership and of the schema choice, the customer-ownership check on history, and request-level idempotency. These are documented in Sections 14, 20 and 22 so the next developer can complete them.

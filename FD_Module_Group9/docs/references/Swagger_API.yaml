@@ -1,0 +1,1867 @@
+openapi: 3.0.3
+info:
+  title: Fixed Deposit Management System API
+  description: 'Consolidated API specification for the Fixed Deposit Management System.
+
+
+    Modules:
+
+    - Authentication & User Management
+
+    - Product & Pricing
+
+    - Fixed Deposit Account Management'
+  version: 1.0.0
+servers:
+- url: http://localhost:3020/api
+  description: Authentication Service
+- url: http://localhost:8080
+  description: Product & Pricing Service
+- url: http://localhost:9090
+  description: FD Account Management Service
+tags:
+- name: Auth
+  description: Authentication related endpoints
+- name: User Management
+  description: User and role management endpoints
+- name: Customer Relay
+  description: Proxy endpoints relaying to Customer Microservice
+- name: FD Account Management
+  description: 'Comprehensive API for managing Fixed Deposit (FD) accounts throughout their complete lifecycle.
+
+
+    ## Core Features
+
+    - **Account Creation**: Create FD accounts with dynamic product configuration
+
+    - **Account Holder Management**: Add owners, co-owners, nominees, guardians
+
+    - **Transaction History**: View complete transaction timeline
+
+    - **Premature Withdrawal**: Calculate penalties and process early closures
+
+    - **Search & Retrieval**: Find accounts by multiple criteria
+
+
+    ## Account Creation Process
+
+    1. User obtains JWT token from Authentication Service (contains customer email in ''sub'' claim)
+
+    2. User creates FD calculation via Calculation Service (returns calcId)
+
+    3. User calls POST /api/v1/accounts with JWT token and calcId
+
+    4. System extracts customer email from JWT token automatically
+
+    5. System calls Customer Service to get customer profile and customerNumber
+
+    6. System fetches calculation details (maturity date, interest rate, product code)
+
+    7. System fetches product configuration (balances, roles, communications)
+
+    8. System creates account with all balance types (FD_PRINCIPAL, FD_INTEREST, PENALTY)
+
+    9. System publishes events to Kafka (account creation, communications)
+
+    10. System returns created account details
+
+
+    ## Role Management
+
+    Products define which roles are allowed. Common roles:
+
+    - **OWNER**: Primary account owner (required, from JWT)
+
+    - **CO_OWNER**: Joint account owner
+
+    - **NOMINEE**: Beneficiary designation
+
+    - **GUARDIAN**: For minor accounts
+
+
+    ## Transaction Types
+
+    All transactions are tracked with:
+
+    - Transaction type (DEPOSIT, WITHDRAWAL, INTEREST_ACCRUED, PENALTY_DEBIT)
+
+    - Amount and date
+
+    - Transaction reference (UUID)
+
+    - Description
+
+
+    ## Search Capabilities
+
+    Find accounts by:
+
+    - **accountNumber**: Exact account number match
+
+    - **customerId**: All accounts for a customer
+
+    - **productCode**: All accounts for a product type
+
+
+    ## Authentication
+
+    All endpoints require JWT Bearer token in Authorization header.
+
+    Customer email is automatically extracted from token''s ''sub'' claim and used to fetch customer profile.
+
+    '
+- name: Authentication
+  description: Authentication verification and user info endpoints
+- name: FD Reports
+  description: APIs for generating Fixed Deposit reports and analytics
+- name: Batch Jobs
+  description: APIs for manually triggering batch processing jobs
+- name: Product Management
+  description: Create, retrieve, update, search, and deactivate banking products
+paths:
+  /auth/register:
+    post:
+      tags:
+      - Auth
+      summary: Register a new user
+      operationId: registerUser
+      requestBody:
+        description: User registration data
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Auth_RegisterRequest'
+        required: true
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth_User'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth_ErrorResponse'
+        '409':
+          description: Username already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth_ErrorResponse'
+  /auth/login:
+    post:
+      tags:
+      - Auth
+      summary: Login user
+      operationId: loginUser
+      requestBody:
+        description: User login credentials
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Auth_LoginRequest'
+        required: true
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth_LoginResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth_ErrorResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth_ErrorResponse'
+  /auth/logout:
+    post:
+      tags:
+      - Auth
+      summary: Logout user and invalidate token
+      operationId: logoutUser
+      responses:
+        '200':
+          description: Logout successful, no content
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth_ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth_ErrorResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth_ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth_ErrorResponse'
+      security:
+      - bearerAuth: []
+  /auth/refresh:
+    post:
+      tags:
+      - Auth
+      summary: Refresh JWT token
+      operationId: refreshToken
+      responses:
+        '200':
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth_LoginResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth_ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth_ErrorResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth_ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth_ErrorResponse'
+      security:
+      - bearerAuth: []
+  /auth/validate:
+    get:
+      tags:
+      - Auth
+      summary: Validate JWT token and return claims
+      operationId: validateToken
+      responses:
+        '200':
+          description: Token validation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth_inline_response_200'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth_ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth_ErrorResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth_ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth_ErrorResponse'
+      security:
+      - bearerAuth: []
+  /users/me:
+    get:
+      tags:
+      - User Management
+      summary: Get current user's information
+      operationId: getCurrentUser
+      responses:
+        '200':
+          description: Current user info
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth_User'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth_ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth_ErrorResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth_ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth_ErrorResponse'
+      security:
+      - bearerAuth: []
+  /users/{id}:
+    get:
+      tags:
+      - User Management
+      summary: Get user by ID
+      operationId: getUserById
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: User found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth_User'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth_ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth_ErrorResponse'
+        '403':
+          description: Forbidden - insufficient role
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth_ErrorResponse'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth_ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth_ErrorResponse'
+      security:
+      - bearerAuth: []
+  /users:
+    get:
+      tags:
+      - User Management
+      summary: Get paginated list of users
+      operationId: listUsers
+      parameters:
+      - name: page
+        in: query
+        required: false
+        schema:
+          minimum: 0
+          type: integer
+      - name: size
+        in: query
+        required: false
+        schema:
+          minimum: 1
+          type: integer
+      responses:
+        '200':
+          description: List of users
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth_inline_response_200_1'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth_ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth_ErrorResponse'
+        '403':
+          description: Forbidden - insufficient role
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth_ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth_ErrorResponse'
+      security:
+      - bearerAuth: []
+  /users/{id}/role:
+    put:
+      tags:
+      - User Management
+      summary: Update user role (admin only)
+      operationId: updateUserRole
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+      requestBody:
+        description: Role update request
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Auth_RoleUpdateRequest'
+        required: true
+      responses:
+        '200':
+          description: User role updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth_User'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth_ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth_ErrorResponse'
+        '403':
+          description: Forbidden - admin role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth_ErrorResponse'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth_ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth_ErrorResponse'
+      security:
+      - bearerAuth: []
+  /customers/profile:
+    get:
+      tags:
+      - Customer Relay
+      summary: Get current customer's profile (relayed)
+      operationId: getCustomerProfile
+      responses:
+        '200':
+          description: Customer profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth_CustomerProfile'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth_ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth_ErrorResponse'
+        '403':
+          description: Forbidden - CUSTOMER role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth_ErrorResponse'
+        '502':
+          description: Customer Microservice unreachable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth_ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth_ErrorResponse'
+      security:
+      - bearerAuth: []
+  /customers/{customerId}:
+    get:
+      tags:
+      - Customer Relay
+      summary: Get customer profile by ID (relayed)
+      operationId: getCustomerById
+      parameters:
+      - name: customerId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Customer profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth_CustomerProfile'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth_ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth_ErrorResponse'
+        '403':
+          description: Forbidden - BANK_OFFICER or ADMIN role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth_ErrorResponse'
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth_ErrorResponse'
+        '502':
+          description: Customer Microservice unreachable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth_ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth_ErrorResponse'
+      security:
+      - bearerAuth: []
+  /customers:
+    get:
+      tags:
+      - Customer Relay
+      summary: Get paginated list of customers (relayed)
+      operationId: listCustomers
+      parameters:
+      - name: page
+        in: query
+        required: false
+        schema:
+          minimum: 0
+          type: integer
+      - name: size
+        in: query
+        required: false
+        schema:
+          minimum: 1
+          type: integer
+      responses:
+        '200':
+          description: List of customers
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth_inline_response_200_2'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth_ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth_ErrorResponse'
+        '403':
+          description: Forbidden - BANK_OFFICER or ADMIN role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth_ErrorResponse'
+        '502':
+          description: Customer Microservice unreachable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth_ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth_ErrorResponse'
+      security:
+      - bearerAuth: []
+  /api/v1/jobs/run/maturity-processing:
+    post:
+      tags:
+      - Batch Jobs
+      summary: Run maturity processing job
+      description: Manually trigger the batch job to process maturing FD accounts and execute maturity instructions
+      operationId: runMaturityProcessingJob
+      responses:
+        '200':
+          description: Maturity processing job started successfully
+          content:
+            '*/*':
+              schema:
+                type: string
+        '500':
+          description: Failed to start the job
+          content:
+            '*/*':
+              schema:
+                type: string
+  /api/v1/jobs/run/interest-calculation:
+    post:
+      tags:
+      - Batch Jobs
+      summary: Run interest calculation job
+      description: Manually trigger the batch job to calculate interest for all active FD accounts
+      operationId: runInterestCalculationJob
+      responses:
+        '200':
+          description: Interest calculation job started successfully
+          content:
+            '*/*':
+              schema:
+                type: string
+        '500':
+          description: Failed to start the job
+          content:
+            '*/*':
+              schema:
+                type: string
+  /api/v1/accounts:
+    post:
+      tags:
+      - FD Account Management
+      summary: Create a new Fixed Deposit account
+      description: "Create a new Fixed Deposit account with comprehensive configuration from external services.\n\n**What This Endpoint Does:**\n1. Extracts customer email from JWT token's 'sub' claim (automatic, no manual input needed)\n2. Calls Customer Service to get customer profile and customerNumber\n3. Fetches calculation details from FD Calculation Service using calcId\n4. Fetches product configuration from Product & Pricing Service\n5. Creates FD account with calculated maturity values\n6. Creates balance types based on product configuration (FD_PRINCIPAL, FD_INTEREST, PENALTY)\n7. Publishes account creation event to Kafka\n8. Sends communication events (Email/SMS) based on product templates\n9. Returns complete account details\n\n**Request Body:**\n- `accountName`: Display name for the account (e.g., \"My Retirement Fund\")\n- `calcId`: Calculation ID from FD Calculation Service (obtained from /api/fd/calculations)\n\n**JWT Token Requirements:**\n- Must contain 'sub' claim with\
+        \ customer email\n- Must be valid and not expired\n- Obtained from Authentication Service at http://localhost:3020\n\n**External Service Calls:**\nThis endpoint integrates with:\n1. **Customer Service** (http://localhost:1005)\n   - Fetches: customer profile, customerNumber (business identifier)\n2. **FD Calculation Service** (http://localhost:4030)\n   - Fetches: maturity value, maturity date, interest rates, product code\n3. **Product & Pricing Service** (http://localhost:8080)\n   - Fetches: balance types, allowed roles, transaction types, communication templates, penalty charges\n\n**What Gets Created:**\n- FD Account entity with all details\n- Account holder entry (OWNER role) using customerNumber from Customer Service\n- Initial deposit transaction (PRINCIPAL_DEPOSIT)\n- Multiple balance entries:\n  * FD_PRINCIPAL: Set to principal amount\n  * FD_INTEREST: Initialized to 0\n  * PENALTY: Initialized to 0\n\n**Kafka Events Published:**\n- **fd.account.created**: Account creation\
+        \ notification\n- **fd.communication**: Customer notifications (based on product config)\n  * COMM_OPENING event via SMS/Email\n  * Uses templates from product configuration\n  * Variables substituted: ${CUSTOMER_NAME}, ${ACCOUNT_NUMBER}, ${DATE}, etc.\n\n**Use Cases:**\n\n**Scenario 1: Standard FD Account Creation**\n- Customer completes FD calculation in UI\n- Receives calcId: 12345\n- Calls this endpoint with accountName and calcId\n- System creates account with customer as OWNER\n- Customer receives SMS/Email confirmation\n\n**Scenario 2: Multiple Accounts for Same Customer**\n- Customer already has one FD account\n- Creates another calculation for different term/amount\n- Calls endpoint with new calcId\n- System creates second account linked to same customer ID\n\n**Scenario 3: Product-Specific Configuration**\n- Different products (FD001, FD002) have different:\n  * Balance types\n  * Communication templates\n  * Penalty structures\n- System automatically applies correct configuration\n\
+        \n**Related Endpoints:**\n- POST /api/fd/calculations - Create calculation first to get calcId\n- GET /api/products/{code} - View product configuration\n- GET /api/v1/accounts/search - Find created accounts\n- POST /api/v1/accounts/{accountNumber}/roles - Add co-owners/nominees\n\n**Error Scenarios:**\n- **400 Bad Request**: Invalid calcId or calculation not found\n- **401 Unauthorized**: Missing or invalid JWT token\n- **404 Not Found**: Product not found for product code from calculation\n- **500 Internal Error**: External service unavailable (Calculation or Product Service)\n\n**Example Request:**\n```json\nPOST /api/v1/accounts\nAuthorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...\n\n{\n  \"accountName\": \"My Retirement FD\",\n  \"calcId\": 12345\n}\n```\n\n**Example Response:**\n```json\n{\n  \"accountNumber\": \"FD202510220001\",\n  \"accountName\": \"My Retirement FD\",\n  \"productCode\": \"FD001\",\n  \"status\": \"ACTIVE\",\n  \"principalAmount\": 100000.00,\n\
+        \  \"maturityAmount\": 108500.00,\n  \"interestRate\": 8.0,\n  \"termInMonths\": 12,\n  \"effectiveDate\": \"2025-10-22\",\n  \"maturityDate\": \"2026-10-22\",\n  \"accountHolders\": [\n    {\n      \"customerId\": \"CUST123456\",\n      \"roleType\": \"OWNER\",\n      \"ownershipPercentage\": 100.00\n    }\n  ]\n}\n```\n\n**Important Notes:**\n- Customer ID is NEVER in request body - always extracted from JWT\n- Product code comes from calculation service - not in request\n- Interest rate, term, maturity details from calculation service\n- Balance types created automatically based on product configuration\n- This is an asynchronous operation - Kafka events published after response\n"
+      operationId: createFdAccount
+      requestBody:
+        description: 'Account creation request containing:
+
+          - **accountName**: Display name for the account (3-100 characters)
+
+          - **calcId**: Calculation ID from FD Calculation Service (positive integer)
+
+
+          **Note**: Customer ID is automatically extracted from JWT token''s ''sub'' claim.
+
+          Do NOT include customer ID in request body.
+
+          '
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FD_CreateFDAccountRequest'
+        required: true
+      responses:
+        '201':
+          description: Account created successfully with all balances and events published
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/FD_FDAccountView'
+        '400':
+          description: 'Invalid input: calcId not found or invalid accountName'
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/FD_FDAccountView'
+        '401':
+          description: 'Unauthorized: Invalid or missing JWT token'
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/FD_FDAccountView'
+        '404':
+          description: Product not found for product code from calculation
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/FD_FDAccountView'
+        '500':
+          description: 'Internal server error: External service unavailable'
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/FD_FDAccountView'
+  /api/v1/accounts/{accountNumber}/withdrawal:
+    post:
+      tags:
+      - FD Account Management
+      summary: Perform early withdrawal
+      description: Execute premature withdrawal and close the FD account
+      operationId: performEarlyWithdrawal
+      parameters:
+      - name: accountNumber
+        in: path
+        description: FD Account number
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FD_EarlyWithdrawlRequest'
+        required: true
+      responses:
+        '200':
+          description: Early withdrawal completed successfully
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/FD_FDAccountView'
+        '400':
+          description: Invalid withdrawal request
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/FD_FDAccountView'
+        '404':
+          description: Account not found
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/FD_FDAccountView'
+  /api/v1/accounts/{accountNumber}/roles:
+    post:
+      tags:
+      - FD Account Management
+      summary: Add account holder role
+      description: Add a new account holder with a specific role to an existing FD account
+      operationId: addRoleToAccount
+      parameters:
+      - name: accountNumber
+        in: path
+        description: FD Account number
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FD_AddAccountHolderRequest'
+        required: true
+      responses:
+        '200':
+          description: Role added successfully
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/FD_FDAccountView'
+        '400':
+          description: Invalid request
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/FD_FDAccountView'
+        '404':
+          description: Account not found
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/FD_FDAccountView'
+  /api/v1/reports/accounts/maturing:
+    get:
+      tags:
+      - FD Reports
+      summary: Get maturing accounts
+      description: Retrieve all active FD accounts that are maturing within a specified number of days from now
+      operationId: getMaturingAccounts
+      parameters:
+      - name: days
+        in: query
+        description: Number of days to look ahead for maturing accounts
+        required: true
+        schema:
+          type: integer
+          format: int32
+        example: 7
+      responses:
+        '200':
+          description: Maturing accounts retrieved successfully
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FD_FDAccountView'
+        '204':
+          description: No maturing accounts found
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FD_FDAccountView'
+  /api/v1/reports/accounts/created:
+    get:
+      tags:
+      - FD Reports
+      summary: Get accounts created between dates
+      description: Retrieve all FD accounts created within a specified date range
+      operationId: getCreatedAccounts
+      parameters:
+      - name: startDate
+        in: query
+        description: 'Start date (ISO format: yyyy-MM-dd)'
+        required: true
+        schema:
+          type: string
+          format: date
+        example: '2025-01-01'
+      - name: endDate
+        in: query
+        description: 'End date (ISO format: yyyy-MM-dd)'
+        required: true
+        schema:
+          type: string
+          format: date
+        example: '2025-12-31'
+      responses:
+        '200':
+          description: Accounts retrieved successfully
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FD_FDAccountView'
+        '204':
+          description: No accounts found in the date range
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FD_FDAccountView'
+  /api/v1/reports/accounts/closed:
+    get:
+      tags:
+      - FD Reports
+      summary: Get closed accounts
+      description: Retrieve all FD accounts closed within a specified date range, optionally filtered by status
+      operationId: getClosedAccounts
+      parameters:
+      - name: startDate
+        in: query
+        description: 'Start date (ISO format: yyyy-MM-dd)'
+        required: true
+        schema:
+          type: string
+          format: date
+        example: '2025-01-01'
+      - name: endDate
+        in: query
+        description: 'End date (ISO format: yyyy-MM-dd)'
+        required: true
+        schema:
+          type: string
+          format: date
+        example: '2025-12-31'
+      - name: status
+        in: query
+        description: Optional status filter (e.g., CLOSED, MATURED)
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Closed accounts retrieved successfully
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FD_FDAccountView'
+        '204':
+          description: No closed accounts found
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FD_FDAccountView'
+  /api/v1/auth/verify:
+    get:
+      tags:
+      - Authentication
+      summary: Verify authentication
+      description: Simple endpoint to verify that JWT authentication is working correctly
+      operationId: verifyAuthentication
+      responses:
+        '200':
+          description: Authentication verified successfully
+          content:
+            '*/*':
+              schema:
+                type: object
+                additionalProperties:
+                  type: object
+        '401':
+          description: Unauthorized - Invalid or missing JWT token
+          content:
+            '*/*':
+              schema:
+                type: object
+                additionalProperties:
+                  type: object
+      security:
+      - Bearer Authentication: []
+  /api/v1/auth/me:
+    get:
+      tags:
+      - Authentication
+      summary: Get current user information
+      description: Returns information about the currently authenticated user from the JWT token
+      operationId: getCurrentUser
+      responses:
+        '200':
+          description: User information retrieved successfully
+          content:
+            '*/*':
+              schema:
+                type: object
+                additionalProperties:
+                  type: object
+        '401':
+          description: Unauthorized - Invalid or missing JWT token
+          content:
+            '*/*':
+              schema:
+                type: object
+                additionalProperties:
+                  type: object
+      security:
+      - Bearer Authentication: []
+  /api/v1/accounts/{accountNumber}/withdrawal-inquiry:
+    get:
+      tags:
+      - FD Account Management
+      summary: Get premature withdrawal inquiry
+      description: Get details about penalties and amounts for premature withdrawal
+      operationId: getWithdrawalInquiry
+      parameters:
+      - name: accountNumber
+        in: path
+        description: FD Account number
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Inquiry details retrieved successfully
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/FD_PrematureWithdrawalInquiryResponse'
+        '404':
+          description: Account not found
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/FD_PrematureWithdrawalInquiryResponse'
+  /api/v1/accounts/{accountNumber}/transactions:
+    get:
+      tags:
+      - FD Account Management
+      summary: Get account transactions
+      description: Retrieve all transactions for a specific FD account
+      operationId: getAccountTransactions
+      parameters:
+      - name: accountNumber
+        in: path
+        description: FD Account number
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Transactions retrieved successfully
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FD_FDTransactionView'
+        '404':
+          description: Account not found
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FD_FDTransactionView'
+  /api/v1/accounts/{accountNumber}/balances:
+    get:
+      tags:
+      - FD Account Management
+      summary: Get account balances
+      description: Retrieve all balance types (FD_PRINCIPAL, FD_INTEREST, PENALTY) for an FD account
+      operationId: getAccountBalances
+      parameters:
+      - name: accountNumber
+        in: path
+        description: FD Account number
+        required: true
+        schema:
+          type: string
+        example: FD202401150001
+      responses:
+        '200':
+          description: Balances retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FD_FdAccountBalanceView'
+              examples:
+                Account Balances:
+                  description: Account Balances
+                  value:
+                  - balanceType: FD_PRINCIPAL
+                    balanceAmount: 100000
+                    isActive: true
+                    createdAt: '2024-01-15T10:30:00'
+                    updatedAt: '2024-01-15T10:30:00'
+                  - balanceType: FD_INTEREST
+                    balanceAmount: 5250
+                    isActive: true
+                    createdAt: '2024-01-15T10:30:00'
+                    updatedAt: '2024-03-15T00:00:00'
+        '404':
+          description: Account not found
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FD_FdAccountBalanceView'
+  /api/v1/accounts/search:
+    get:
+      tags:
+      - FD Account Management
+      summary: Search for FD accounts by various criteria
+      description: "Flexible search API to find FD accounts using different identification types and values.\n\n**Supported Search Types:**\n\n1. **accountNumber** - Find specific account by account number\n   - Returns: Single account (or empty if not found)\n   - Use case: Customer inquiry, account lookup\n   - Example: idType=accountNumber&value=FD202510220001\n\n2. **customerId** - Find all accounts for a customer\n   - Returns: List of all FD accounts owned/associated with customer\n   - Use case: Customer portfolio view, relationship manager dashboard\n   - Example: idType=customerId&value=CUST123456\n\n3. **productCode** - Find all accounts for a product type\n   - Returns: All accounts using specific product\n   - Use case: Product performance analysis, bulk operations\n   - Example: idType=productCode&value=FD001\n\n**Response Details:**\nEach account in response includes:\n- Complete account details (number, name, status, amounts)\n- All account holders with roles and ownership\
+        \ percentages\n- Product information\n- Maturity details\n- Current balances (if applicable)\n\n**Use Cases:**\n\n**Scenario 1: Customer Service Representative Lookup**\n- Customer calls with account number\n- Rep searches: idType=accountNumber&value=FD202510220001\n- Gets complete account details instantly\n- Can view holders, transactions, status\n\n**Scenario 2: Customer Portfolio View**\n- Customer logs into internet banking\n- System searches: idType=customerId&value=<from JWT>\n- Returns all FD accounts for customer\n- Shows total holdings, maturity dates\n\n**Scenario 3: Product Manager Analytics**\n- Product manager wants FD001 performance\n- Searches: idType=productCode&value=FD001\n- Gets all FD001 accounts\n- Analyzes total deposits, average terms\n\n**Scenario 4: Relationship Manager Dashboard**\n- RM manages multiple customers\n- Searches each customer's accounts\n- Builds comprehensive portfolio view\n- Monitors maturity schedules\n\n**Search Tips:**\n- Account numbers\
+        \ are case-sensitive\n- Customer IDs must match exactly\n- Product codes are case-sensitive\n- Empty result returns 404 Not Found\n- Large result sets returned in single response (no pagination yet)\n\n**Related Endpoints:**\n- POST /api/v1/accounts - Create new account\n- GET /api/v1/accounts/{accountNumber}/transactions - View account transactions\n- POST /api/v1/accounts/{accountNumber}/roles - Add account holders\n\n**Performance Considerations:**\n- Account number search: O(1) - indexed lookup\n- Customer ID search: O(n) - filtered scan, consider pagination for large datasets\n- Product code search: O(n) - filtered scan\n\n**Example Requests:**\n```\n# Find specific account\nGET /api/v1/accounts/search?idType=accountNumber&value=FD202510220001\n\n# Find all customer accounts\nGET /api/v1/accounts/search?idType=customerId&value=CUST123456\n\n# Find all accounts for product\nGET /api/v1/accounts/search?idType=productCode&value=FD001\n```\n\n**Example Response (Customer ID search):**\n\
+        ```json\n[\n  {\n    \"accountNumber\": \"FD202510220001\",\n    \"accountName\": \"My Retirement FD\",\n    \"productCode\": \"FD001\",\n    \"status\": \"ACTIVE\",\n    \"principalAmount\": 100000.00,\n    \"maturityAmount\": 108500.00\n  },\n  {\n    \"accountNumber\": \"FD202510220002\",\n    \"accountName\": \"Emergency Fund FD\",\n    \"productCode\": \"FD002\",\n    \"status\": \"ACTIVE\",\n    \"principalAmount\": 50000.00,\n    \"maturityAmount\": 53250.00\n  }\n]\n```\n"
+      operationId: findAccounts
+      parameters:
+      - name: idType
+        in: query
+        description: 'Type of identifier to search by. Supported values:
+
+          - **accountNumber**: Search by exact account number
+
+          - **customerId**: Find all accounts for a customer
+
+          - **productCode**: Find all accounts using a product
+
+          '
+        required: true
+        schema:
+          type: string
+        example: customerId
+      - name: value
+        in: query
+        description: Value of the identifier to search for. Must match the idType selected.
+        required: true
+        schema:
+          type: string
+        example: CUST123456
+      responses:
+        '200':
+          description: Accounts found successfully. Returns list of matching accounts.
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FD_FDAccountView'
+        '400':
+          description: 'Invalid search parameters: unsupported idType or missing value'
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FD_FDAccountView'
+        '401':
+          description: 'Unauthorized: Missing or invalid JWT token'
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FD_FDAccountView'
+        '404':
+          description: No accounts found matching search criteria
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FD_FDAccountView'
+  /api/product:
+    post:
+      tags:
+      - Product Management
+      summary: Create a new product
+      description: 'Creates a new banking product definition with term limits, rate limits,
+
+        currency, and effective date.
+
+        '
+      operationId: createProduct
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Product_CreateProductRequest'
+            examples:
+              FD Short Term Example:
+                value:
+                  productCode: FD001
+                  productName: Fixed Deposit - Short Term
+                  productType: FD
+                  currency: INR
+                  effectiveDate: '2025-07-01'
+                  termLimit:
+                    min: 3
+                    max: 36
+                  rateLimit:
+                    min: 5.0
+                    max: 7.5
+      responses:
+        '201':
+          description: Product created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product_ProductView'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product_ErrorResponse'
+        '409':
+          description: Product code already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product_ErrorResponse'
+    get:
+      tags:
+      - Product Management
+      summary: List all products
+      description: Retrieve a basic listing of all products, no filters applied.
+      operationId: listProducts
+      responses:
+        '200':
+          description: Products retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product_ProductView'
+  /api/product/search:
+    get:
+      tags:
+      - Product Management
+      summary: Search products by filter
+      description: 'Flexible search API to find products by type and/or effective date range.
+
+
+        **Example Request:**
+
+        ```
+
+        GET /api/product/search?productType=FD&startDate=2025-01-01&endDate=2025-12-31
+
+        ```
+
+        '
+      operationId: searchProducts
+      parameters:
+      - name: productType
+        in: query
+        description: Product type to filter by (e.g. FD, SAVINGS)
+        required: false
+        schema:
+          type: string
+        example: FD
+      - name: startDate
+        in: query
+        description: Start of effective date range
+        required: false
+        schema:
+          type: string
+          format: date
+        example: '2025-01-01'
+      - name: endDate
+        in: query
+        description: End of effective date range
+        required: false
+        schema:
+          type: string
+          format: date
+        example: '2025-12-31'
+      responses:
+        '200':
+          description: Matching products returned
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product_ProductView'
+        '400':
+          description: Invalid filter parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product_ErrorResponse'
+  /api/product/{productCode}:
+    get:
+      tags:
+      - Product Management
+      summary: Get a single product by code
+      description: Direct lookup of one product using its exact product code.
+      operationId: getProduct
+      parameters:
+      - name: productCode
+        in: path
+        required: true
+        schema:
+          type: string
+        example: FD001
+      responses:
+        '200':
+          description: Product found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product_ProductView'
+        '404':
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product_ErrorResponse'
+    put:
+      tags:
+      - Product Management
+      summary: Maintain/update a product
+      description: 'Update mutable fields of an existing product, such as product name or
+
+        interest (rate) range.
+
+        '
+      operationId: updateProduct
+      parameters:
+      - name: productCode
+        in: path
+        required: true
+        schema:
+          type: string
+        example: FD001
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Product_UpdateProductRequest'
+            examples:
+              Update Name and Rate:
+                value:
+                  productName: Fixed Deposit - Short Term (Revised)
+                  rateLimit:
+                    min: 5.5
+                    max: 8.0
+      responses:
+        '200':
+          description: Product updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product_ProductView'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product_ErrorResponse'
+        '404':
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product_ErrorResponse'
+    delete:
+      tags:
+      - Product Management
+      summary: Deactivate a product
+      description: Retires/deactivates a product so it can no longer be used for new accounts.
+      operationId: deactivateProduct
+      parameters:
+      - name: productCode
+        in: path
+        required: true
+        schema:
+          type: string
+        example: FD001
+      responses:
+        '204':
+          description: Product deactivated successfully
+        '404':
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product_ErrorResponse'
+components:
+  schemas:
+    Auth_User:
+      required:
+      - username
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 123
+        username:
+          type: string
+          example: johndoe
+        email:
+          type: string
+          format: email
+          example: johndoe@example.com
+        role:
+          type: string
+          example: CUSTOMER
+          enum:
+          - CUSTOMER
+          - BANK_OFFICER
+          - ADMIN
+          default: CUSTOMER
+        createdAt:
+          type: string
+          format: date-time
+          example: 2023-01-01 12:00:00+00:00
+    Auth_RegisterRequest:
+      required:
+      - email
+      - password
+      - username
+      type: object
+      properties:
+        username:
+          type: string
+          example: johndoe
+        password:
+          type: string
+          writeOnly: true
+          example: strongpassword123
+        email:
+          type: string
+          format: email
+          example: johndoe@example.com
+    Auth_LoginRequest:
+      required:
+      - password
+      - username
+      type: object
+      properties:
+        username:
+          type: string
+          example: johndoe
+        password:
+          type: string
+          writeOnly: true
+          example: strongpassword123
+    Auth_LoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        tokenType:
+          type: string
+          example: Bearer
+        expiresIn:
+          type: integer
+          description: Token expiration time in seconds
+          example: 3600
+        role:
+          type: string
+          example: CUSTOMER
+    Auth_RoleUpdateRequest:
+      required:
+      - role
+      type: object
+      properties:
+        role:
+          type: string
+          example: BANK_OFFICER
+          enum:
+          - CUSTOMER
+          - BANK_OFFICER
+          - ADMIN
+    Auth_CustomerProfile:
+      type: object
+      properties:
+        customerId:
+          type: string
+          example: cust-001
+        fullName:
+          type: string
+          example: John Doe
+        status:
+          type: string
+          example: Active
+        email:
+          type: string
+          format: email
+          example: johndoe@customer.com
+        mobileNumber:
+          type: string
+          example: '+1234567890'
+      readOnly: true
+    Auth_ErrorResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: error
+        message:
+          type: string
+          example: Error message describing the issue
+        timestamp:
+          type: string
+          format: date-time
+          example: 2024-06-01 12:00:00+00:00
+    Auth_inline_response_200:
+      type: object
+      properties:
+        username:
+          type: string
+        role:
+          type: string
+          enum:
+          - CUSTOMER
+          - BANK_OFFICER
+          - ADMIN
+        valid:
+          type: boolean
+        expiresAt:
+          type: string
+          format: date-time
+    Auth_inline_response_200_1:
+      type: object
+      properties:
+        page:
+          type: integer
+        size:
+          type: integer
+        total:
+          type: integer
+        users:
+          type: array
+          items:
+            $ref: '#/components/schemas/Auth_User'
+    Auth_inline_response_200_2:
+      type: object
+      properties:
+        page:
+          type: integer
+        size:
+          type: integer
+        total:
+          type: integer
+        customers:
+          type: array
+          items:
+            $ref: '#/components/schemas/Auth_CustomerProfile'
+    FD_CreateFDAccountRequest:
+      required:
+      - accountName
+      - calcId
+      type: object
+      properties:
+        accountName:
+          type: string
+          description: Name of the FD account
+          example: My Savings FD
+        calcId:
+          type: integer
+          description: Calculation ID from FD calculation service
+          format: int64
+          example: 123
+      description: Request object for creating a new Fixed Deposit account
+    FD_AccountHolderView:
+      type: object
+      properties:
+        customerId:
+          type: string
+        roleType:
+          type: string
+          enum:
+          - OWNER
+          - CO_OWNER
+          - NOMINEE
+          - GUARDIAN
+        ownershipPercentage:
+          type: number
+      description: List of account holders and their roles
+    FD_FDAccountView:
+      type: object
+      properties:
+        accountNumber:
+          type: string
+          description: Unique account number
+          example: FD2025001234
+        accountName:
+          type: string
+          description: Name of the FD account
+          example: My Savings FD
+        productCode:
+          type: string
+          description: Product code
+          example: FD-REGULAR-01
+        status:
+          type: string
+          description: Current status of the account
+          example: ACTIVE
+          enum:
+          - ACTIVE
+          - CLOSED
+          - MATURED
+          - PREMATURELY_CLOSED
+        principalAmount:
+          type: number
+          description: Principal amount deposited
+          example: 100000
+        maturityAmount:
+          type: number
+          description: Expected maturity amount
+          example: 107500
+        effectiveDate:
+          type: string
+          description: Account effective date
+          format: date
+          example: '2025-01-15'
+        maturityDate:
+          type: string
+          description: Expected maturity date
+          format: date
+          example: '2026-01-15'
+        interestRate:
+          type: number
+          description: Interest rate percentage
+          example: 7.5
+        apy:
+          type: number
+          description: Annual Percentage Yield
+          example: 7.76
+        category1Id:
+          type: string
+          description: Customer category 1 (e.g., SENIOR, JUNIOR)
+          example: JR
+        category2Id:
+          type: string
+          description: Customer category 2 (e.g., GOLD, PLATINUM)
+          example: DY
+        interestType:
+          type: string
+          description: Interest type (SIMPLE or COMPOUND)
+          example: COMPOUND
+        compoundingFrequency:
+          type: string
+          description: Compounding frequency (MONTHLY, QUARTERLY, YEARLY)
+          example: QUARTERLY
+        tenureValue:
+          type: integer
+          description: Tenure value
+          format: int32
+          example: 5
+        tenureUnit:
+          type: string
+          description: Tenure unit (YEARS, MONTHS, DAYS)
+          example: YEARS
+        currency:
+          type: string
+          description: Currency code
+          example: INR
+        accountHolders:
+          type: array
+          description: List of account holders and their roles
+          items:
+            $ref: '#/components/schemas/FD_AccountHolderView'
+      description: Fixed Deposit account details view
+    FD_EarlyWithdrawlRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+    FD_AddAccountHolderRequest:
+      required:
+      - customerId
+      - roleType
+      type: object
+      properties:
+        customerId:
+          type: string
+        roleType:
+          type: string
+          enum:
+          - OWNER
+          - CO_OWNER
+          - NOMINEE
+          - GUARDIAN
+        ownershipPercentage:
+          type: number
+    FD_PrematureWithdrawalInquiryResponse:
+      type: object
+      properties:
+        accountNumber:
+          type: string
+        originalPrincipal:
+          type: number
+        interestAccruedToDate:
+          type: number
+        penaltyAmount:
+          type: number
+        finalPayoutAmount:
+          type: number
+        inquiryDate:
+          type: string
+          format: date
+    FD_FDTransactionView:
+      type: object
+      properties:
+        transactionType:
+          type: string
+          enum:
+          - PRINCIPAL_DEPOSIT
+          - INTEREST_ACCRUAL
+          - INTEREST_PAYOUT
+          - INTEREST_CAPITALIZATION
+          - PREMATURE_WITHDRAWAL
+          - PENALTY_DEBIT
+          - MATURITY_PAYOUT
+          - RENEWAL_DEPOSIT
+        amount:
+          type: number
+        transactionDate:
+          type: string
+          format: date-time
+        description:
+          type: string
+        transactionReference:
+          type: string
+    FD_FdAccountBalanceView:
+      type: object
+      properties:
+        balanceType:
+          type: string
+          description: Balance type (FD_PRINCIPAL, FD_INTEREST, PENALTY)
+          example: FD_PRINCIPAL
+        balanceAmount:
+          type: number
+          description: Current balance amount
+          example: 100000
+        isActive:
+          type: boolean
+          description: Whether this balance type is active
+          example: true
+        createdAt:
+          type: string
+          description: When this balance entry was created
+          format: date-time
+        updatedAt:
+          type: string
+          description: When this balance was last updated
+          format: date-time
+      description: FD Account balance details for different balance types
+    Product_Range:
+      type: object
+      properties:
+        min:
+          type: number
+        max:
+          type: number
+      description: Generic min/max range used for term and rate limits
+    Product_CreateProductRequest:
+      type: object
+      required:
+      - productCode
+      - productName
+      - productType
+      - currency
+      - effectiveDate
+      - termLimit
+      - rateLimit
+      properties:
+        productCode:
+          type: string
+          description: Unique product code
+          example: FD001
+        productName:
+          type: string
+          description: Display name of the product
+          example: Fixed Deposit - Short Term
+        productType:
+          type: string
+          description: Type of product
+          example: FD
+        currency:
+          type: string
+          description: Currency code
+          example: INR
+        effectiveDate:
+          type: string
+          format: date
+          description: Date the product becomes effective
+          example: '2025-07-01'
+        termLimit:
+          $ref: '#/components/schemas/Product_Range'
+        rateLimit:
+          $ref: '#/components/schemas/Product_Range'
+      description: Request object for creating a new product
+    Product_UpdateProductRequest:
+      type: object
+      properties:
+        productName:
+          type: string
+          description: Updated display name of the product
+        rateLimit:
+          $ref: '#/components/schemas/Product_Range'
+      description: Request object for updating an existing product's mutable fields
+    Product_ProductView:
+      type: object
+      properties:
+        productCode:
+          type: string
+          example: FD001
+        productName:
+          type: string
+          example: Fixed Deposit - Short Term
+        productType:
+          type: string
+          example: FD
+        currency:
+          type: string
+          example: INR
+        effectiveDate:
+          type: string
+          format: date
+          example: '2025-07-01'
+        termLimit:
+          $ref: '#/components/schemas/Product_Range'
+        rateLimit:
+          $ref: '#/components/schemas/Product_Range'
+        status:
+          type: string
+          enum:
+          - ACTIVE
+          - INACTIVE
+          example: ACTIVE
+      description: Product details view
+    Product_ErrorResponse:
+      type: object
+      properties:
+        status:
+          type: integer
+          example: 404
+        message:
+          type: string
+          example: Product not found
+        timestamp:
+          type: string
+          format: date-time
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    Bearer Authentication:
+      type: http
+      description: JWT token obtained from the authentication service
+      scheme: bearer
+      bearerFormat: JWT

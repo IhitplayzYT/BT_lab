@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "productRoles")
+@Table(name = "product_roles")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -15,12 +15,12 @@ public class ProductRole {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "roleId")
+    @Column(name = "role_id")
     private Integer roleId;
 
-    @Column(name = "roleType", nullable = false, length = 20)
+    @Column(name = "role_type", nullable = false, length = 20)
     private String roleType;
 
-    @Column(name = "isMandatory")
+    @Column(name = "is_mandatory")
     private Boolean isMandatory;
 }

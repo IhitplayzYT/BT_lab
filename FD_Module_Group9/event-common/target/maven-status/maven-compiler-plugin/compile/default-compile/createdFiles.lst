@@ -1,0 +1,5 @@
+com/example/fdshared/Outbox.class
+com/example/fdshared/EventInfrastructure.class
+com/example/fdshared/EventInfrastructure$Relay.class
+com/example/fdshared/DomainEvent.class
+com/example/fdshared/InvalidEventException.class

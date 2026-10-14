@@ -190,22 +190,4 @@ public class ProductController {
         CalculatorConfigDTO response = productService.getCalculatorConfig(productCode);
         return ResponseEntity.ok(response);
     }
-
-    // ─── Batch Processing Endpoint ───────────────────────────────────────────
-
-    @PostMapping("/batch")
-    @PreAuthorize(ProductAuthorization.WRITE)
-    @Operation(summary = "Batch create products", description = "Requires BANK_OFFICER or ADMIN role. Creates multiple products in a single request with Kafka-based logging.")
-    @ApiResponse(responseCode = "200", description = "Batch operation completed",
-            content = @Content(schema = @Schema(implementation = BatchProductResponse.class)))
-    @ApiResponse(responseCode = "400", description = "Invalid batch request",
-            content = @Content(schema = @Schema(implementation = ErrorDetails.class)))
-    @ApiResponse(responseCode = "401", description = "Unauthenticated request",
-            content = @Content(schema = @Schema(implementation = ErrorDetails.class)))
-    @ApiResponse(responseCode = "403", description = "Unauthorized role",
-            content = @Content(schema = @Schema(implementation = ErrorDetails.class)))
-    public ResponseEntity<BatchProductResponse> batchCreateProducts(@Valid @RequestBody BatchProductRequest batchRequest) {
-        BatchProductResponse response = productService.batchCreateProducts(batchRequest);
-        return ResponseEntity.ok(response);
-    }
 }

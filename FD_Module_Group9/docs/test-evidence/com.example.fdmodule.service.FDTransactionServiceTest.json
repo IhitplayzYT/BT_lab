@@ -1,0 +1,16 @@
+{
+  "class": "com.example.fdmodule.service.FDTransactionServiceTest",
+  "tests": 6,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0,
+  "seconds": "1.168",
+  "methods": [
+    "createFDAccountWithTransaction_l13ValidationFailure_writesNoTransaction",
+    "getTransactions_mapsLedgerRowsToResponses",
+    "getTransactions_unknownAccount_throws",
+    "recordInitialDeposit_existingDeposit_isReturnedAndNothingIsWritten",
+    "createFDAccountWithTransaction_usesL13CreationThenLogsDepositAndReturnsIds",
+    "recordInitialDeposit_writesDepositWithBothGlLegsForThePrincipal"
+  ]
+}

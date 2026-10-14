@@ -4,23 +4,23 @@
 -- 1. PRODUCTS (core / basic info & limits)
 -- =========================================
 CREATE TABLE IF NOT EXISTS products (
-    productId                INT AUTO_INCREMENT PRIMARY KEY,
-    productCode              VARCHAR(50)  NOT NULL UNIQUE,   -- e.g. 'FD001'
-    productName              VARCHAR(100) NOT NULL,          -- e.g. 'Fixed Deposit - Short Term'
-    productType              VARCHAR(20)  NOT NULL,          -- e.g. 'FD', 'TD', 'CASA', 'LOAN', 'SAVINGS'
+    product_id               INT AUTO_INCREMENT PRIMARY KEY,
+    product_code             VARCHAR(50)  NOT NULL UNIQUE,   -- e.g. 'FD001'
+    product_name             VARCHAR(100) NOT NULL,          -- e.g. 'Fixed Deposit - Short Term'
+    product_type             VARCHAR(20)  NOT NULL,          -- e.g. 'FD', 'TD', 'CASA', 'LOAN', 'SAVINGS'
     currency                 VARCHAR(10)  NOT NULL,          -- ISO code, e.g. 'INR', 'USD'
-    effectiveDate            DATE         NOT NULL,
-    endDate                  DATE         DEFAULT NULL,
-    isActive                 BOOLEAN      DEFAULT TRUE,
+    effective_date           DATE         NOT NULL,
+    end_date                 DATE         DEFAULT NULL,
+    is_active                BOOLEAN      DEFAULT TRUE,
     status                   VARCHAR(20)  DEFAULT 'ACTIVE',  -- DRAFT, ACTIVE, SUSPENDED, RETIRED, INACTIVE
-    interestType             VARCHAR(10)  DEFAULT 'CREDIT',  -- CREDIT for deposits, DEBIT for loans
-    minAge                   INT          DEFAULT NULL,
-    minDeposit               DECIMAL(15,2) DEFAULT NULL,
-    maxDeposit               DECIMAL(15,2) DEFAULT NULL,
-    minWithdrawal            DECIMAL(15,2) DEFAULT NULL,
-    maxWithdrawal            DECIMAL(15,2) DEFAULT NULL,
-    allowedTransactionTypes  VARCHAR(255) DEFAULT NULL,
-    balanceTypes             VARCHAR(255) DEFAULT NULL,
+    interest_type            VARCHAR(10)  DEFAULT 'CREDIT',  -- CREDIT for deposits, DEBIT for loans
+    min_age                  INT          DEFAULT NULL,
+    min_deposit              DECIMAL(15,2) DEFAULT NULL,
+    max_deposit              DECIMAL(15,2) DEFAULT NULL,
+    min_withdrawal           DECIMAL(15,2) DEFAULT NULL,
+    max_withdrawal           DECIMAL(15,2) DEFAULT NULL,
+    allowed_transaction_types VARCHAR(255) DEFAULT NULL,
+    balance_types            VARCHAR(255) DEFAULT NULL,
     -- Audit columns (exact match to specification)
     created_at               TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
     updated_at               TIMESTAMP    DEFAULT CURRENT_TIMESTAMP
@@ -35,52 +35,52 @@ CREATE TABLE IF NOT EXISTS products (
     ooo_host_ts              DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
     ooo_local_ts             DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
     -- Declared inline: MySQL 8 does not support CREATE INDEX IF NOT EXISTS
-    INDEX idx_products_type (productType),
+    INDEX idx_products_type (product_type),
     INDEX idx_products_status (status),
-    INDEX idx_products_effective_date (effectiveDate)
+    INDEX idx_products_effective_date (effective_date)
 );
 
 -- =========================================
 -- 2. PRODUCT BUSINESS RULES (term & rate limits)
 -- =========================================
-CREATE TABLE IF NOT EXISTS productBusinessRules (
-    ruleId          INT AUTO_INCREMENT PRIMARY KEY,
-    productId       INT NOT NULL,
-    termLimitMin    INT NOT NULL,          -- months, e.g. 3
-    termLimitMax    INT NOT NULL,          -- months, e.g. 36
-    rateLimitMin    DECIMAL(5,2) NOT NULL, -- e.g. 5.00
-    rateLimitMax    DECIMAL(5,2) NOT NULL, -- e.g. 7.50
-    transactionType VARCHAR(30),           -- optional, e.g. 'deposit', 'withdrawal'
+CREATE TABLE IF NOT EXISTS product_business_rules (
+    rule_id          INT AUTO_INCREMENT PRIMARY KEY,
+    product_id       INT NOT NULL,
+    term_limit_min    INT NOT NULL,          -- months, e.g. 3
+    term_limit_max    INT NOT NULL,          -- months, e.g. 36
+    rate_limit_min    DECIMAL(5,2) NOT NULL, -- e.g. 5.00
+    rate_limit_max    DECIMAL(5,2) NOT NULL, -- e.g. 7.50
+    transaction_type VARCHAR(30),           -- optional, e.g. 'deposit', 'withdrawal'
     CONSTRAINT fk_rules_product
-        FOREIGN KEY (productId) REFERENCES products(productId)
+        FOREIGN KEY (product_id) REFERENCES products(product_id)
         ON DELETE CASCADE
 );
 
 -- =========================================
 -- 3. PRODUCT CHARGES (1:many)
 -- =========================================
-CREATE TABLE IF NOT EXISTS productCharges (
-    chargeId        INT AUTO_INCREMENT PRIMARY KEY,
-    productId       INT NOT NULL,
-    chargeType      VARCHAR(30) NOT NULL,   -- 'interestCredit', 'tax', 'withdrawalFee'
-    chargeValue     DECIMAL(10,2) NOT NULL, -- amount or percentage value
-    chargeUnit      VARCHAR(10) NOT NULL,   -- 'flat' or 'percentage'
-    feeType         VARCHAR(30) DEFAULT 'PERIODIC', -- 'PERIODIC', 'ONE_TIME', 'EVENT_BASED'
+CREATE TABLE IF NOT EXISTS product_charges (
+    charge_id        INT AUTO_INCREMENT PRIMARY KEY,
+    product_id       INT NOT NULL,
+    charge_type      VARCHAR(30) NOT NULL,   -- 'interestCredit', 'tax', 'withdrawalFee'
+    charge_value     DECIMAL(10,2) NOT NULL, -- amount or percentage value
+    charge_unit      VARCHAR(10) NOT NULL,   -- 'flat' or 'percentage'
+    fee_type         VARCHAR(30) DEFAULT 'PERIODIC', -- 'PERIODIC', 'ONE_TIME', 'EVENT_BASED'
     CONSTRAINT fk_charges_product
-        FOREIGN KEY (productId) REFERENCES products(productId)
+        FOREIGN KEY (product_id) REFERENCES products(product_id)
         ON DELETE CASCADE
 );
 
 -- =========================================
 -- 4. PRODUCT ROLES (1:many)
 -- =========================================
-CREATE TABLE IF NOT EXISTS productRoles (
-    roleId          INT AUTO_INCREMENT PRIMARY KEY,
-    productId       INT NOT NULL,
-    roleType        VARCHAR(20) NOT NULL,   -- 'owner', 'co-owner', 'nominee'
-    isMandatory     BOOLEAN DEFAULT FALSE,
+CREATE TABLE IF NOT EXISTS product_roles (
+    role_id          INT AUTO_INCREMENT PRIMARY KEY,
+    product_id       INT NOT NULL,
+    role_type        VARCHAR(20) NOT NULL,   -- 'owner', 'co-owner', 'nominee'
+    is_mandatory     BOOLEAN DEFAULT FALSE,
     CONSTRAINT fk_roles_product
-        FOREIGN KEY (productId) REFERENCES products(productId)
+        FOREIGN KEY (product_id) REFERENCES products(product_id)
         ON DELETE CASCADE
 );
 
@@ -88,11 +88,11 @@ CREATE TABLE IF NOT EXISTS productRoles (
 -- 5. PRODUCT RATE VARIATIONS (by Customer Category)
 -- =========================================
 CREATE TABLE IF NOT EXISTS product_rate_variations (
-    productId         INT NOT NULL,
+    product_id        INT NOT NULL,
     customer_category VARCHAR(50) NOT NULL,  -- 'SENIOR_CITIZEN', 'EMPLOYEE', 'GENERAL'
     rate_modifier     DECIMAL(5,2) NOT NULL, -- e.g. 1.00, 0.50
     CONSTRAINT fk_rate_variations_product
-        FOREIGN KEY (productId) REFERENCES products(productId)
+        FOREIGN KEY (product_id) REFERENCES products(product_id)
         ON DELETE CASCADE
 );
 
@@ -114,7 +114,6 @@ CREATE TABLE IF NOT EXISTS fd_calculations (
     calculation_date         DATETIME      NOT NULL,
     is_converted             BOOLEAN       DEFAULT FALSE,
     conversion_rate          DOUBLE        DEFAULT NULL,
-
     -- Audit columns (exact match to specification)
     created_at               TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
     updated_at               TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

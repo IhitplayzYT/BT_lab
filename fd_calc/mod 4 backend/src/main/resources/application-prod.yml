@@ -11,13 +11,14 @@ spring:
     hikari:
       maximum-pool-size: 10
       minimum-idle: 2
-      connection-timeout: 20000
-      idle-timeout: 300000
 
   jpa:
-    database-platform: org.hibernate.dialect.MySQLDialect
+    open-in-view: false
     hibernate:
-      ddl-auto: validate    # use Flyway / Liquibase in production
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
     show-sql: false
 
   h2:
@@ -52,5 +53,10 @@ services:
 
 logging:
   level:
-    com.bank.calculator: INFO
+    com.bank.calculator: DEBUG
     org.springframework.security: WARN
+    com.bank.calculator.client: DEBUG
+    feign: DEBUG
+    com.bank.calculator.service: DEBUG
+    com.bank.calculator.config: DEBUG
+    com.bank.calculator.service.impl: DEBUG

@@ -1,0 +1,15 @@
+{
+  "class": "com.example.fdmodule.interest.InterestEngineTest",
+  "tests": 5,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0,
+  "seconds": "0.017",
+  "methods": [
+    "simpleAnnual",
+    "invalidInputs",
+    "actual365Daily",
+    "monthlyAnnual",
+    "zeroRate"
+  ]
+}

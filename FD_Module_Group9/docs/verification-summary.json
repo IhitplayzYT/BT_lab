@@ -1,0 +1,18 @@
+{
+  "totalTests": 52,
+  "failures": 0,
+  "errors": 0,
+  "javaRuntime": "24.0.1",
+  "javaReleaseTarget": 17,
+  "maven": "3.9.11",
+  "angular": "20.3.0",
+  "browserChecks": [
+    "admin sign-in",
+    "monthly compound quote",
+    "inherited FD creation HTTP"
+  ],
+  "kafkaTransport": "real embedded KRaft delivery, five-attempt retries and DLT passed",
+  "nativeKafkaStartup": "start-kafka.ps1 formatted and started Kafka 3.9.1 successfully",
+  "liveKafkaMicroservices": "accrual, statement, payout and replay passed with three H2 databases",
+  "nativeMySqlEndToEnd": "pending actual local credentials"
+}

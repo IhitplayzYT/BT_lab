@@ -24,31 +24,32 @@ import java.util.List;
 public class Product {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "product_id")
+    private Integer productId;
+
     @Column(name = "id", nullable = false, unique = true, length = 50)
-    private String id;
+    private String id; // UUID for backward compatibility
 
-    @Column(name = "productId")
-    private Integer productId; // Business key for backward compatibility
-
-    @Column(name = "productCode", unique = true, nullable = false, length = 50)
+    @Column(name = "product_code", unique = true, nullable = false, length = 50)
     private String productCode;
 
-    @Column(name = "productName", nullable = false, length = 100)
+    @Column(name = "product_name", nullable = false, length = 100)
     private String productName;
 
-    @Column(name = "productType", nullable = false, length = 20)
+    @Column(name = "product_type", nullable = false, length = 20)
     private String productType;
 
     @Column(name = "currency", nullable = false, length = 10)
     private String currency;
 
-    @Column(name = "effectiveDate", nullable = false)
+    @Column(name = "effective_date", nullable = false)
     private LocalDate effectiveDate;
 
-    @Column(name = "endDate")
+    @Column(name = "end_date")
     private LocalDate endDate;
 
-    @Column(name = "isActive")
+    @Column(name = "is_active")
     @Builder.Default
     private Boolean isActive = true;
 
@@ -57,51 +58,51 @@ public class Product {
     @Builder.Default
     private ProductStatus status = ProductStatus.ACTIVE;
 
-    @Column(name = "interestType", length = 10)
+    @Column(name = "interest_type", length = 10)
     @Builder.Default
     private String interestType = "CREDIT";
 
-    @Column(name = "minAge")
+    @Column(name = "min_age")
     private Integer minAge;
 
-    @Column(name = "minDeposit", precision = 18, scale = 2)
+    @Column(name = "min_deposit", precision = 18, scale = 2)
     private java.math.BigDecimal minDeposit;
 
-    @Column(name = "maxDeposit", precision = 18, scale = 2)
+    @Column(name = "max_deposit", precision = 18, scale = 2)
     private java.math.BigDecimal maxDeposit;
 
-    @Column(name = "minWithdrawal", precision = 18, scale = 2)
+    @Column(name = "min_withdrawal", precision = 18, scale = 2)
     private java.math.BigDecimal minWithdrawal;
 
-    @Column(name = "maxWithdrawal", precision = 18, scale = 2)
+    @Column(name = "max_withdrawal", precision = 18, scale = 2)
     private java.math.BigDecimal maxWithdrawal;
 
-    @Column(name = "allowedTransactionTypes", length = 255)
+    @Column(name = "allowed_transaction_types", length = 255)
     private String allowedTransactionTypes;
 
-    @Column(name = "balanceTypes", length = 255)
+    @Column(name = "balance_types", length = 255)
     private String balanceTypes;
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     // nullable = false: Hibernate inserts the FK with the child row (schema.sql declares it NOT NULL)
-    @JoinColumn(name = "productId", nullable = false)
+    @JoinColumn(name = "product_id", nullable = false)
     @Builder.Default
     private List<ProductBusinessRule> businessRules = new ArrayList<>();
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     // nullable = false: Hibernate inserts the FK with the child row (schema.sql declares it NOT NULL)
-    @JoinColumn(name = "productId", nullable = false)
+    @JoinColumn(name = "product_id", nullable = false)
     @Builder.Default
     private List<ProductCharge> charges = new ArrayList<>();
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     // nullable = false: Hibernate inserts the FK with the child row (schema.sql declares it NOT NULL)
-    @JoinColumn(name = "productId", nullable = false)
+    @JoinColumn(name = "product_id", nullable = false)
     @Builder.Default
     private List<ProductRole> allowedRoles = new ArrayList<>();
 
     @ElementCollection(fetch = FetchType.LAZY)
-    @CollectionTable(name = "product_rate_variations", joinColumns = @JoinColumn(name = "productId"))
+    @CollectionTable(name = "product_rate_variations", joinColumns = @JoinColumn(name = "product_id"))
     @Builder.Default
     private List<RateVariation> rateVariations = new ArrayList<>();
 
@@ -210,7 +211,6 @@ public class Product {
     protected void onPrePersist() {
         String currentUser = getCurrentAuditor();
         if (this.id == null) this.id = "PROD-" + java.util.UUID.randomUUID().toString();
-        if (this.productId == null) this.productId = (int) (System.currentTimeMillis() % Integer.MAX_VALUE);
         if (this.oooUserId == null) this.oooUserId = truncate(currentUser, 32);
         this.updatedBy = currentUser;
         if (this.oooWsId == null) this.oooWsId = "DEFAULT";

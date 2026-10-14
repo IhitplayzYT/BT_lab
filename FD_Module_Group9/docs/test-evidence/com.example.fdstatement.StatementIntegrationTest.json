@@ -1,0 +1,15 @@
+{
+  "class": "com.example.fdstatement.StatementIntegrationTest",
+  "tests": 5,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0,
+  "seconds": "11.59",
+  "methods": [
+    "outOfOrderSnapshotsPreserved",
+    "statementReadRequiresLogin",
+    "invalidEventRollsBack",
+    "duplicateEventIgnored",
+    "sameDatePayoutMerges"
+  ]
+}

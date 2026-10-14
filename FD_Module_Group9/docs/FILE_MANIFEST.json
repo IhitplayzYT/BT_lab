@@ -1,0 +1,652 @@
+[
+  {
+    "path": ".gitignore",
+    "bytes": 136,
+    "sha256": "1f7dcf64042a37b8da649306cd53e80ea01eb25f0bf2b802084aff6227d5aeea"
+  },
+  {
+    "path": "pom.xml",
+    "bytes": 749,
+    "sha256": "5cdab6c695cd01c484d9ce13333818fc8e9c29480fe40c8b595e4763c6284996"
+  },
+  {
+    "path": "README.md",
+    "bytes": 5377,
+    "sha256": "0a8e1a79a5a8f56ce9840775f64ef9c7912e6924a70fa8f82fa7b6b8c7f8e48c"
+  },
+  {
+    "path": "artifacts/fd-account-service.jar",
+    "bytes": 86465881,
+    "sha256": "24bbb1a4ae7cd6aa29448f6713125a8881cc41d65404de080ed4c50d19609cf6"
+  },
+  {
+    "path": "artifacts/interest-batch-service.jar",
+    "bytes": 66341711,
+    "sha256": "b928161392826a093dca0e29577f8a439083ad6e4ec56c638080fd47fbc502a4"
+  },
+  {
+    "path": "artifacts/statement-service.jar",
+    "bytes": 66338494,
+    "sha256": "d432255856c8c9efa5753165774bb0ef096d3fe02acbb423b4eb2531dd8fcba6"
+  },
+  {
+    "path": "artifacts/dashboard/index.html",
+    "bytes": 356,
+    "sha256": "c7b806c9c818d346e0d0e0af8759eaf82f8d3e526fbf4c6ca33e8ae9c2c2c894"
+  },
+  {
+    "path": "artifacts/dashboard/main.js",
+    "bytes": 998888,
+    "sha256": "e62e2e7f142bb88f6b1f4a358423c85b0b91cb9e064ff7a4debd8927cf0596b5"
+  },
+  {
+    "path": "artifacts/dashboard/polyfills.js",
+    "bytes": 34786,
+    "sha256": "4ba1a3de3e4fe0c9db8ca2bceeb0641cbcde7be9c27006e643789ff81fa09198"
+  },
+  {
+    "path": "artifacts/dashboard/styles.css",
+    "bytes": 2827,
+    "sha256": "49e1df23bc090d4d2c81ad505b8e0bb1a5d80820910ace37a6e609711094ba19"
+  },
+  {
+    "path": "docs/API_CONTRACTS.md",
+    "bytes": 2446,
+    "sha256": "1423824f0ebd8bc726ca55bb73649ef7baa290b0862697d959123c512c1d22af"
+  },
+  {
+    "path": "docs/baseline-preservation.json",
+    "bytes": 1585,
+    "sha256": "c0b700660bb169f867ece600f329f13a8e1f9917a65211b5e49ec6b276f9acf3"
+  },
+  {
+    "path": "docs/dashboard-full-kafka.png",
+    "bytes": 104627,
+    "sha256": "ddfac33263e1445ab9bcb2bde6e3458abe3d5597da2fb55234208ef77d1c3111"
+  },
+  {
+    "path": "docs/dashboard-verified.png",
+    "bytes": 42082,
+    "sha256": "f8da4ebb874920333e9618c0a7af6bb53876af3cc2ddbbfd35a94d7347eefd79"
+  },
+  {
+    "path": "docs/EVENT_CONTRACTS.md",
+    "bytes": 3559,
+    "sha256": "8469a2b6b17f80a3df29872ad2624a8666c70d7e4e1afdf09439294a92ce44c2"
+  },
+  {
+    "path": "docs/HANDOVER.md",
+    "bytes": 3647,
+    "sha256": "1f420d3b640cf4e35d72d02c2c2fdfd25d263605b264b18a181c554744c8b076"
+  },
+  {
+    "path": "docs/live-kafka-evidence.json",
+    "bytes": 2485,
+    "sha256": "2121d5551973b35b29bb754c0f0b40fe3998f9957b818b7657f299d37cf18240"
+  },
+  {
+    "path": "docs/Parth_L14_L17_Interest_Statements_Handover_Report.docx",
+    "bytes": 349858,
+    "sha256": "f2372115c2fbacde6cfe5eeacb9ca3b0f264f2774f79f3cc6b4d330bc1afae58"
+  },
+  {
+    "path": "docs/verification-summary.json",
+    "bytes": 619,
+    "sha256": "059a47b4002e20982b63785ee8c4af6057827e4bf25675edc4ead98efeaa2876"
+  },
+  {
+    "path": "docs/references/Anirudh_Lab16_Transactions_GL_Implementation_Report.docx",
+    "bytes": 341846,
+    "sha256": "fa6a147645e63edcd1655dba0d08ec59c21130cac1d9c804964e13543ddbfa6a"
+  },
+  {
+    "path": "docs/references/ER_Diagram.pdf",
+    "bytes": 1699222,
+    "sha256": "303a028cd1850c6839523f127845c4da9d119a9094bf22f6f3fae9bcc805dfaa"
+  },
+  {
+    "path": "docs/references/FD module functioning.md",
+    "bytes": 45843,
+    "sha256": "4ec6c3560ca2439fa5c92bf79cc4b42003f059276ea38e3314cda0f447e04efe"
+  },
+  {
+    "path": "docs/references/FD_Module_L12_L13_Compiled_Project_Report.docx",
+    "bytes": 42442,
+    "sha256": "abdab7dc3ba7cb297184e1edd0fbdbf62d7cfde37d9363f345e357aadb7f3523"
+  },
+  {
+    "path": "docs/references/Swagger_API.yaml",
+    "bytes": 61370,
+    "sha256": "b8372f94a1f2393b7c1298b7b029f31716c79d848b5ec210d91fd840f26d1526"
+  },
+  {
+    "path": "docs/test-evidence/com.example.fdbatch.BatchIntegrationTest.json",
+    "bytes": 317,
+    "sha256": "ec49229abe52f42996b7b78a3f395ad23a9a52cf990761de52411245c1efe4da"
+  },
+  {
+    "path": "docs/test-evidence/com.example.fdmodule.integration.FDTransactionApiIntegrationTest.json",
+    "bytes": 946,
+    "sha256": "d07b1675fa8f50e81198754ea70a620d95e2c9a9b94ef0547770a6c3e0351d21"
+  },
+  {
+    "path": "docs/test-evidence/com.example.fdmodule.integration.FDTransactionRollbackIntegrationTest.json",
+    "bytes": 247,
+    "sha256": "02b4927c92f58245316843229479a783ac62e5692c43c911535727190b86fe52"
+  },
+  {
+    "path": "docs/test-evidence/com.example.fdmodule.interest.InterestEngineTest.json",
+    "bytes": 282,
+    "sha256": "563c8759574bf46823fb2af77dec44d17c5f492e533753df8cbd2112f1066c43"
+  },
+  {
+    "path": "docs/test-evidence/com.example.fdmodule.interest.InterestPostingIntegrationTest.json",
+    "bytes": 465,
+    "sha256": "22af56b5937fd77e2eee062d7d89069753b531b8b08a2c41589810151909107f"
+  },
+  {
+    "path": "docs/test-evidence/com.example.fdmodule.service.FDTransactionServiceTest.json",
+    "bytes": 588,
+    "sha256": "98b5741d94bbe201d3f24225d94fed0ac7a0817547f4a1ceff190792553df3e7"
+  },
+  {
+    "path": "docs/test-evidence/com.example.fdshared.KafkaDeliveryIntegrationTest.json",
+    "bytes": 347,
+    "sha256": "1e342a26d940f91aa74838e0fb83e8bef7e8d986009a3f87ba5166fe9854a0ee"
+  },
+  {
+    "path": "docs/test-evidence/com.example.fdshared.OutboxRelayTest.json",
+    "bytes": 351,
+    "sha256": "40f467df99605394cd8488ba49d9a8579b04aa1d72384e235b6853fbf97474f4"
+  },
+  {
+    "path": "docs/test-evidence/com.example.fdstatement.StatementIntegrationTest.json",
+    "bytes": 338,
+    "sha256": "f2180136e25fe9e11c268ffb1649dd7170033ea1b011ec07ce0bee1230b9aab5"
+  },
+  {
+    "path": "event-common/pom.xml",
+    "bytes": 986,
+    "sha256": "53835db5c9b24782b5d6e1cc771206d8526195516d20303cfa01412d4c4fd40e"
+  },
+  {
+    "path": "event-common/src/main/java/com/example/fdshared/DomainEvent.java",
+    "bytes": 245,
+    "sha256": "8ae56a49356ba0af6705dc3ac66a2865034eae8651475ae9d4a2beef6af1b7b5"
+  },
+  {
+    "path": "event-common/src/main/java/com/example/fdshared/EventInfrastructure.java",
+    "bytes": 4274,
+    "sha256": "d77bd148484bb361f1a0b86d3800c976940966e670ffb890eb205b6daa562905"
+  },
+  {
+    "path": "event-common/src/main/java/com/example/fdshared/InvalidEventException.java",
+    "bytes": 248,
+    "sha256": "6922328e50052a53c49665e731514c3f9570269dba28b428fd77846caea0e1b7"
+  },
+  {
+    "path": "event-common/src/main/java/com/example/fdshared/Outbox.java",
+    "bytes": 1105,
+    "sha256": "4fbe06288ab22a812040695c822f1a3f165fde84469c8b6d4c98ede88efc948e"
+  },
+  {
+    "path": "event-common/src/test/java/com/example/fdshared/KafkaDeliveryIntegrationTest.java",
+    "bytes": 5744,
+    "sha256": "ee968698780e3bee8b988f83f481880b78c1c8c48fa70f3c8f52fad38f1f1d34"
+  },
+  {
+    "path": "event-common/src/test/java/com/example/fdshared/OutboxRelayTest.java",
+    "bytes": 2416,
+    "sha256": "23957dea48c226dc53c93d5b6e727b4543ff3dded712c1d9c4a2c556d5026008"
+  },
+  {
+    "path": "fd-account-service/pom.xml",
+    "bytes": 1496,
+    "sha256": "a0d7a07ee111014b4d13703c850de657a6cadcd7e07161e6a09e5a7d56615cc6"
+  },
+  {
+    "path": "fd-account-service/README.md",
+    "bytes": 3564,
+    "sha256": "72f6bd0b6fc23de285260c8b2323d8d909d226409ea09fcf69313da443111fea"
+  },
+  {
+    "path": "fd-account-service/docs/Anirudh_Lab16_Transactions_GL_Implementation_Report.docx",
+    "bytes": 341846,
+    "sha256": "fa6a147645e63edcd1655dba0d08ec59c21130cac1d9c804964e13543ddbfa6a"
+  },
+  {
+    "path": "fd-account-service/docs/Anirudh_Lab16_Transactions_GL_Implementation_Report.extracted.txt",
+    "bytes": 56194,
+    "sha256": "b63144ae1a84b210f2e1bcaab7e78b384d8b40484ba41d6597106b2c2e2d1d37"
+  },
+  {
+    "path": "fd-account-service/docs/LAB16_HANDOVER.md",
+    "bytes": 15757,
+    "sha256": "75cb5e6a2b58ee494f38fe728d8a8f69c079495d79664ca894b5c79bebd3165f"
+  },
+  {
+    "path": "fd-account-service/sql/l12_l13_setup.sql",
+    "bytes": 4828,
+    "sha256": "b2bbb72d792a99230dada52fb0ebe2932d459d6ea9b76c3bb7a8169446cb382a"
+  },
+  {
+    "path": "fd-account-service/sql/l14_l17_interest.sql",
+    "bytes": 1380,
+    "sha256": "f3245070db8aca3aa55fd81d3aaadd82cf7f0b121be5fa11743c21080d63fb5b"
+  },
+  {
+    "path": "fd-account-service/sql/l16_fd_transactions.sql",
+    "bytes": 3395,
+    "sha256": "833d4c0a4a63df0fcfe038318de6fde60e7655752c8ac517b68abbefac4c1d3e"
+  },
+  {
+    "path": "fd-account-service/sql/local_test_setup.sql",
+    "bytes": 3860,
+    "sha256": "c680f8d931974bdf09bef260a36b9e557f86d33eefe80c1895d4b7e6ba61c43c"
+  },
+  {
+    "path": "fd-account-service/src/main/java/com/example/fdmodule/FdModuleApplication.java",
+    "bytes": 412,
+    "sha256": "ef100ceb0de7a362303f1095f9ca19490e49f4c43a4d858c584e5c23e607186b"
+  },
+  {
+    "path": "fd-account-service/src/main/java/com/example/fdmodule/config/SecurityConfig.java",
+    "bytes": 2022,
+    "sha256": "301995e3a431ceee956d49fabe62c35f4cb31dc7d660abdf7a6b7436492776d6"
+  },
+  {
+    "path": "fd-account-service/src/main/java/com/example/fdmodule/controller/ApiExceptionHandler.java",
+    "bytes": 1168,
+    "sha256": "ea60f6d419931b79f0b3cb4fc2518bd1c7d6e285cd9d4edfec2dcf5b0e388d36"
+  },
+  {
+    "path": "fd-account-service/src/main/java/com/example/fdmodule/controller/FDAccountController.java",
+    "bytes": 1382,
+    "sha256": "ebda93ab0a85551a6c77519d139fc137d36e88ee6693a46cb658ea571309d91c"
+  },
+  {
+    "path": "fd-account-service/src/main/java/com/example/fdmodule/controller/FDTransactionController.java",
+    "bytes": 2162,
+    "sha256": "04bcfd84545214b32d8e4e04fd59c985b5468fa512f4ef00e5d36fa83cbcbc67"
+  },
+  {
+    "path": "fd-account-service/src/main/java/com/example/fdmodule/controller/HealthController.java",
+    "bytes": 316,
+    "sha256": "4df3e45d7730b883de1a9c0403596489901bcb33c1614722673a2b1ae00f25f4"
+  },
+  {
+    "path": "fd-account-service/src/main/java/com/example/fdmodule/dto/FDAccountCreationResponse.java",
+    "bytes": 599,
+    "sha256": "da207cc0a711f54b520b189b157a72142828471d9017bf6ac6c4d7c7dc31927f"
+  },
+  {
+    "path": "fd-account-service/src/main/java/com/example/fdmodule/dto/FDAccountRequest.java",
+    "bytes": 1169,
+    "sha256": "a3830184570cc418093376713c306c67c4a47a66ff36d7b251a8065e5561977d"
+  },
+  {
+    "path": "fd-account-service/src/main/java/com/example/fdmodule/dto/FDAccountResponse.java",
+    "bytes": 391,
+    "sha256": "2d5c2b22d1c7c915c2d8f7745124fe8dcb8a5fee699ee7813374386a00b41b8a"
+  },
+  {
+    "path": "fd-account-service/src/main/java/com/example/fdmodule/dto/FDTransactionResponse.java",
+    "bytes": 965,
+    "sha256": "3d818bbb505ffe7b4e21c0c32023c82e5aa16d65fb1eabbca823d76d8c7aabd0"
+  },
+  {
+    "path": "fd-account-service/src/main/java/com/example/fdmodule/entity/CustomerProfile.java",
+    "bytes": 1680,
+    "sha256": "e9dad28d902263a22b31f0e9b741fab548b6a36afb40aacec913628b2df74319"
+  },
+  {
+    "path": "fd-account-service/src/main/java/com/example/fdmodule/entity/FDTransaction.java",
+    "bytes": 4285,
+    "sha256": "848529f910a7595a88ddd127f117e00841500d50e5efc7723529b20cb4b7d4ee"
+  },
+  {
+    "path": "fd-account-service/src/main/java/com/example/fdmodule/entity/FixedDepositAccount.java",
+    "bytes": 4025,
+    "sha256": "13ff536d9824b8c323881e0466e55174cf4ffa6403694b3edc1e9915375f2d18"
+  },
+  {
+    "path": "fd-account-service/src/main/java/com/example/fdmodule/entity/Product.java",
+    "bytes": 3896,
+    "sha256": "e7d9472ce4896c8ae8b382526bc3b90bec22b8d73a596a5439aa7951e6d5e434"
+  },
+  {
+    "path": "fd-account-service/src/main/java/com/example/fdmodule/interest/InterestCommandListener.java",
+    "bytes": 2397,
+    "sha256": "f7060cbd1eacc6104c6219d2a73f6ede69ab06c469c9b5176068ee5cb73eeae5"
+  },
+  {
+    "path": "fd-account-service/src/main/java/com/example/fdmodule/interest/InterestConfiguration.java",
+    "bytes": 229,
+    "sha256": "c4ab26421dffe5f77d116d2ce4a46125e3b1070da8c22ab65519aeeb77223f55"
+  },
+  {
+    "path": "fd-account-service/src/main/java/com/example/fdmodule/interest/InterestController.java",
+    "bytes": 1506,
+    "sha256": "0be1db82634d57680795785d1c4647afde0343e2b418b4d2365e29bafa504e22"
+  },
+  {
+    "path": "fd-account-service/src/main/java/com/example/fdmodule/interest/InterestEngine.java",
+    "bytes": 1193,
+    "sha256": "cfadb84461834a3d426fb58e46d829c9c7e13f9ab8d1bbe5188998c39f306990"
+  },
+  {
+    "path": "fd-account-service/src/main/java/com/example/fdmodule/interest/InterestPostingService.java",
+    "bytes": 10039,
+    "sha256": "bf6ea9a7e4115b2b646b35693d3e926bb7599e7750ac7c1eaef72ea84c44a27b"
+  },
+  {
+    "path": "fd-account-service/src/main/java/com/example/fdmodule/repository/CustomerProfileRepository.java",
+    "bytes": 251,
+    "sha256": "2c6ca0518d1f6587147dffc1839710cc58ffe50242481be4c9dc6c3fe2bb7c4c"
+  },
+  {
+    "path": "fd-account-service/src/main/java/com/example/fdmodule/repository/FDTransactionRepository.java",
+    "bytes": 1019,
+    "sha256": "4941c8cecf23925fbc1a381257d7191021fc5856a5fd1d3602c6051cf4ed584f"
+  },
+  {
+    "path": "fd-account-service/src/main/java/com/example/fdmodule/repository/FixedDepositAccountRepository.java",
+    "bytes": 312,
+    "sha256": "1d2b152859ba43d006281381baf86159716ab98725a2e4c69999c622bf119e4e"
+  },
+  {
+    "path": "fd-account-service/src/main/java/com/example/fdmodule/repository/ProductRepository.java",
+    "bytes": 227,
+    "sha256": "dc85e754a9766bbb2325552c0824800a74d4588bad600c4bd139fd95e3e3d0f3"
+  },
+  {
+    "path": "fd-account-service/src/main/java/com/example/fdmodule/service/AccountNumberGenerator.java",
+    "bytes": 123,
+    "sha256": "867b809077d12e6339ae8501bd32f3e87f79483d86b69a27d698638363fce3d2"
+  },
+  {
+    "path": "fd-account-service/src/main/java/com/example/fdmodule/service/FDAccountNumberGenerator.java",
+    "bytes": 1521,
+    "sha256": "cde1694321902fcccaad1d54f66812b8f45f8d56e8e6b0b8bffb8556f5b968d7"
+  },
+  {
+    "path": "fd-account-service/src/main/java/com/example/fdmodule/service/FDAccountService.java",
+    "bytes": 3454,
+    "sha256": "fc272591e700f48939f0e48c529418ee49558c6eeaba8cdd52741dca14c06ba9"
+  },
+  {
+    "path": "fd-account-service/src/main/java/com/example/fdmodule/service/FDTransactionService.java",
+    "bytes": 5526,
+    "sha256": "8d0a1efc01f6c66ae7a75cf172681b6be8541439ebb2399f741d54047089eedc"
+  },
+  {
+    "path": "fd-account-service/src/main/java/com/example/fdmodule/service/GLAccounts.java",
+    "bytes": 1355,
+    "sha256": "5b2548f4d8b57f4872bd8d25a37752f35d0a748be412f96e189d11951f1cd7b9"
+  },
+  {
+    "path": "fd-account-service/src/main/java/com/example/fdmodule/service/ProductValidationService.java",
+    "bytes": 1606,
+    "sha256": "2ff375d13624eb2ad90ce4d8ba9d1357fc1315d252f06ec88eb49859e31db23d"
+  },
+  {
+    "path": "fd-account-service/src/main/java/com/example/fdmodule/service/RateService.java",
+    "bytes": 1985,
+    "sha256": "bf7c34d9318b232bc5b07f95f8d708f3ad9e1aa8b6439491822f4ea37ca0a434"
+  },
+  {
+    "path": "fd-account-service/src/main/resources/application.properties",
+    "bytes": 1455,
+    "sha256": "6ef04d7361f939abea885d1c23d85d0870139914a011e431e6419b66e742c724"
+  },
+  {
+    "path": "fd-account-service/src/test/java/com/example/fdmodule/integration/FDTransactionApiIntegrationTest.java",
+    "bytes": 12884,
+    "sha256": "5da3a2886426a29f39eb1e1808b084a81f42aa5c243ea4f2827360d44b1bca32"
+  },
+  {
+    "path": "fd-account-service/src/test/java/com/example/fdmodule/integration/FDTransactionRollbackIntegrationTest.java",
+    "bytes": 3248,
+    "sha256": "f6b18d5e19c53b3e3d4d6b9d475c2eed32fc30a50ebd26d6c769bf0c33e09761"
+  },
+  {
+    "path": "fd-account-service/src/test/java/com/example/fdmodule/integration/TestData.java",
+    "bytes": 2357,
+    "sha256": "bb1d798280d69ff671c88492ec9417ffc4e2040c20221f6edaaf31c802039a47"
+  },
+  {
+    "path": "fd-account-service/src/test/java/com/example/fdmodule/interest/InterestEngineTest.java",
+    "bytes": 1100,
+    "sha256": "6c7b04a0278b219f3542c3df9f5ae97781b6d50d7b581d33046dbba61ed5ce82"
+  },
+  {
+    "path": "fd-account-service/src/test/java/com/example/fdmodule/interest/InterestPostingIntegrationTest.java",
+    "bytes": 4789,
+    "sha256": "a6295c3e97d0eb40798a7ff7447568f3c2e3936057d0e0431e8ab15ff24537ca"
+  },
+  {
+    "path": "fd-account-service/src/test/java/com/example/fdmodule/service/FDTransactionServiceTest.java",
+    "bytes": 7409,
+    "sha256": "9e56cca5634892b566cdb3682a80e053f921f932626e190248cc8710f77a2de3"
+  },
+  {
+    "path": "fd-account-service/src/test/resources/application-test.properties",
+    "bytes": 544,
+    "sha256": "bb0b92f89ecdc774dc657e25b91094cc90f60844eb7f56f588bc31c1f87fb74c"
+  },
+  {
+    "path": "fd-account-service/src/test/resources/interest-schema.sql",
+    "bytes": 1351,
+    "sha256": "3ea37a6980d638e72be009ac6bdf2d867fe9b6922151a063d8cbab7c64901a25"
+  },
+  {
+    "path": "interest-batch-service/pom.xml",
+    "bytes": 1379,
+    "sha256": "b4c04c62f38304443a8cedaf8b1809dcb13a401e61ef730d4c58f9d202822bde"
+  },
+  {
+    "path": "interest-batch-service/src/main/java/com/example/fdbatch/ApiExceptionHandler.java",
+    "bytes": 885,
+    "sha256": "dc0194245f4d29cc3945c7478b3d17cf8c29f0b3d7dc81b0fcc73d2b544b44bc"
+  },
+  {
+    "path": "interest-batch-service/src/main/java/com/example/fdbatch/Application.java",
+    "bytes": 424,
+    "sha256": "cf2a30388b30571b00003c723321883b2ca9857512c169b2ba99d9a66b53b346"
+  },
+  {
+    "path": "interest-batch-service/src/main/java/com/example/fdbatch/BatchController.java",
+    "bytes": 1084,
+    "sha256": "5c6db0e26943af31fdb4f8cd1f8c70bdf84ef2f4d537c61b28714730110ed20a"
+  },
+  {
+    "path": "interest-batch-service/src/main/java/com/example/fdbatch/BatchService.java",
+    "bytes": 3438,
+    "sha256": "e3f04c286bf4c990dcf366cf7cc408bbf53f3afd0c6c8ebeb2c1a6479b73011e"
+  },
+  {
+    "path": "interest-batch-service/src/main/java/com/example/fdbatch/DailyInterestScheduler.java",
+    "bytes": 642,
+    "sha256": "7c84a77c124a2da7e2ac631830fa8aa092fd7cf9fe44cf2ec6a4c73d894bb5c0"
+  },
+  {
+    "path": "interest-batch-service/src/main/java/com/example/fdbatch/ResultListener.java",
+    "bytes": 824,
+    "sha256": "a9bd79e9ed78f5ecc855a731ca79f77f71a1a687f13f98d6d700deaa87dfca63"
+  },
+  {
+    "path": "interest-batch-service/src/main/java/com/example/fdbatch/SecurityConfig.java",
+    "bytes": 1188,
+    "sha256": "f1dc8cad01e4ad543d205fa33801da07ddbc7add78fc0584d596fdad0ba04687"
+  },
+  {
+    "path": "interest-batch-service/src/main/resources/application.properties",
+    "bytes": 1449,
+    "sha256": "cc6d87d7ad6889fd0ec3fc4d9c4ddc2da7d9198b201cc861a14b5636f1a5457f"
+  },
+  {
+    "path": "interest-batch-service/src/main/resources/schema.sql",
+    "bytes": 707,
+    "sha256": "474c88666e6ee52e717e634c9c5485bef7acfaeecf82f83552d73d612598de04"
+  },
+  {
+    "path": "interest-batch-service/src/test/java/com/example/fdbatch/BatchIntegrationTest.java",
+    "bytes": 2403,
+    "sha256": "14c38de9f8fa7f8832964839eb46fbac64d186bed34d6341eca6c77ee3a59b14"
+  },
+  {
+    "path": "interest-batch-service/src/test/resources/application-test.properties",
+    "bytes": 257,
+    "sha256": "7bd6011bb947a541a84f2500dc8aefcb8bf5c4b405ccf59bc9ffa820bb384ee8"
+  },
+  {
+    "path": "interest-dashboard/angular.json",
+    "bytes": 780,
+    "sha256": "bca9b3048e19107c92068f27ecfec61882c18bbe4cafaae128ecc1124b381a9c"
+  },
+  {
+    "path": "interest-dashboard/package.json",
+    "bytes": 673,
+    "sha256": "ab235cc1f332c1d72ff833b60948abe48790dc327cb47beeb80cf7e5ca3d3eb2"
+  },
+  {
+    "path": "interest-dashboard/pnpm-lock.yaml",
+    "bytes": 164276,
+    "sha256": "c533c7f90e656c3adffa21e132bff0a43f792ffb5c0f45bd24e95bf230915a6f"
+  },
+  {
+    "path": "interest-dashboard/pnpm-workspace.yaml",
+    "bytes": 177,
+    "sha256": "95bc03a949ffcdce4a478c691433e148ce11ef05d0eb6bcbef7903d8537e2f0d"
+  },
+  {
+    "path": "interest-dashboard/proxy.conf.json",
+    "bytes": 265,
+    "sha256": "c2ed1bd79a5ad481e903100ebe92cb31eafc94bef6a6c7d0fcc46678954b7bb8"
+  },
+  {
+    "path": "interest-dashboard/tsconfig.json",
+    "bytes": 364,
+    "sha256": "4b1be08a037b201ae1ea19642e617b1d7549bd1f437bd6a4686f0c3d1b888af0"
+  },
+  {
+    "path": "interest-dashboard/src/index.html",
+    "bytes": 232,
+    "sha256": "f55c30820039ac02ace315f530a886b16a464b591621c94c96c70772468faebe"
+  },
+  {
+    "path": "interest-dashboard/src/main.ts",
+    "bytes": 9306,
+    "sha256": "f2a3969ec665620875ddba5c836cb434b414b65a37ece220c9b579baf3d4e819"
+  },
+  {
+    "path": "interest-dashboard/src/styles.css",
+    "bytes": 2827,
+    "sha256": "49e1df23bc090d4d2c81ad505b8e0bb1a5d80820910ace37a6e609711094ba19"
+  },
+  {
+    "path": "scripts/build-ui.ps1",
+    "bytes": 1729,
+    "sha256": "f841b585ad1643b6bf46fcb1c6671db996e1432c42f98e22fc04dee92fb1a790"
+  },
+  {
+    "path": "scripts/demo.ps1",
+    "bytes": 3890,
+    "sha256": "3b94e76498d63bf8267a9bda1c917f4db473ff78324ea3a6b3cfe769530f5183"
+  },
+  {
+    "path": "scripts/init-local-databases.sql",
+    "bytes": 491,
+    "sha256": "560458159b1f66279c901c43226729e0f06f47d94b4ea2d55abf1895549bb698"
+  },
+  {
+    "path": "scripts/kafka-local.properties",
+    "bytes": 750,
+    "sha256": "7380ac1ed9c526d796eea1dbbaf7bacec734acd443d3e5efa088816e5028e96a"
+  },
+  {
+    "path": "scripts/local.env.ps1.example",
+    "bytes": 542,
+    "sha256": "32a60f11b909ef9b91b75e7f13a63d2783bc6b5c9b45fe96894b762f58bceefb"
+  },
+  {
+    "path": "scripts/serve-dashboard.mjs",
+    "bytes": 2195,
+    "sha256": "bc3b3b3c751ebaf3342c82ace25de1502921806b7ec63b28e1de562d1272c302"
+  },
+  {
+    "path": "scripts/start-kafka.ps1",
+    "bytes": 1608,
+    "sha256": "5e47a87c3b50e5dde36742509a40ca86e768f38d3fa2ce799e9f01939ff634e0"
+  },
+  {
+    "path": "scripts/start-services.ps1",
+    "bytes": 2007,
+    "sha256": "72d73842f16da14ef7f5c834cabb5f3279fd6dc9e16e36ecbbb6dc3ec816baca"
+  },
+  {
+    "path": "scripts/stop-services.ps1",
+    "bytes": 649,
+    "sha256": "f7e08ea799063295d5cdaf7617087eb2db0016e2c5ec8514917b15dfa9dbca55"
+  },
+  {
+    "path": "scripts/verify.ps1",
+    "bytes": 474,
+    "sha256": "ac71dbf63eaefae36fae5dbcbe81ab8cb41298de0d36ad77c5aca7473ebb0d7d"
+  },
+  {
+    "path": "statement-service/pom.xml",
+    "bytes": 1374,
+    "sha256": "f83b68d0b30b76c336737ff4fb142aae89e897edab5587bb91486366afdf4cf7"
+  },
+  {
+    "path": "statement-service/src/main/java/com/example/fdstatement/ApiExceptionHandler.java",
+    "bytes": 889,
+    "sha256": "2620529339d07604caa8efccd1ab236fa7f9e7d431aa7e308e77b0656bc67aba"
+  },
+  {
+    "path": "statement-service/src/main/java/com/example/fdstatement/Application.java",
+    "bytes": 428,
+    "sha256": "9beb7cee4db7638c58511d55c1a451841967e71f1dad4ea7a773e1f0372b04ad"
+  },
+  {
+    "path": "statement-service/src/main/java/com/example/fdstatement/SecurityConfig.java",
+    "bytes": 1192,
+    "sha256": "96fa9b0d65bc958ef4fbfc0a86824be0dbfaf36cdc738b1bdfea87aa1bf8db5b"
+  },
+  {
+    "path": "statement-service/src/main/java/com/example/fdstatement/StatementController.java",
+    "bytes": 597,
+    "sha256": "3434054d8df08c6b3b4f85e2a6d1105271c8f23ce741cdaea62fcdbb114b4381"
+  },
+  {
+    "path": "statement-service/src/main/java/com/example/fdstatement/StatementListener.java",
+    "bytes": 842,
+    "sha256": "bf443d7fa10bb5493c85a3ef38082bbe91acfc817b9183ee37f04a0413dcdfdd"
+  },
+  {
+    "path": "statement-service/src/main/java/com/example/fdstatement/StatementService.java",
+    "bytes": 3332,
+    "sha256": "b49442a35f23e647171bcb1e33519fe84c0949457f21aae912abd817d968c7df"
+  },
+  {
+    "path": "statement-service/src/main/resources/application.properties",
+    "bytes": 1448,
+    "sha256": "7a6e388bf9f822a22010f31ca305a3549a4fa1d7528dea607e103dde2ed3690f"
+  },
+  {
+    "path": "statement-service/src/main/resources/schema.sql",
+    "bytes": 838,
+    "sha256": "1861dfcb6b2313b1677a77bad6a4a4a3f4f73a750c04e959637b6d53b3a25c77"
+  },
+  {
+    "path": "statement-service/src/test/java/com/example/fdstatement/StatementIntegrationTest.java",
+    "bytes": 3485,
+    "sha256": "3982b29bac7c56309c4cbc5efd1f3698e4677309bc347d03ab443756a959c00a"
+  },
+  {
+    "path": "statement-service/src/test/resources/application-test.properties",
+    "bytes": 261,
+    "sha256": "4c75d3b2db8cf6eb9a03c22a0e38a5631bcbd8c8485d61960134f03e4ac034fa"
+  }
+]

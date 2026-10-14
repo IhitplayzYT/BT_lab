@@ -1,0 +1,11 @@
+com/example/fdnotify/WhatsAppChannel.class
+com/example/fdnotify/NotificationListener.class
+com/example/fdnotify/SecurityConfig.class
+com/example/fdnotify/NotificationService.class
+com/example/fdnotify/NotificationChannel.class
+com/example/fdnotify/NotificationController.class
+com/example/fdnotify/MessageTemplates.class
+com/example/fdnotify/MessageTemplates$Message.class
+com/example/fdnotify/Application.class
+com/example/fdnotify/EmailChannel.class
+com/example/fdnotify/NotificationChannel$Result.class

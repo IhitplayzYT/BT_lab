@@ -1,0 +1,15 @@
+{
+  "class": "com.example.fdbatch.BatchIntegrationTest",
+  "tests": 5,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0,
+  "seconds": "12.206",
+  "methods": [
+    "payoutRequiresAccount",
+    "conflictingRetryRejected",
+    "officerCannotTrigger",
+    "enqueueAndRetry",
+    "schedulerHasDailyGuard"
+  ]
+}

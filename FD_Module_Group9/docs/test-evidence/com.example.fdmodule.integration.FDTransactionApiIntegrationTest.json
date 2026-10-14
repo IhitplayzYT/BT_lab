@@ -1,0 +1,24 @@
+{
+  "class": "com.example.fdmodule.integration.FDTransactionApiIntegrationTest",
+  "tests": 14,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0,
+  "seconds": "19.197",
+  "methods": [
+    "recordInitialDeposit_calledAgain_returnsExistingDepositAndWritesNothing",
+    "createWithTxn_unauthenticated_isUnauthorized",
+    "history_isScopedToTheRequestedAccount",
+    "history_unknownAccount_returns400",
+    "history_customerRole_canRead",
+    "createWithTxn_admin_isForbidden",
+    "createWithTxn_unknownCustomer_createsNothing",
+    "createWithTxn_customer_isForbidden",
+    "recordInitialDeposit_outsideATransaction_isRejected",
+    "historyLink_returnsTheInitialDeposit",
+    "existingL13Create_stillWorks_andIsNotChangedByLab16",
+    "createWithTxn_createsAccountAndExactlyOneBalancedDeposit",
+    "createWithTxn_belowMinimumDeposit_createsNothing",
+    "createWithTxn_responseMatchesLabManualContractPlusHistoryLink"
+  ]
+}

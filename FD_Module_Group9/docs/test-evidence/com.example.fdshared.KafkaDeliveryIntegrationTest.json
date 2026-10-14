@@ -1,0 +1,13 @@
+{
+  "class": "com.example.fdshared.KafkaDeliveryIntegrationTest",
+  "tests": 3,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0,
+  "seconds": "22.99",
+  "methods": [
+    "invalidRecordIsPublishedToDeadLetterTopic",
+    "transientFailureRetriesFiveAttemptsBeforeDeadLetter",
+    "acknowledgedOutboxReachesIndependentConsumerGroups"
+  ]
+}

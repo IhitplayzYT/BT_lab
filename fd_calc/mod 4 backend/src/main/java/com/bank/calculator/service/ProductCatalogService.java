@@ -33,6 +33,8 @@ public class ProductCatalogService {
 
     public ProductCatalogService(ProductClient productClient) {
         this.productClient = productClient;
+        System.out.println("ProductCatalogService: Constructor called, ProductClient class='" + (productClient != null ? productClient.getClass().getName() : "null") + "'");
+        log.info("ProductCatalogService: Constructor called, ProductClient class='{}'", productClient != null ? productClient.getClass().getName() : "null");
     }
 
     /**
@@ -44,9 +46,11 @@ public class ProductCatalogService {
      */
     @Cacheable(value = CacheConfig.PRODUCT_RATES_CACHE, key = "#productCode")
     public ProductConfigDto getProductConfig(String productCode) {
+        log.info("ProductCatalogService: Getting config for productCode='{}', ProductClient class='{}'", productCode, productClient.getClass().getName());
         log.debug("Cache miss for productCode='{}' — invoking ProductClient", productCode);
         try {
             ProductConfigDto dto = productClient.getCalculatorConfig(productCode);
+            log.info("ProductCatalogService: Received response from ProductClient for productCode='{}'", productCode);
             if (dto == null) {
                 throw new ProductNotFoundException(productCode);
             }
@@ -56,8 +60,10 @@ public class ProductCatalogService {
         } catch (FeignException.NotFound e) {
             throw new ProductNotFoundException(productCode);
         } catch (FeignException e) {
+            log.error("ProductCatalogService: FeignException calling Product Service", e);
             throw new ServiceUnavailableException("Product Service", e);
         } catch (Exception e) {
+            log.error("ProductCatalogService: Exception calling Product Service", e);
             throw new ServiceUnavailableException("Product Service", e);
         }
     }

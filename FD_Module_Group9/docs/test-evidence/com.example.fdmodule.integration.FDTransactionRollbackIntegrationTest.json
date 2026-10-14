@@ -1,0 +1,11 @@
+{
+  "class": "com.example.fdmodule.integration.FDTransactionRollbackIntegrationTest",
+  "tests": 1,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0,
+  "seconds": "2.492",
+  "methods": [
+    "ledgerWriteFailure_rollsBackTheFdAccount"
+  ]
+}

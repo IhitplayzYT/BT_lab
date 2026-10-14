@@ -1,0 +1,72 @@
+{
+  "transport": "Apache Kafka 3.9.1 embedded KRaft broker",
+  "services": "three independent Java processes",
+  "databases": "three isolated H2 databases in MySQL compatibility mode",
+  "account": "BR0010000016",
+  "payoutRequest": "e00931c1-af84-4027-ae97-45330f4811ff",
+  "payoutResult": {
+    "request_id": "e00931c1-af84-4027-ae97-45330f4811ff",
+    "request_type": "PAYOUT",
+    "business_date": "2026-10-11",
+    "fd_account_no": "BR0010000016",
+    "actor": "admin1",
+    "status": "COMPLETED",
+    "result": "{\"status\":\"COMPLETED\",\"requestId\":\"e00931c1-af84-4027-ae97-45330f4811ff\",\"amount\":17.8}",
+    "created_at": "2026-10-11T15:17:27.326+00:00"
+  },
+  "statements": [
+    {
+      "statement_id": 1,
+      "fd_account_no": "BR0010000016",
+      "customer_id": "CUST001",
+      "currency": "INR",
+      "statement_date": "2026-10-11",
+      "opening_balance": 100000.0,
+      "interest_accrued": 17.808219,
+      "interest_credited": 0.0,
+      "interest_paid": 17.8,
+      "closing_balance": 100000.0,
+      "outstanding_interest": 0.008219,
+      "last_occurred_at": "2026-10-11T15:17:28.939269100Z"
+    }
+  ],
+  "ledgerAfterReplay": [
+    {
+      "txnId": 1,
+      "fdAccountNo": "BR0010000016",
+      "txnType": "DEPOSIT",
+      "amount": 100000.0,
+      "currency": "INR",
+      "debitGlAccount": "ASSET_CUSTOMER_REMITTANCE",
+      "creditGlAccount": "LIABILITY_FD_DEPOSITS",
+      "status": "POSTED",
+      "txnTimestamp": "2026-10-11T20:46:31.610585",
+      "remarks": "Initial Deposit",
+      "uuid": "9d63091f-aa1e-4e70-8d89-de080cac054e",
+      "createdBy": "officer1"
+    },
+    {
+      "txnId": 2,
+      "fdAccountNo": "BR0010000016",
+      "txnType": "INTEREST",
+      "amount": 17.8,
+      "currency": "INR",
+      "debitGlAccount": "EXPENSE_INTEREST",
+      "creditGlAccount": "ASSET_CUSTOMER_SETTLEMENT",
+      "status": "POSTED",
+      "txnTimestamp": "2026-10-11T20:47:28.93135",
+      "remarks": "Interest payout request e00931c1-af84-4027-ae97-45330f4811ff",
+      "uuid": "953fc5bd-0078-407b-b456-bcfbecafde8a",
+      "createdBy": "admin1"
+    }
+  ],
+  "checks": [
+    "existing FD creation",
+    "Kafka accrual command and completion",
+    "statement event projection",
+    "Kafka payout command and completion",
+    "payout statement projection",
+    "identical request replay creates no duplicate ledger entry"
+  ],
+  "nativeMySql": "pending actual local credentials"
+}

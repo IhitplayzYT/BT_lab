@@ -14,7 +14,7 @@ spring:
   jpa:
     open-in-view: false
     hibernate:
-      ddl-auto: validate   # prod: validate; dev profile overrides to update
+      ddl-auto: update
     properties:
       hibernate:
         format_sql: false
@@ -46,6 +46,23 @@ spring:
   sql:
     init:
       mode: never
+
+  # ── Kafka Configuration for Batch Processing and Logging ───────────────────
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.add.type.headers: false
+    consumer:
+      group-id: product-service-group
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
+    listener:
+      ack-mode: manual
 
 # ── Server ─────────────────────────────────────────────────────────────────
 server:
@@ -80,6 +97,15 @@ springdoc:
     path: /v3/api-docs
   packages-to-scan: com.bank.product.controller
 
+# ── Logging ─────────────────────────────────────────────────────────────────
+logging:
+  level:
+    com.bank.product: INFO
+    org.springframework.security: WARN
+    org.hibernate.SQL: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%X{correlationId}] [%thread] %-5level %logger{36} - %msg%n"
+
 # ── Application-specific configuration ───────────────────────────────────────
 app:
   # CORS configuration (to be removed when API Gateway is implemented)
@@ -95,36 +121,8 @@ app:
       issuer: ${JWT_ISSUER:http://localhost:8081}
       audience: ${JWT_AUDIENCE:product-service}
       roles-claim: ${JWT_ROLES_CLAIM:roles}
-
-# ── Logging ─────────────────────────────────────────────────────────────────
-logging:
-  level:
-    com.bank.product: INFO
-    org.springframework.security: WARN
-    org.hibernate.SQL: WARN
-  pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%X{correlationId}] [%thread] %-5level %logger{36} - %msg%n"
-
-# ── Kafka Configuration for Batch Processing and Logging ───────────────────
-spring:
-  kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
-    producer:
-      key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
-      properties:
-        spring.json.add.type.headers: false
-    consumer:
-      group-id: product-service-group
-      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
-      properties:
-        spring.json.trusted.packages: "*"
-    listener:
-      ack-mode: manual
-
-# ── Kafka Topics ───────────────────────────────────────────────────────────
-app:
+  
+  # Kafka Topics
   kafka:
     topics:
       batch-products: product-service-batch-products

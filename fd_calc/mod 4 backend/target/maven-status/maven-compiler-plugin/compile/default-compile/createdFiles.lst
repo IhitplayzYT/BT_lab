@@ -10,6 +10,7 @@ com/bank/calculator/config/OpenApiConfig.class
 com/bank/calculator/repository/CalculationAuditRepository.class
 com/bank/calculator/client/dto/CustomerCategoriesDto.class
 com/bank/calculator/controller/FdCalculationController.class
+com/bank/calculator/dto/request/CustomCalculationRequest.class
 com/bank/calculator/dto/request/TermDto.class
 com/bank/calculator/service/ExplainService.class
 com/bank/calculator/filter/InputSanitizationFilter.class

@@ -1,0 +1,18 @@
+{
+  "class": "com.example.fdmodule.interest.InterestPostingIntegrationTest",
+  "tests": 8,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0,
+  "seconds": "2.404",
+  "methods": [
+    "monthlyCapitalizationAndOriginalPrincipal",
+    "stopsBeforeMaturity",
+    "outboxFailureRollsBackAccrual",
+    "payoutReplayDoesNotPayTwice",
+    "rejectsPayoutBeforeCursor",
+    "futureDatesRejected",
+    "accrualCatchUpAndReplay",
+    "closedAccountsSkipped"
+  ]
+}

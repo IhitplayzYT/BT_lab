@@ -4,6 +4,7 @@ import com.bank.calculator.dto.BatchCalculationRequest;
 import com.bank.calculator.dto.BatchCalculationResponse;
 import com.bank.calculator.dto.request.CalculationRequest;
 import com.bank.calculator.dto.request.ComparisonRequest;
+import com.bank.calculator.dto.request.CustomCalculationRequest;
 import com.bank.calculator.dto.response.CalculationResponse;
 import com.bank.calculator.dto.response.ComparisonResponse;
 import com.bank.calculator.dto.response.ProductPreviewResponse;
@@ -69,4 +70,14 @@ public interface FdCalculatorService {
      * @return batch calculation response with results
      */
     BatchCalculationResponse batchCalculate(BatchCalculationRequest batchRequest, Authentication authentication);
+
+    /**
+     * Performs a custom FD maturity calculation with user-defined parameters.
+     * Bypasses Product Service and uses provided rate, interest type, and compounding frequency.
+     *
+     * @param request        validated custom calculation request
+     * @param authentication the verified Spring Security authentication (JWT)
+     * @return calculation response with full breakdown
+     */
+    CalculationResponse calculateCustom(CustomCalculationRequest request, Authentication authentication);
 }

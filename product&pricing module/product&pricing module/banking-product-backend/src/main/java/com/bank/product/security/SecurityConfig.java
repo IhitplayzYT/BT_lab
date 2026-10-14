@@ -17,6 +17,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationProvider;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -63,6 +64,11 @@ public class SecurityConfig {
     }
 
     @Bean
+    public JwtAuthenticationProvider jwtAuthenticationProvider() {
+        return new JwtAuthenticationProvider(jwtDecoder());
+    }
+
+    @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
@@ -87,9 +93,9 @@ public class SecurityConfig {
                                 "/api/auth/**"
                         ).permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers("/api/v1/products/internal/**").hasAnyRole("BANK_OFFICER", "ADMIN")
                         .requestMatchers("/api/v1/products/**").hasAnyRole("BANK_OFFICER", "ADMIN")
-                        .requestMatchers("/internal/**").authenticated()
-                        .anyRequest().authenticated()
+                        .anyRequest().denyAll()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt

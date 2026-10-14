@@ -21,6 +21,7 @@ com/bank/product/config/MetricsConfig.class
 com/bank/product/exception/GlobalExceptionHandler.class
 com/bank/product/dto/RateVariationDTO$RateVariationDTOBuilder.class
 com/bank/product/dto/TermLimitDTO.class
+com/bank/product/controller/InternalProductController.class
 com/bank/product/filter/InputSanitizationFilter.class
 com/bank/product/dto/ErrorDetails$ErrorDetailsBuilder.class
 com/bank/product/mapper/ProductMapper.class

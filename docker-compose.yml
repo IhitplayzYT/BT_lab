@@ -1,0 +1,224 @@
+version: "3.9"
+
+services:
+  # ── FD Calculator Service ──────────────────────────────────────────────
+  fd-calculator:
+    build:
+      context: ./fd_calc/mod 4 backend
+      dockerfile: Dockerfile
+    container_name: fd-calculator
+    ports:
+      - "8084:8084"
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SERVER_PORT: 8084
+      DB_URL: jdbc:mysql://fd-mysql:3306/fd_calculator?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      DB_USER: fd_user
+      DB_PASSWORD: ${DB_PASSWORD:-fd_secret}
+      DB_DRIVER: com.mysql.cj.jdbc.Driver
+      JWT_SECRET: ${JWT_SECRET:-test-secret-key-minimum-32-characters-for-hmac256}
+      JWT_ISSUER: ${JWT_ISSUER:-http://localhost:8081}
+      JWT_AUDIENCE: fd-calculator-service
+      JWT_ROLES_CLAIM: roles
+      PRODUCT_SERVICE_URL: http://product-service:8080
+      CUSTOMER_SERVICE_URL: ${CUSTOMER_SERVICE_URL:-http://localhost:8082}
+      mock.product-client: false
+      mock.customer-client: true
+    depends_on:
+      fd-mysql:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8084/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      - banking-network
+
+  # ── FD Calculator MySQL ──────────────────────────────────────────────
+  fd-mysql:
+    image: mysql:8.0
+    container_name: fd-mysql
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_DATABASE: fd_calculator
+      MYSQL_USER: fd_user
+      MYSQL_PASSWORD: ${DB_PASSWORD:-fd_secret}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_secret}
+    volumes:
+      - fd_mysql_data:/var/lib/mysql
+      - ./fd_calc/mod 4 backend/src/main/resources/db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "fd_user", "--password=${DB_PASSWORD:-fd_secret}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - banking-network
+
+  # ── Product & Pricing Service ──────────────────────────────────────────────
+  product-service:
+    build:
+      context: ./product&pricing module/product&pricing module/banking-product-backend
+      dockerfile: Dockerfile
+    container_name: product-service
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SERVER_PORT: 8080
+      DB_URL: jdbc:mysql://product-mysql:3306/banking_product_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      DB_USER: product_user
+      DB_PASSWORD: ${DB_PASSWORD:-product_secret}
+      DB_DRIVER: com.mysql.cj.jdbc.Driver
+      JWT_SECRET: ${JWT_SECRET:-test-secret-key-minimum-32-characters-for-hmac256}
+      JWT_ISSUER: ${JWT_ISSUER:-http://localhost:8081}
+      JWT_AUDIENCE: product-service
+      JWT_ROLES_CLAIM: roles
+    depends_on:
+      product-mysql:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      - banking-network
+
+  # ── Product & Pricing MySQL ──────────────────────────────────────────────
+  product-mysql:
+    image: mysql:8.0
+    container_name: product-mysql
+    ports:
+      - "3308:3306"
+    environment:
+      MYSQL_DATABASE: banking_product_db
+      MYSQL_USER: product_user
+      MYSQL_PASSWORD: ${DB_PASSWORD:-product_secret}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_secret}
+    volumes:
+      - product_mysql_data:/var/lib/mysql
+      - ./product&pricing module/product&pricing module/banking-product-backend/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+      - ./product&pricing module/product&pricing module/banking-product-backend/insert_dummy_data.sql:/docker-entrypoint-initdb.d/02-insert_dummy_data.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "product_user", "--password=${DB_PASSWORD:-product_secret}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - banking-network
+
+  # ── FD Module Group9 Auth Service ──────────────────────────────────────────────
+  fd-auth-service:
+    build:
+      context: ./FD_Module_Group9
+      dockerfile: Dockerfile
+      target: auth-service
+    container_name: fd-auth-service
+    ports:
+      - "8090:8090"
+    environment:
+      JWT_SECRET: ${JWT_SECRET:-test-secret-key-minimum-32-characters-for-hmac256}
+    networks:
+      - banking-network
+
+  # ── FD Module Group9 Account Service ──────────────────────────────────────────────
+  fd-account-service:
+    build:
+      context: ./FD_Module_Group9
+      dockerfile: Dockerfile
+      target: fd-account-service
+    container_name: fd-account-service
+    ports:
+      - "8086:8086"
+    depends_on:
+      fd-group9-mysql:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    environment:
+      FD_DB_URL: jdbc:mysql://fd-group9-mysql:3306/banking_technology_lab?serverTimezone=Asia/Kolkata
+      DB_USER: root
+      DB_PASSWORD: ${DB_PASSWORD:-12345}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      JWT_SECRET: ${JWT_SECRET:-test-secret-key-minimum-32-characters-for-hmac256}
+      APP_TIME_TRAVEL_ENABLED: ${APP_TIME_TRAVEL_ENABLED:-false}
+      APP_SECURITY_BASIC_ENABLED: false
+      PRODUCT_SERVICE_URL: http://product-service:8080
+      CALCULATOR_SERVICE_URL: http://fd-calculator:8084
+    volumes:
+      - fd_extracts:/app/extracts
+    networks:
+      - banking-network
+
+  # ── FD Module Group9 MySQL ──────────────────────────────────────────────
+  fd-group9-mysql:
+    image: mysql:8.0
+    container_name: fd-group9-mysql
+    ports:
+      - "3310:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-12345}
+      TZ: Asia/Kolkata
+    volumes:
+      - fd_group9_mysql_data:/var/lib/mysql
+      - ./FD_Module_Group9/scripts/init-local-databases.sql:/docker-entrypoint-initdb.d/01-databases.sql:ro
+      - ./FD_Module_Group9/fd-account-service/sql/l12_l13_setup.sql:/docker-entrypoint-initdb.d/02-l12_l13_setup.sql:ro
+      - ./FD_Module_Group9/fd-account-service/sql/l16_fd_transactions.sql:/docker-entrypoint-initdb.d/03-l16_fd_transactions.sql:ro
+      - ./FD_Module_Group9/fd-account-service/sql/l14_l17_interest.sql:/docker-entrypoint-initdb.d/04-l14_l17_interest.sql:ro
+      - ./FD_Module_Group9/fd-account-service/sql/l18_clock_contacts_seed.sql:/docker-entrypoint-initdb.d/05-l18_clock_contacts_seed.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -p\"$$MYSQL_ROOT_PASSWORD\""]
+      interval: 5s
+      timeout: 10s
+      retries: 20
+      start_period: 30s
+    networks:
+      - banking-network
+
+  # ── Kafka (for FD Module Group9) ──────────────────────────────────────────────
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: kafka
+    ports:
+      - "9092:9092"
+      - "19092:19092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,EXTERNAL://localhost:19092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: true
+    depends_on:
+      - zookeeper
+    networks:
+      - banking-network
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - banking-network
+
+networks:
+  banking-network:
+    driver: bridge
+
+volumes:
+  fd_mysql_data:
+  product_mysql_data:
+  fd_group9_mysql_data:
+  fd_extracts:

@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "productCharges")
+@Table(name = "product_charges")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -15,18 +15,18 @@ public class ProductCharge {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "chargeId")
+    @Column(name = "charge_id")
     private Integer chargeId;
 
-    @Column(name = "chargeType", nullable = false, length = 30)
+    @Column(name = "charge_type", nullable = false, length = 30)
     private String chargeType;
 
-    @Column(name = "chargeValue", nullable = false, precision = 18, scale = 2)
+    @Column(name = "charge_value", nullable = false, precision = 18, scale = 2)
     private java.math.BigDecimal chargeValue;
 
-    @Column(name = "chargeUnit", nullable = false, length = 10)
+    @Column(name = "charge_unit", nullable = false, length = 10)
     private String chargeUnit;
 
-    @Column(name = "feeType", length = 30)
+    @Column(name = "fee_type", length = 30)
     private String feeType;
 }

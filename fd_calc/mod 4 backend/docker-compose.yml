@@ -17,12 +17,14 @@ services:
       DB_USER: fd_user
       DB_PASSWORD: ${DB_PASSWORD:-fd_secret}
       DB_DRIVER: com.mysql.cj.jdbc.Driver
-      JWT_SECRET: ${JWT_SECRET:-ChangeThisInProductionMustBe32CharsMinimum!}
+      JWT_SECRET: ${JWT_SECRET:-test-secret-key-minimum-32-characters-for-hmac256}
       JWT_ISSUER: ${JWT_ISSUER:-http://localhost:8081}
       JWT_AUDIENCE: fd-calculator-service
       JWT_ROLES_CLAIM: roles
-      PRODUCT_SERVICE_URL: ${PRODUCT_SERVICE_URL:-http://localhost:8083}
+      PRODUCT_SERVICE_URL: ${PRODUCT_SERVICE_URL:-http://product-service:8080}
       CUSTOMER_SERVICE_URL: ${CUSTOMER_SERVICE_URL:-http://localhost:8082}
+      mock.product-client: false
+      mock.customer-client: true
     depends_on:
       fd-mysql:
         condition: service_healthy
@@ -32,6 +34,8 @@ services:
       timeout: 10s
       retries: 5
       start_period: 60s
+    networks:
+      - shared-network
 
   # ── MySQL ──────────────────────────────────────────────────────────────
   fd-mysql:
@@ -53,6 +57,12 @@ services:
       timeout: 5s
       retries: 10
       start_period: 30s
+    networks:
+      - shared-network
+
+networks:
+  shared-network:
+    external: true
 
 volumes:
   fd_mysql_data:

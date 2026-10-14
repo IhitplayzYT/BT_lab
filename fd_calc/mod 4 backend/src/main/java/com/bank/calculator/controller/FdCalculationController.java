@@ -5,6 +5,7 @@ import com.bank.calculator.dto.BatchCalculationRequest;
 import com.bank.calculator.dto.BatchCalculationResponse;
 import com.bank.calculator.dto.request.CalculationRequest;
 import com.bank.calculator.dto.request.ComparisonRequest;
+import com.bank.calculator.dto.request.CustomCalculationRequest;
 import com.bank.calculator.dto.response.CalculationResponse;
 import com.bank.calculator.dto.response.ComparisonResponse;
 import com.bank.calculator.dto.response.ErrorResponse;
@@ -284,6 +285,34 @@ public class FdCalculationController {
             @Valid @RequestBody BatchCalculationRequest batchRequest,
             Authentication authentication) {
         return ResponseEntity.ok(calculatorService.batchCalculate(batchRequest, authentication));
+    }
+
+    // ─── POST /api/v1/fd/calculations/custom ────────────────────────────────
+
+    @PostMapping("/calculations/custom")
+    @Operation(
+        summary = "Calculate custom FD maturity with user-defined parameters",
+        description = """
+            Calculates a simulation-only FD maturity estimate with fully customizable parameters.
+            Accepts custom interest rate, interest type, and compounding frequency.
+            Bypasses Product Service validation. CUSTOMER role required.
+            """)
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Custom calculation successful",
+            content = @Content(schema = @Schema(implementation = CalculationResponse.class))),
+        @ApiResponse(responseCode = "400", description = "Malformed request or validation error",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+        @ApiResponse(responseCode = "401", description = "Missing or invalid JWT",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+        @ApiResponse(responseCode = "403", description = "Authenticated user lacks CUSTOMER role",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+        @ApiResponse(responseCode = "500", description = "Unexpected server error",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    public ResponseEntity<CalculationResponse> calculateCustom(
+            @Valid @RequestBody CustomCalculationRequest request,
+            Authentication authentication) {
+        return ResponseEntity.ok(calculatorService.calculateCustom(request, authentication));
     }
 
     // ── Helper ─────────────────────────────────────────────────────────────

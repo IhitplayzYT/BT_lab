@@ -334,7 +334,6 @@ public class CalculationAudit implements Persistable<String> {
     }
 
     @PostLoad
-    @PrePersist
     void markNotNew() {
         this.isNewRecord = false;
         if (this.id == null) {

@@ -1,0 +1,25 @@
+# Keep secrets, build output and local runtime files out of every image.
+.git
+**/node_modules
+**/dist
+**/.angular
+runtime
+artifacts
+extracts
+fd-kafka-data
+.env
+**/*.log
+scripts/local.env.ps1
+interest-dashboard
+docs
+# Not needed to build an image (and editing them should not trigger a rebuild).
+scripts
+Dockerfile
+compose.yaml
+*.md
+# Keep target directories for services we need JARs from
+!auth-service/target
+!fd-account-service/target
+!interest-batch-service/target
+!notification-service/target
+!statement-service/target

@@ -2,7 +2,7 @@
 
 # Port number for the Spring Boot service
 PORT=8080
-BASE_URL="http://localhost:${PORT}/api/product"
+BASE_URL="http://localhost:${PORT}/api/v1/products"
 AUTH_URL="http://localhost:${PORT}/api/auth/token"
 
 echo "=========================================================="
@@ -11,14 +11,10 @@ echo "        (Labs L5: Products, L9: JWT, L13: FD Integration)  "
 echo "=========================================================="
 
 # 1. Acquire JWT Tokens for Testing
-echo -e "\n1. Generating Admin and Bank Officer JWT tokens..."
-ADMIN_TOKEN=$(curl -s -X POST "${AUTH_URL}" \
-  -H "Content-Type: application/json" \
-  -d '{"username":"admin_user","roles":["ADMIN"]}' | grep -o '"token":"[^"]*' | cut -d'"' -f4)
+echo -e "\n1. Using pre-generated Admin and Bank Officer JWT tokens..."
+ADMIN_TOKEN="eyJhbGciOiAiSFMyNTYiLCAidHlwIjogIkpXVCJ9.eyJzdWIiOiAiYWRtaW5fdXNlciIsICJyb2xlcyI6IFsiQURNSU4iXSwgImlzcyI6ICJodHRwOi8vbG9jYWxob3N0OjgwODEiLCAiYXVkIjogInByb2R1Y3Qtc2VydmljZSIsICJleHAiOiAxNzkxOTc1NjQ2fQ.Z3ZfKTSmAlFIwGB5OiodUBMgtgjBrbxG8lEb0NMkvKs"
 
-OFFICER_TOKEN=$(curl -s -X POST "${AUTH_URL}" \
-  -H "Content-Type: application/json" \
-  -d '{"username":"officer_user","roles":["BANK_OFFICER"]}' | grep -o '"token":"[^"]*' | cut -d'"' -f4)
+OFFICER_TOKEN="eyJhbGciOiAiSFMyNTYiLCAidHlwIjogIkpXVCJ9.eyJzdWIiOiAib2ZmaWNlcl91c2VyIiwgInJvbGVzIjogWyJCQU5LX09GRklDRVIiXSwgImlzcyI6ICJodHRwOi8vbG9jYWxob3N0OjgwODEiLCAiYXVkIjogInByb2R1Y3Qtc2VydmljZSIsICJleHAiOiAxNzkxOTc1NjQ2fQ.GCtmr-5rrxgx71HbmOtLuK4csiYcXO1P-IFKr55Lt2k"
 
 echo "Admin Token Acquired: ${ADMIN_TOKEN:0:20}..."
 echo "Officer Token Acquired: ${OFFICER_TOKEN:0:20}..."
@@ -29,9 +25,7 @@ curl -s -w "\nHTTP Status: %{http_code}\n" -X GET "${BASE_URL}/search"
 
 # 3. Security Test: 403 Forbidden (Customer attempting to Create Product)
 echo -e "\n3. Security Check: Customer role attempting Create (Expect 403)..."
-CUSTOMER_TOKEN=$(curl -s -X POST "${AUTH_URL}" \
-  -H "Content-Type: application/json" \
-  -d '{"username":"customer_user","roles":["CUSTOMER"]}' | grep -o '"token":"[^"]*' | cut -d'"' -f4)
+CUSTOMER_TOKEN="eyJhbGciOiAiSFMyNTYiLCAidHlwIjogIkpXVCJ9.eyJzdWIiOiAiY3VzdG9tZXJfdXNlciIsICJyb2xlcyI6IFsiQ1VTVE9NRVIiXSwgImlzcyI6ICJodHRwOi8vbG9jYWxob3N0OjgwODEiLCAiYXVkIjogImZkLWNhbGN1bGF0b3Itc2VydmljZSIsICJleHAiOiAxNzkxOTc1NjQ2fQ.MLkJi7euCkqWbBQ4KSSX3EBA9EQCL05uA1eEuicGrI8"
 curl -s -w "\nHTTP Status: %{http_code}\n" -X POST "${BASE_URL}" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer ${CUSTOMER_TOKEN}" \

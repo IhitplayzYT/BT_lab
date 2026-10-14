@@ -20,6 +20,10 @@ import java.math.BigDecimal;
 @ConditionalOnProperty(name = "mock.product-client", havingValue = "true")
 public class MockProductClient implements ProductClient {
 
+    public MockProductClient() {
+        System.out.println("MockProductClient: CONSTRUCTOR CALLED - MOCK IS ACTIVE!");
+    }
+
     @Override
     public ProductConfigDto getCalculatorConfig(String productCode) {
         if ("INACTIVE001".equals(productCode)) {

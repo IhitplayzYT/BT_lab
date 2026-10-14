@@ -17,6 +17,7 @@
 /home/ihitplayzyt/Downloads/BT_LAB/fd_calc/mod 4 backend/src/main/java/com/bank/calculator/dto/request/CalculationRequest.java
 /home/ihitplayzyt/Downloads/BT_LAB/fd_calc/mod 4 backend/src/main/java/com/bank/calculator/dto/request/ComparisonOptionDto.java
 /home/ihitplayzyt/Downloads/BT_LAB/fd_calc/mod 4 backend/src/main/java/com/bank/calculator/dto/request/ComparisonRequest.java
+/home/ihitplayzyt/Downloads/BT_LAB/fd_calc/mod 4 backend/src/main/java/com/bank/calculator/dto/request/CustomCalculationRequest.java
 /home/ihitplayzyt/Downloads/BT_LAB/fd_calc/mod 4 backend/src/main/java/com/bank/calculator/dto/request/TermDto.java
 /home/ihitplayzyt/Downloads/BT_LAB/fd_calc/mod 4 backend/src/main/java/com/bank/calculator/dto/response/CalculationResponse.java
 /home/ihitplayzyt/Downloads/BT_LAB/fd_calc/mod 4 backend/src/main/java/com/bank/calculator/dto/response/CategoryBenefitDto.java

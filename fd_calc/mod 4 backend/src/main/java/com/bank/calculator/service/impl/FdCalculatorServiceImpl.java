@@ -8,6 +8,7 @@ import com.bank.calculator.dto.BatchCalculationRequest;
 import com.bank.calculator.dto.BatchCalculationResponse;
 import com.bank.calculator.dto.request.CalculationRequest;
 import com.bank.calculator.dto.request.ComparisonRequest;
+import com.bank.calculator.dto.request.CustomCalculationRequest;
 import com.bank.calculator.dto.request.TermDto;
 import com.bank.calculator.dto.response.CalculationResponse;
 import com.bank.calculator.dto.response.ComparisonResponse;
@@ -103,6 +104,7 @@ public class FdCalculatorServiceImpl implements FdCalculatorService {
         this.exportService = exportService;
         this.auditRepository = auditRepository;
         this.idGenerator = idGenerator;
+        System.out.println("FdCalculatorServiceImpl: Constructor called with ProductCatalogService=" + productCatalogService.getClass().getName());
     }
 
     /**
@@ -497,5 +499,88 @@ public class FdCalculatorServiceImpl implements FdCalculatorService {
                 failed == 0 ? "All calculations completed successfully" 
                         : "Batch completed with " + failed + " failures"
         );
+    }
+
+    @Override
+    public CalculationResponse calculateCustom(CustomCalculationRequest request, Authentication authentication) {
+        String username = extractUsername(authentication);
+        String correlationId = MDC.get(CorrelationIdFilter.MDC_KEY);
+
+        log.info("[{}] Custom calculation request from user='{}' principal='{}' rate='{}' interestType='{}'",
+                correlationId, username, request.principal(), request.interestRate(), request.interestType());
+
+        // Compute term in years
+        int termMonths = toMonths(request.term());
+        BigDecimal termYears = BigDecimal.valueOf(termMonths).divide(TWELVE, 12, ROUNDING);
+
+        // Use provided parameters directly
+        InterestType interestType = request.interestType();
+        CompoundingFrequency frequency = interestType == InterestType.COMPOUND
+                ? request.resolvedCompoundingFrequency()
+                : CompoundingFrequency.YEARLY;
+
+        // Calculate maturity & APY
+        CalculationEngine.CalculationResult calcResult;
+        if (request.resolvedPayoutMode() == PayoutMode.PERIODIC) {
+            calcResult = calculationEngine.calculatePeriodic(
+                    request.principal(), request.interestRate(), termYears, frequency);
+        } else if (interestType == InterestType.SIMPLE || interestType == InterestType.CREDIT) {
+            calcResult = calculationEngine.calculateSimple(
+                    request.principal(), request.interestRate(), termYears);
+        } else {
+            calcResult = calculationEngine.calculateCompound(
+                    request.principal(), request.interestRate(), termYears, frequency);
+        }
+
+        BigDecimal apy = calculationEngine.calculateApy(request.interestRate(), frequency);
+
+        // Identifiers and Dates
+        String calculationId = idGenerator.next();
+        String uuid = UUID.randomUUID().toString();
+        LocalDate startDate = request.resolvedStartDate();
+        LocalDate maturityDate = startDate.plusMonths(termMonths);
+
+        CalculationResponse response = new CalculationResponse(
+                calculationId,
+                uuid,
+                "CUSTOM",
+                "Custom FD",
+                request.principal().setScale(2, ROUNDING),
+                request.term(),
+                request.resolvedPayoutMode(),
+                startDate,
+                maturityDate,
+                interestType,
+                frequency,
+                request.interestRate().setScale(2, ROUNDING),
+                List.of(), // No category benefits for custom FDs
+                null, null, null,
+                request.interestRate(), // No bonus applied
+                apy,
+                false,
+                calcResult.interestEarned(),
+                calcResult.maturityAmount(),
+                calcResult.periodicPayoutAmount(),
+                "INR",
+                null, // explanation set after
+                Instant.now()
+        );
+
+        // Build explanation inline
+        String explanation = explainService.explain(response);
+        response = new CalculationResponse(
+                response.calculationId(), response.uuid(), response.productCode(), response.productName(),
+                response.principal(), response.term(), response.payoutMode(), response.startDate(),
+                response.estimatedMaturityDate(), response.interestType(), response.compoundingFrequency(),
+                response.baseRate(), response.categoryBenefits(), response.requestedTotalBonus(),
+                response.appliedTotalBonus(), response.bonusCap(), response.effectiveRate(), response.apy(),
+                response.rateCapped(), response.interestEarned(), response.maturityAmount(),
+                response.periodicPayoutAmount(), response.currency(), explanation, response.generatedAt()
+        );
+
+        log.info("[{}] Custom calculation complete: calculationId='{}' uuid='{}' maturity='{}'",
+                correlationId, calculationId, uuid, calcResult.maturityAmount());
+
+        return response;
     }
 }

@@ -1,0 +1,30 @@
+{
+  "unchangedJavaFiles": 25,
+  "files": [
+    "com/example/fdmodule/FdModuleApplication.java",
+    "com/example/fdmodule/config/SecurityConfig.java",
+    "com/example/fdmodule/controller/ApiExceptionHandler.java",
+    "com/example/fdmodule/controller/FDAccountController.java",
+    "com/example/fdmodule/controller/FDTransactionController.java",
+    "com/example/fdmodule/controller/HealthController.java",
+    "com/example/fdmodule/dto/FDAccountCreationResponse.java",
+    "com/example/fdmodule/dto/FDAccountRequest.java",
+    "com/example/fdmodule/dto/FDAccountResponse.java",
+    "com/example/fdmodule/dto/FDTransactionResponse.java",
+    "com/example/fdmodule/entity/CustomerProfile.java",
+    "com/example/fdmodule/entity/FDTransaction.java",
+    "com/example/fdmodule/entity/FixedDepositAccount.java",
+    "com/example/fdmodule/entity/Product.java",
+    "com/example/fdmodule/repository/CustomerProfileRepository.java",
+    "com/example/fdmodule/repository/FDTransactionRepository.java",
+    "com/example/fdmodule/repository/FixedDepositAccountRepository.java",
+    "com/example/fdmodule/repository/ProductRepository.java",
+    "com/example/fdmodule/service/AccountNumberGenerator.java",
+    "com/example/fdmodule/service/FDAccountNumberGenerator.java",
+    "com/example/fdmodule/service/FDAccountService.java",
+    "com/example/fdmodule/service/FDTransactionService.java",
+    "com/example/fdmodule/service/GLAccounts.java",
+    "com/example/fdmodule/service/ProductValidationService.java",
+    "com/example/fdmodule/service/RateService.java"
+  ]
+}
