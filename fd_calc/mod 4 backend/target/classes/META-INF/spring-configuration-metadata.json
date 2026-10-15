@@ -28,8 +28,7 @@
       "name": "app.jwt.roles-claim",
       "type": "java.lang.String",
       "description": "Name of the claim that carries the comma-separated roles list.",
-      "sourceType": "com.bank.calculator.security.JwtProperties",
-      "defaultValue": "roles"
+      "sourceType": "com.bank.calculator.security.JwtProperties"
     },
     {
       "name": "app.jwt.secret",

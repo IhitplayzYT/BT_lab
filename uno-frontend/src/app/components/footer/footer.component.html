@@ -1,0 +1,54 @@
+<footer class="footer">
+  <div class="container">
+    <div class="footer-content">
+      <div class="footer-brand">
+        <div class="logo">
+          <span class="logo-text">UNO</span>
+          <span class="logo-subtitle">Bank</span>
+        </div>
+        <p>Premium digital banking for the modern investor. Secure, simple, and smart.</p>
+      </div>
+
+      <div class="footer-links">
+        <div class="link-group">
+          <h4>Quick Links</h4>
+          <ul>
+            @for (link of quickLinks; track link.label) {
+              <li><a [href]="link.href">{{ link.label }}</a></li>
+            }
+          </ul>
+        </div>
+
+        <div class="link-group">
+          <h4>Support</h4>
+          <ul>
+            @for (link of supportLinks; track link.label) {
+              <li><a [href]="link.href">{{ link.label }}</a></li>
+            }
+          </ul>
+        </div>
+
+        <div class="link-group">
+          <h4>Legal</h4>
+          <ul>
+            <li><a (click)="navigateTo('/terms')">Terms & Conditions</a></li>
+            <li><a (click)="navigateTo('/privacy')">Privacy Policy</a></li>
+          </ul>
+        </div>
+
+        <div class="link-group">
+          <h4>Connect</h4>
+          <div class="social-links">
+            @for (link of socialLinks; track link.icon) {
+              <a [href]="link.href" class="social-link">{{ link.icon }}</a>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <p>&copy; {{ currentYear }} UNO Bank. All rights reserved.</p>
+    </div>
+  </div>
+</footer>

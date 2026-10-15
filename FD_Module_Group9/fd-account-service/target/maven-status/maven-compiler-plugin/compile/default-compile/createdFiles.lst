@@ -7,6 +7,7 @@ com/example/fdmodule/controller/FDTransactionController.class
 com/example/fdmodule/controller/IntegrationController.class
 com/example/fdmodule/report/ReportService.class
 com/example/fdmodule/withdrawal/WithdrawalService$Inquiry.class
+com/example/fdmodule/dto/FDApplicationResponse.class
 com/example/fdmodule/client/ProductServiceClient.class
 com/example/fdmodule/maturity/MaturityController$RunRequest.class
 com/example/fdmodule/config/SecurityConfig.class
@@ -14,6 +15,7 @@ com/example/fdmodule/repository/FDTransactionRepository.class
 com/example/fdmodule/service/ProductValidationService.class
 com/example/fdmodule/dto/FDAccountRequest.class
 com/example/fdmodule/config/ServiceProperties.class
+com/example/fdmodule/dto/FDApprovalRequest.class
 com/example/fdmodule/withdrawal/WithdrawalController.class
 com/example/fdmodule/service/GLAccounts.class
 com/example/fdmodule/repository/ProductRepository.class
@@ -23,9 +25,11 @@ com/example/fdmodule/service/RateService.class
 com/example/fdmodule/interest/InterestController$Quote.class
 com/example/fdmodule/repository/CustomerProfileRepository.class
 com/example/fdmodule/interest/InterestController$Settings.class
+com/example/fdmodule/dto/FDApplicationRequest.class
 com/example/fdmodule/report/ExtractService.class
 com/example/fdmodule/dto/FDAccountCreationResponse.class
 com/example/fdmodule/interest/InterestPostingService.class
+com/example/fdmodule/report/ChartController.class
 com/example/fdmodule/maturity/MaturityService.class
 com/example/fdmodule/client/ServiceClientSupport.class
 com/example/fdmodule/service/AccountNumberGenerator.class

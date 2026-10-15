@@ -1,0 +1,177 @@
+<section class="admin-panel section">
+  <div class="container">
+    <div class="panel-header">
+      <h1 class="text-gradient">Admin Dashboard</h1>
+      <p>Complete system overview and analytics</p>
+    </div>
+
+    <!-- Key Metrics -->
+    <div class="analytics-grid">
+      <div class="analytics-card card">
+        <div class="card-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="20" x2="18" y2="10"></line>
+            <line x1="12" y1="20" x2="12" y2="4"></line>
+            <line x1="6" y1="20" x2="6" y2="14"></line>
+          </svg>
+        </div>
+        <div class="card-content">
+          <span class="card-label">Total FDs</span>
+          <span class="card-value">{{ formatNumber(analytics.totalFDs) }}</span>
+        </div>
+      </div>
+
+      <div class="analytics-card card">
+        <div class="card-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="1" x2="12" y2="23"></line>
+            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+          </svg>
+        </div>
+        <div class="card-content">
+          <span class="card-label">Total Deposits</span>
+          <span class="card-value">{{ formatCurrency(analytics.totalDeposits) }}</span>
+        </div>
+      </div>
+
+      <div class="analytics-card card">
+        <div class="card-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+        </div>
+        <div class="card-content">
+          <span class="card-label">Pending Approvals</span>
+          <span class="card-value accent">{{ formatNumber(analytics.pendingApprovals) }}</span>
+        </div>
+      </div>
+
+      <div class="analytics-card card">
+        <div class="card-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+          </svg>
+        </div>
+        <div class="card-content">
+          <span class="card-label">Active FDs</span>
+          <span class="card-value">{{ formatNumber(analytics.activeFDs) }}</span>
+        </div>
+      </div>
+
+      <div class="analytics-card card">
+        <div class="card-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="2" y1="12" x2="22" y2="12"></line>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+          </svg>
+        </div>
+        <div class="card-content">
+          <span class="card-label">Matured FDs</span>
+          <span class="card-value">{{ formatNumber(analytics.maturedFDs) }}</span>
+        </div>
+      </div>
+
+      <div class="analytics-card card">
+        <div class="card-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="15" y1="9" x2="9" y2="15"></line>
+            <line x1="9" y1="9" x2="15" y2="15"></line>
+          </svg>
+        </div>
+        <div class="card-content">
+          <span class="card-label">Rejected FDs</span>
+          <span class="card-value">{{ formatNumber(analytics.rejectedFDs) }}</span>
+        </div>
+      </div>
+
+      <div class="analytics-card card">
+        <div class="card-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+          </svg>
+        </div>
+        <div class="card-content">
+          <span class="card-label">Avg Tenure</span>
+          <span class="card-value">{{ analytics.averageTenure }} months</span>
+        </div>
+      </div>
+
+      <div class="analytics-card card">
+        <div class="card-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+          </svg>
+        </div>
+        <div class="card-content">
+          <span class="card-label">Interest Earned</span>
+          <span class="card-value">{{ formatCurrency(analytics.totalInterestEarned) }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Product Distribution -->
+    <div class="distribution-section">
+      <h2 class="text-gradient">Product-wise Distribution</h2>
+      <div class="distribution-grid">
+        @for (product of productWiseDistribution; track product.product) {
+          <div class="distribution-card card">
+            <div class="distribution-header">
+              <span class="product-name">{{ product.product }}</span>
+              <span class="product-count">{{ formatNumber(product.count) }}</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill" [style.width.%]="product.percentage"></div>
+            </div>
+            <span class="product-percentage">{{ product.percentage }}%</span>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Recent Applications -->
+    <div class="applications-section">
+      <h2 class="text-gradient">Recent Applications</h2>
+      <div class="applications-table card">
+        <table>
+          <thead>
+            <tr>
+              <th>FD ID</th>
+              <th>Customer</th>
+              <th>Amount</th>
+              <th>Status</th>
+              <th>Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (app of recentApplications; track app.id) {
+              <tr>
+                <td>{{ app.id }}</td>
+                <td>{{ app.customer }}</td>
+                <td>₹{{ formatNumber(app.amount) }}</td>
+                <td>
+                  <span class="status-badge" [class]="app.status.toLowerCase()">
+                    {{ app.status }}
+                  </span>
+                </td>
+                <td>{{ app.date }}</td>
+                <td>
+                  @if (app.status === 'PENDING') {
+                    <button class="btn-action approve">Approve</button>
+                    <button class="btn-action reject">Reject</button>
+                  } @else {
+                    <button class="btn-action view">View</button>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>

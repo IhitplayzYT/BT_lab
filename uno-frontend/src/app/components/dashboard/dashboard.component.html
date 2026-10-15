@@ -1,0 +1,121 @@
+<div class="dashboard">
+  <div class="container">
+    <div class="dashboard-header">
+      <div>
+        <h1>Welcome back, {{ user()?.username || 'User' }}</h1>
+        <p>Manage your fixed deposits and track your investments</p>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-primary" (click)="navigateToApplyFD()">Apply for FD</button>
+        <button class="btn btn-secondary" (click)="logout()">Logout</button>
+      </div>
+    </div>
+
+    @if (isLoading()) {
+      <div class="loading-state">
+        <p>Loading your dashboard...</p>
+      </div>
+    } @else if (error()) {
+      <div class="error-state">
+        <p>{{ error() }}</p>
+        <button class="btn btn-primary" (click)="loadDashboardData()">Retry</button>
+      </div>
+    } @else {
+      <div class="dashboard-content">
+        <div class="stats-grid">
+          <div class="stat-card card">
+            <span class="stat-label">Total FD Accounts</span>
+            <span class="stat-value">{{ fdAccounts().length }}</span>
+          </div>
+          <div class="stat-card card">
+            <span class="stat-label">Available Products</span>
+            <span class="stat-value">{{ products().length }}</span>
+          </div>
+          <div class="stat-card card">
+            <span class="stat-label">Account Type</span>
+            <span class="stat-value">CUSTOMER</span>
+          </div>
+        </div>
+
+        <div class="dashboard-section">
+          <h2>Available FD Products</h2>
+          <div class="products-grid">
+            @for (product of products(); track product.productCode) {
+              <div class="product-card card">
+                <h3>{{ product.productName }}</h3>
+                <p class="product-code">{{ product.productCode }}</p>
+                <div class="product-details">
+                  <div class="detail-item">
+                    <span class="label">Interest Rate:</span>
+                    <span class="value">{{ product.baseRate }}%</span>
+                  </div>
+                  <div class="detail-item">
+                    <span class="label">Min Deposit:</span>
+                    <span class="value">₹{{ product.minDepositAmount?.toLocaleString() }}</span>
+                  </div>
+                  <div class="detail-item">
+                    <span class="label">Tenure:</span>
+                    <span class="value">{{ product.termMinMonths }} - {{ product.termMaxMonths }} months</span>
+                  </div>
+                </div>
+                <button class="btn btn-primary" (click)="navigateToCalculator()">Calculate Returns</button>
+              </div>
+            } @empty {
+              <p class="no-data">No products available</p>
+            }
+          </div>
+        </div>
+
+        @if (fdAccounts().length > 0) {
+          <div class="dashboard-section">
+            <h2>Your FD Accounts</h2>
+            <div class="accounts-table">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Account No</th>
+                    <th>Principal</th>
+                    <th>Interest Rate</th>
+                    <th>Tenure</th>
+                    <th>Maturity Date</th>
+                    <th>Status</th>
+                    <th>Approval Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (account of fdAccounts(); track account.fdAccountNo) {
+                    <tr>
+                      <td>{{ account.fdAccountNo }}</td>
+                      <td>₹{{ account.principalAmount?.toLocaleString() }}</td>
+                      <td>{{ account.interestRate }}%</td>
+                      <td>{{ account.termMonths }} months</td>
+                      <td>{{ account.maturityDate }}</td>
+                      <td>
+                        <span class="badge" [class.active]="account.status === 'ACTIVE'">
+                          {{ account.status }}
+                        </span>
+                      </td>
+                      <td>
+                        <span class="approval-badge" [class]="account.approvalStatus?.toLowerCase()">
+                          {{ account.approvalStatus || 'PENDING' }}
+                        </span>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        } @else {
+          <div class="dashboard-section">
+            <h2>Your FD Accounts</h2>
+            <div class="empty-state card">
+              <p>You don't have any FD accounts yet.</p>
+              <button class="btn btn-primary" (click)="navigateToApplyFD()">Apply for your first FD</button>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </div>
+</div>

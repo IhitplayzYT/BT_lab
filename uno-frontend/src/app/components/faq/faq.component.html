@@ -1,0 +1,24 @@
+<section class="faq section" id="faq">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="text-gradient">Frequently Asked Questions</h2>
+      <p>Got questions? We've got answers</p>
+    </div>
+
+    <div class="faq-list">
+      @for (item of faqs; track item.question) {
+        <div class="faq-item card">
+          <button class="faq-question" (click)="toggle($index)">
+            <span>{{ item.question }}</span>
+            <span class="icon" [class.expanded]="expandedIndex() === $index">+</span>
+          </button>
+          @if (expandedIndex() === $index) {
+            <div class="faq-answer">
+              <p>{{ item.answer }}</p>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+</section>

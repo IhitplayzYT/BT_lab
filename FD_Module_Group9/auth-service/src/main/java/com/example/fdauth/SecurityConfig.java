@@ -31,7 +31,7 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain chain(HttpSecurity http) throws Exception {
         return http
-                .csrf(c -> c.disable()) // no cookies or sessions are used, so there is nothing for CSRF to attack
+                .csrf(c -> c.disable()) // no cookies or sessions are used,
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(a -> a
                         .requestMatchers("/api/auth/login", "/error").permitAll()

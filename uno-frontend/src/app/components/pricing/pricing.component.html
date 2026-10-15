@@ -1,0 +1,54 @@
+<section class="pricing section" id="pricing">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="text-gradient">Simple, Transparent Pricing</h2>
+      <p>Choose the plan that works best for you</p>
+      
+      <div class="pricing-toggle">
+        <button 
+          class="toggle-btn" 
+          [class.active]="!isAnnual()"
+          (click)="isAnnual.set(false)"
+        >
+          Monthly
+        </button>
+        <button 
+          class="toggle-btn" 
+          [class.active]="isAnnual()"
+          (click)="isAnnual.set(true)"
+        >
+          Yearly <span class="save-badge">Save 17%</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="pricing-grid">
+      @for (plan of plans; track plan.name) {
+        <div class="pricing-card card" [class.popular]="plan.popular">
+          @if (plan.popular) {
+            <div class="popular-badge">Most Popular</div>
+          }
+          
+          <h3>{{ plan.name }}</h3>
+          <div class="price">
+            <span class="price-amount">₹{{ getPrice(plan) }}</span>
+            <span class="price-period">{{ getPeriod() }}</span>
+          </div>
+          
+          <ul class="features-list">
+            @for (feature of plan.features; track feature) {
+              <li>
+                <span class="check">✓</span>
+                {{ feature }}
+              </li>
+            }
+          </ul>
+          
+          <button class="btn" [class.btn-primary]="plan.popular" [class.btn-secondary]="!plan.popular">
+            Get Started
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+</section>

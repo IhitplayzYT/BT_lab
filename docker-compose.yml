@@ -114,17 +114,52 @@ services:
     networks:
       - banking-network
 
+  # ── Auth Service MySQL ──────────────────────────────────────────────
+  auth-mysql:
+    image: mysql:8.0
+    container_name: auth-mysql
+    ports:
+      - "3309:3306"
+    environment:
+      MYSQL_DATABASE: auth_db
+      MYSQL_USER: auth_user
+      MYSQL_PASSWORD: ${DB_PASSWORD:-auth_secret}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_secret}
+    volumes:
+      - auth_mysql_data:/var/lib/mysql
+      - ./Auth_Sec/auth-service/src/main/resources/db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "auth_user", "--password=${DB_PASSWORD:-auth_secret}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - banking-network
+
   # ── FD Module Group9 Auth Service ──────────────────────────────────────────────
   fd-auth-service:
     build:
-      context: ./FD_Module_Group9
+      context: ./Auth_Sec
       dockerfile: Dockerfile
       target: auth-service
     container_name: fd-auth-service
     ports:
       - "8090:8090"
+    depends_on:
+      auth-mysql:
+        condition: service_healthy
     environment:
       JWT_SECRET: ${JWT_SECRET:-test-secret-key-minimum-32-characters-for-hmac256}
+      DB_URL: jdbc:mysql://auth-mysql:3306/auth_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      DB_USER: auth_user
+      DB_PASSWORD: ${DB_PASSWORD:-auth_secret}
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8090/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
     networks:
       - banking-network
 
@@ -152,6 +187,12 @@ services:
       APP_SECURITY_BASIC_ENABLED: false
       PRODUCT_SERVICE_URL: http://product-service:8080
       CALCULATOR_SERVICE_URL: http://fd-calculator:8084
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8086/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
     volumes:
       - fd_extracts:/app/extracts
     networks:
@@ -221,4 +262,5 @@ volumes:
   fd_mysql_data:
   product_mysql_data:
   fd_group9_mysql_data:
+  auth_mysql_data:
   fd_extracts:

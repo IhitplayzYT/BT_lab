@@ -1,0 +1,137 @@
+<section class="calculator-section section" id="calculator">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="text-gradient">FD Calculator</h2>
+      <p>Calculate your returns with our interactive calculator</p>
+    </div>
+
+    <div class="calculator-container">
+      <div class="calculator-inputs card">
+        <div class="input-group">
+          <label for="principal">Principal Amount (₹)</label>
+          <input 
+            type="number" 
+            id="principal" 
+            [(ngModel)]="principal" 
+            (blur)="validatePrincipal()"
+            min="10000" 
+            max="10000000"
+            step="1000"
+            [class.error]="principalError"
+          />
+          @if (principalError) {
+            <div class="validation-error">{{ principalError }}</div>
+          }
+          <div class="slider-container">
+            <input 
+              type="range" 
+              [(ngModel)]="principal" 
+              min="10000" 
+              max="1000000" 
+              step="5000"
+              class="slider"
+            />
+          </div>
+          <span class="input-value">{{ formattedPrincipal() }}</span>
+        </div>
+
+        <div class="input-group">
+          <label for="term">Tenure (Months)</label>
+          <input 
+            type="number" 
+            id="term" 
+            [(ngModel)]="termMonths" 
+            (blur)="validateTermMonths()"
+            min="6" 
+            max="120"
+            [class.error]="termMonthsError"
+          />
+          @if (termMonthsError) {
+            <div class="validation-error">{{ termMonthsError }}</div>
+          }
+          <div class="slider-container">
+            <input 
+              type="range" 
+              [(ngModel)]="termMonths" 
+              min="6" 
+              max="120" 
+              step="6"
+              class="slider"
+            />
+          </div>
+          <span class="input-value">{{ termMonths() }} months</span>
+        </div>
+
+        <div class="input-group">
+          <label for="interestType">Interest Type</label>
+          <select id="interestType" [(ngModel)]="interestType">
+            <option value="COMPOUND">Compound Interest</option>
+            <option value="SIMPLE">Simple Interest</option>
+          </select>
+        </div>
+
+        <div class="input-group">
+          <label for="product">Product</label>
+          <select id="product" [(ngModel)]="productCode">
+            @for (product of products(); track product.productCode) {
+              <option [value]="product.productCode">{{ product.productName }}</option>
+            }
+          </select>
+        </div>
+
+        <button 
+          class="btn btn-primary" 
+          (click)="calculate()" 
+          [disabled]="isCalculating()"
+        >
+          @if (isCalculating()) {
+            Calculating...
+          } @else {
+            Calculate Returns
+          }
+        </button>
+
+        @if (error()) {
+          <div class="error">{{ error() }}</div>
+        }
+      </div>
+
+      @if (calculationResult()) {
+        <div class="calculator-result card">
+          <h3>Your Returns</h3>
+          
+          <div class="result-grid">
+            <div class="result-item">
+              <span class="result-label">Maturity Amount</span>
+              <span class="result-value text-gradient">₹{{ formattedMaturity() }}</span>
+            </div>
+            
+            <div class="result-item">
+              <span class="result-label">Interest Earned</span>
+              <span class="result-value accent">₹{{ formattedInterest() }}</span>
+            </div>
+            
+            <div class="result-item">
+              <span class="result-label">Interest Rate</span>
+              <span class="result-value">{{ interestRate() }}% p.a.</span>
+            </div>
+            
+            <div class="result-item">
+              <span class="result-label">Maturity Date</span>
+              <span class="result-value">{{ calculationResult().maturityDate }}</span>
+            </div>
+          </div>
+
+          <div class="result-chart">
+            <div class="chart-bar principal-bar" [style.width.%]="(principal() / calculationResult().maturityAmount) * 100">
+              <span>Principal: {{ formattedPrincipal() }}</span>
+            </div>
+            <div class="chart-bar interest-bar" [style.width.%]="(calculationResult().interestEarned / calculationResult().maturityAmount) * 100">
+              <span>Interest: {{ formattedInterest() }}</span>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</section>

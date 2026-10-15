@@ -59,7 +59,7 @@ check_port() {
 wait_for_service() {
     local service_name=$1
     local url=$2
-    local max_attempts=60
+    local max_attempts=30
     local attempt=1
     
     log_info "Waiting for $service_name to be healthy..."
@@ -70,11 +70,11 @@ wait_for_service() {
             return 0
         fi
         echo -n "." | tee -a "$LOG_FILE"
-        sleep 5
+        sleep 3
         attempt=$((attempt + 1))
     done
     
-    log_error "$service_name failed to become healthy after $((max_attempts * 5)) seconds"
+    log_error "$service_name failed to become healthy after $((max_attempts * 3)) seconds"
     return 1
 }
 
@@ -89,7 +89,7 @@ check_container_health() {
     # Check if container has healthcheck
     has_healthcheck=$(docker inspect --format='{{.State.Health}}' "$container_name" 2>/dev/null)
     
-    if [ "$has_healthcheck" = "<no value>" ] || [ -z "$has_healthcheck" ]; then
+    if [ "$has_healthcheck" = "<no value>" ] || [ "$has_healthcheck" = "<nil>" ] || [ -z "$has_healthcheck" ]; then
         log_warning "$container_name has no healthcheck defined, skipping health check"
         # Just verify container is running
         if docker ps --format '{{.Names}}' | grep -q "^${container_name}$"; then
@@ -113,7 +113,7 @@ check_container_health() {
         fi
         
         echo -n "." | tee -a "$LOG_FILE"
-        sleep 5
+        sleep 3
         attempt=$((attempt + 1))
     done
     
@@ -201,6 +201,7 @@ wait_for_services() {
     check_container_health "fd-mysql"
     check_container_health "product-mysql"
     check_container_health "fd-group9-mysql"
+    check_container_health "auth-mysql"
     
     # Wait for Kafka
     check_container_health "kafka"
@@ -214,7 +215,8 @@ wait_for_services() {
     # Wait for HTTP endpoints to respond
     log_info "Waiting for HTTP endpoints to respond..."
     
-    wait_for_service "Auth Service" "http://localhost:$AUTH_PORT/api/auth/login" || true
+    # Auth Service has no health endpoint, skip HTTP check
+    log_info "Skipping Auth Service HTTP check (no health endpoint)"
     wait_for_service "Product Service" "http://localhost:$PRODUCT_PORT/api/v1/products/active" || true
     wait_for_service "Calculator Service" "http://localhost:$CALCULATOR_PORT/actuator/health" || true
     wait_for_service "Account Service" "http://localhost:$ACCOUNT_PORT/health" || true
@@ -236,6 +238,10 @@ initialize_data() {
     
     if [ -f "$PROJECT_ROOT/FD_Module_Group9/scripts/init-local-databases.sql" ]; then
         log_success "FD Account Service database init script found"
+    fi
+    
+    if [ -f "$PROJECT_ROOT/Auth_Sec/auth-service/src/main/resources/db/init.sql" ]; then
+        log_success "Auth Service database init script found"
     fi
     
     log_info "Database initialization will be handled automatically by MySQL containers"
@@ -289,6 +295,7 @@ print_service_urls() {
     log_info "Database Ports:"
     echo -e "  ${GREEN}FD Calculator DB:${NC}   localhost:3307"
     echo -e "  ${GREEN}Product DB:${NC}         localhost:3308"
+    echo -e "  ${GREEN}Auth DB:${NC}            localhost:3309"
     echo -e "  ${GREEN}FD Account DB:${NC}      localhost:3310"
     echo ""
 }

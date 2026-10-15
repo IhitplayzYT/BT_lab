@@ -1,0 +1,138 @@
+{
+  "hash": "a705df04",
+  "configHash": "ea4915aa",
+  "lockfileHash": "b20cf0d5",
+  "browserHash": "e1712b1c",
+  "optimized": {
+    "@angular/animations": {
+      "src": "../../../../../../node_modules/@angular/animations/fesm2022/animations.mjs",
+      "file": "@angular_animations.js",
+      "fileHash": "772b4e94",
+      "needsInterop": false
+    },
+    "@angular/common": {
+      "src": "../../../../../../node_modules/@angular/common/fesm2022/common.mjs",
+      "file": "@angular_common.js",
+      "fileHash": "9d302e0e",
+      "needsInterop": false
+    },
+    "@angular/common/http": {
+      "src": "../../../../../../node_modules/@angular/common/fesm2022/http.mjs",
+      "file": "@angular_common_http.js",
+      "fileHash": "d85bdfdb",
+      "needsInterop": false
+    },
+    "@angular/core": {
+      "src": "../../../../../../node_modules/@angular/core/fesm2022/core.mjs",
+      "file": "@angular_core.js",
+      "fileHash": "87c6e560",
+      "needsInterop": false
+    },
+    "@angular/forms": {
+      "src": "../../../../../../node_modules/@angular/forms/fesm2022/forms.mjs",
+      "file": "@angular_forms.js",
+      "fileHash": "3bf2f835",
+      "needsInterop": false
+    },
+    "@angular/platform-browser": {
+      "src": "../../../../../../node_modules/@angular/platform-browser/fesm2022/platform-browser.mjs",
+      "file": "@angular_platform-browser.js",
+      "fileHash": "3213729f",
+      "needsInterop": false
+    },
+    "@angular/platform-browser/animations/async": {
+      "src": "../../../../../../node_modules/@angular/platform-browser/fesm2022/animations-async.mjs",
+      "file": "@angular_platform-browser_animations_async.js",
+      "fileHash": "56766156",
+      "needsInterop": false
+    },
+    "@angular/router": {
+      "src": "../../../../../../node_modules/@angular/router/fesm2022/router.mjs",
+      "file": "@angular_router.js",
+      "fileHash": "1ec6d126",
+      "needsInterop": false
+    },
+    "gsap": {
+      "src": "../../../../../../../node_modules/gsap/index.js",
+      "file": "gsap.js",
+      "fileHash": "57880868",
+      "needsInterop": false
+    },
+    "gsap/ScrollTrigger": {
+      "src": "../../../../../../../node_modules/gsap/ScrollTrigger.js",
+      "file": "gsap_ScrollTrigger.js",
+      "fileHash": "287787db",
+      "needsInterop": false
+    },
+    "lenis": {
+      "src": "../../../../../../../node_modules/lenis/dist/lenis.mjs",
+      "file": "lenis.js",
+      "fileHash": "49ec9d64",
+      "needsInterop": false
+    },
+    "rxjs": {
+      "src": "../../../../../../node_modules/rxjs/dist/esm5/index.js",
+      "file": "rxjs.js",
+      "fileHash": "8648bb04",
+      "needsInterop": false
+    },
+    "rxjs/operators": {
+      "src": "../../../../../../node_modules/rxjs/dist/esm5/operators/index.js",
+      "file": "rxjs_operators.js",
+      "fileHash": "d7e09168",
+      "needsInterop": false
+    },
+    "three": {
+      "src": "../../../../../../../node_modules/three/build/three.module.js",
+      "file": "three.js",
+      "fileHash": "fc082bd5",
+      "needsInterop": false
+    }
+  },
+  "chunks": {
+    "_dom_renderer-chunk-B4Flrlw7": {
+      "file": "_dom_renderer-chunk-B4Flrlw7.js",
+      "isDynamicEntry": false
+    },
+    "_xhr-chunk-BAX-lOkS": {
+      "file": "_xhr-chunk-BAX-lOkS.js",
+      "isDynamicEntry": false
+    },
+    "browser-C7qT-ik3": {
+      "file": "browser-C7qT-ik3.js",
+      "isDynamicEntry": true
+    },
+    "common-CrHjF_j8": {
+      "file": "common-CrHjF_j8.js",
+      "isDynamicEntry": false
+    },
+    "core-Bfwnsk4L": {
+      "file": "core-Bfwnsk4L.js",
+      "isDynamicEntry": false
+    },
+    "esm5-ZXh7Ahry": {
+      "file": "esm5-ZXh7Ahry.js",
+      "isDynamicEntry": false
+    },
+    "http-TtVJOq0Y": {
+      "file": "http-TtVJOq0Y.js",
+      "isDynamicEntry": false
+    },
+    "operators-DdygPeWq": {
+      "file": "operators-DdygPeWq.js",
+      "isDynamicEntry": false
+    },
+    "platform-browser-wOhfj0Ji": {
+      "file": "platform-browser-wOhfj0Ji.js",
+      "isDynamicEntry": false
+    },
+    "private_export-DmLgnbB_": {
+      "file": "private_export-DmLgnbB_.js",
+      "isDynamicEntry": false
+    },
+    "zipWith-llrjS8GZ": {
+      "file": "zipWith-llrjS8GZ.js",
+      "isDynamicEntry": false
+    }
+  }
+}

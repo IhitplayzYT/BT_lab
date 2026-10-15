@@ -1,5 +1,4 @@
 package com.example.fdauth;
-
 import com.example.fdsecurity.TokenIssuer;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -41,7 +40,6 @@ public class AuthController {
         var account = users.authenticate(request.username(), request.password());
         if (account.isEmpty()) {
             limiter.failed(request.username());
-            // Same answer for an unknown user and a wrong password, so the response never reveals which usernames exist.
             return error(HttpStatus.UNAUTHORIZED, "Invalid username or password");
         }
         limiter.succeeded(request.username());

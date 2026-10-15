@@ -1,0 +1,122 @@
+.section-header {
+  text-align: center;
+  margin-bottom: var(--spacing-3xl);
+  
+  h2 {
+    font-size: clamp(2rem, 4vw, 3rem);
+    margin-bottom: var(--spacing-sm);
+  }
+  
+  p {
+    font-size: 1.125rem;
+    color: var(--color-text-secondary);
+    margin-bottom: var(--spacing-lg);
+  }
+}
+
+.pricing-toggle {
+  display: inline-flex;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 0.25rem;
+  gap: 0.25rem;
+  
+  .toggle-btn {
+    padding: 0.5rem 1.5rem;
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--color-text-secondary);
+    font-weight: 500;
+    transition: all var(--transition-fast);
+    
+    &.active {
+      background: var(--color-primary);
+      color: white;
+    }
+    
+    .save-badge {
+      font-size: 0.75rem;
+      background: var(--color-accent);
+      padding: 0.125rem 0.5rem;
+      border-radius: var(--radius-sm);
+      margin-left: 0.5rem;
+    }
+  }
+}
+
+.pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--spacing-lg);
+}
+
+.pricing-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-xl);
+  position: relative;
+  
+  &.popular {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px var(--color-primary);
+  }
+  
+  .popular-badge {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--color-primary);
+    color: white;
+    padding: 0.25rem 1rem;
+    border-radius: var(--radius-lg);
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+  
+  h3 {
+    font-size: 1.5rem;
+    text-align: center;
+  }
+  
+  .price {
+    text-align: center;
+    
+    .price-amount {
+      font-size: 3rem;
+      font-weight: 700;
+      color: var(--color-text-primary);
+    }
+    
+    .price-period {
+      color: var(--color-text-muted);
+      font-size: 1rem;
+    }
+  }
+  
+  .features-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    
+    li {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+      font-size: 0.9375rem;
+      color: var(--color-text-secondary);
+      
+      .check {
+        color: var(--color-accent);
+        font-weight: 700;
+      }
+    }
+  }
+  
+  .btn {
+    margin-top: auto;
+  }
+}

@@ -1,0 +1,324 @@
+<section class="apply-fd-section section">
+  <div class="container">
+    <div class="section-header">
+      <h1 class="text-gradient">Apply for Fixed Deposit</h1>
+      <p>Start your investment journey in just a few simple steps</p>
+    </div>
+
+    @if (!submitSuccess) {
+      <div class="apply-fd-container">
+        <!-- Progress Steps -->
+        <div class="progress-steps">
+          @for (step of [1, 2, 3]; track step) {
+            <div class="step-item" [class.active]="currentStep >= step" [class.completed]="currentStep > step">
+              <div class="step-number">
+                @if (currentStep > step) {
+                  <span>✓</span>
+                } @else {
+                  <span>{{ step }}</span>
+                }
+              </div>
+              <div class="step-label">
+                @if (step === 1) { Personal Details }
+                @if (step === 2) { FD Details }
+                @if (step === 3) { Bank Details }
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Form -->
+        <form class="apply-fd-form" (submit)="submitApplication()">
+          
+          <!-- Step 1: Personal Details -->
+          @if (currentStep === 1) {
+            <div class="form-section">
+              <h2 class="text-gradient">Personal Information</h2>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label for="fullName">Full Name *</label>
+                  <input 
+                    type="text" 
+                    id="fullName" 
+                    [(ngModel)]="formData.fullName" 
+                    (blur)="validateFullName()"
+                    name="fullName"
+                    required
+                    placeholder="Enter your full name"
+                    [class.error]="fullNameError"
+                  />
+                  @if (fullNameError) {
+                    <div class="validation-error">{{ fullNameError }}</div>
+                  }
+                </div>
+
+                <div class="form-group">
+                  <label for="email">Email Address *</label>
+                  <input 
+                    type="email" 
+                    id="email" 
+                    [(ngModel)]="formData.email" 
+                    (blur)="validateEmail()"
+                    name="email"
+                    required
+                    placeholder="Enter your email"
+                    [class.error]="emailError"
+                  />
+                  @if (emailError) {
+                    <div class="validation-error">{{ emailError }}</div>
+                  }
+                </div>
+
+                <div class="form-group">
+                  <label for="phone">Phone Number *</label>
+                  <input 
+                    type="tel" 
+                    id="phone" 
+                    [(ngModel)]="formData.phone" 
+                    (blur)="validatePhone()"
+                    name="phone"
+                    required
+                    placeholder="Enter your phone number"
+                    [class.error]="phoneError"
+                  />
+                  @if (phoneError) {
+                    <div class="validation-error">{{ phoneError }}</div>
+                  }
+                </div>
+
+                <div class="form-group">
+                  <label for="panNumber">PAN Number *</label>
+                  <input 
+                    type="text" 
+                    id="panNumber" 
+                    [(ngModel)]="formData.panNumber" 
+                    (blur)="validatePanNumber()"
+                    name="panNumber"
+                    required
+                    placeholder="Enter your PAN number"
+                    maxlength="10"
+                    style="text-transform: uppercase"
+                    [class.error]="panNumberError"
+                  />
+                  @if (panNumberError) {
+                    <div class="validation-error">{{ panNumberError }}</div>
+                  }
+                </div>
+              </div>
+            </div>
+          }
+
+          <!-- Step 2: FD Details -->
+          @if (currentStep === 2) {
+            <div class="form-section">
+              <h2 class="text-gradient">Fixed Deposit Details</h2>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label for="principalAmount">Principal Amount (₹) *</label>
+                  <input 
+                    type="number" 
+                    id="principalAmount" 
+                    [(ngModel)]="formData.principalAmount" 
+                    (blur)="validatePrincipalAmount()"
+                    name="principalAmount"
+                    min="10000"
+                    max="10000000"
+                    required
+                    [class.error]="principalAmountError"
+                  />
+                  @if (principalAmountError) {
+                    <div class="validation-error">{{ principalAmountError }}</div>
+                  }
+                  <div class="slider-container">
+                    <input 
+                      type="range" 
+                      [(ngModel)]="formData.principalAmount" 
+                      min="10000" 
+                      max="1000000" 
+                      step="5000"
+                      class="slider"
+                    />
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="tenureMonths">Tenure (Months) *</label>
+                  <input 
+                    type="number" 
+                    id="tenureMonths" 
+                    [(ngModel)]="formData.tenureMonths" 
+                    name="tenureMonths"
+                    min="6"
+                    max="120"
+                    required
+                  />
+                  <div class="slider-container">
+                    <input 
+                      type="range" 
+                      [(ngModel)]="formData.tenureMonths" 
+                      min="6" 
+                      max="120" 
+                      step="6"
+                      class="slider"
+                    />
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="interestType">Interest Type *</label>
+                  <select id="interestType" [(ngModel)]="formData.interestType" name="interestType">
+                    <option value="COMPOUND">Compound Interest</option>
+                    <option value="SIMPLE">Simple Interest</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label for="product">Product Type *</label>
+                  <select id="product" [(ngModel)]="formData.productCode" name="productCode">
+                    @for (product of products; track product.productCode) {
+                      <option [value]="product.productCode">{{ product.productName }}</option>
+                    }
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label for="nomineeName">Nominee Name</label>
+                  <input 
+                    type="text" 
+                    id="nomineeName" 
+                    [(ngModel)]="formData.nomineeName" 
+                    (blur)="validateNomineeName()"
+                    name="nomineeName"
+                    placeholder="Enter nominee name (optional)"
+                    [class.error]="nomineeNameError"
+                  />
+                  @if (nomineeNameError) {
+                    <div class="validation-error">{{ nomineeNameError }}</div>
+                  }
+                </div>
+
+                <div class="form-group">
+                  <label for="nomineeRelation">Nominee Relation</label>
+                  <input 
+                    type="text" 
+                    id="nomineeRelation" 
+                    [(ngModel)]="formData.nomineeRelation" 
+                    name="nomineeRelation"
+                    placeholder="Relationship with nominee"
+                  />
+                </div>
+              </div>
+            </div>
+          }
+
+          <!-- Step 3: Bank Details -->
+          @if (currentStep === 3) {
+            <div class="form-section">
+              <h2 class="text-gradient">Bank Account Details</h2>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label for="accountNumber">Account Number *</label>
+                  <input 
+                    type="text" 
+                    id="accountNumber" 
+                    [(ngModel)]="formData.accountNumber" 
+                    (blur)="validateAccountNumber()"
+                    name="accountNumber"
+                    required
+                    placeholder="Enter your bank account number"
+                    [class.error]="accountNumberError"
+                  />
+                  @if (accountNumberError) {
+                    <div class="validation-error">{{ accountNumberError }}</div>
+                  }
+                </div>
+
+                <div class="form-group">
+                  <label for="ifscCode">IFSC Code *</label>
+                  <input 
+                    type="text" 
+                    id="ifscCode" 
+                    [(ngModel)]="formData.ifscCode" 
+                    (blur)="validateIfscCode()"
+                    name="ifscCode"
+                    required
+                    placeholder="Enter IFSC code"
+                    style="text-transform: uppercase"
+                    [class.error]="ifscCodeError"
+                  />
+                  @if (ifscCodeError) {
+                    <div class="validation-error">{{ ifscCodeError }}</div>
+                  }
+                </div>
+              </div>
+
+              <div class="summary-card card">
+                <h3 class="text-gradient">Application Summary</h3>
+                <div class="summary-grid">
+                  <div class="summary-item">
+                    <span class="summary-label">Name</span>
+                    <span class="summary-value">{{ formData.fullName }}</span>
+                  </div>
+                  <div class="summary-item">
+                    <span class="summary-label">Amount</span>
+                    <span class="summary-value">₹{{ formData.principalAmount.toLocaleString() }}</span>
+                  </div>
+                  <div class="summary-item">
+                    <span class="summary-label">Tenure</span>
+                    <span class="summary-value">{{ formData.tenureMonths }} months</span>
+                  </div>
+                  <div class="summary-item">
+                    <span class="summary-label">Interest Type</span>
+                    <span class="summary-value">{{ formData.interestType }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
+
+          <!-- Navigation Buttons -->
+          <div class="form-actions">
+            @if (currentStep > 1) {
+              <button type="button" class="btn btn-secondary" (click)="prevStep()">
+                ← Previous
+              </button>
+            }
+
+            @if (currentStep < totalSteps) {
+              <button type="button" class="btn btn-primary" (click)="nextStep()">
+                Next →
+              </button>
+            }
+
+            @if (currentStep === totalSteps) {
+              <button type="submit" class="btn btn-primary" [disabled]="isSubmitting">
+                @if (isSubmitting) {
+                  <span class="spinner"></span>
+                  Processing...
+                } @else {
+                  Submit Application
+                }
+              </button>
+            }
+          </div>
+
+          @if (errorMessage) {
+            <div class="error-message">{{ errorMessage }}</div>
+          }
+        </form>
+      </div>
+    } @else {
+      <div class="success-section">
+        <div class="success-card card">
+          <div class="success-icon">✓</div>
+          <h2 class="text-gradient">Application Submitted Successfully!</h2>
+          <p>Your FD application has been received and is being processed. You will receive a confirmation email shortly with your FD details.</p>
+          <div class="success-actions">
+            <button class="btn btn-primary" (click)="resetForm()">Apply Another FD</button>
+            <button class="btn btn-secondary">View Dashboard</button>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+</section>

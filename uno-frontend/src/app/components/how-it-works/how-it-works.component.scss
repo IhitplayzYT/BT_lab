@@ -1,0 +1,48 @@
+.section-header {
+  text-align: center;
+  margin-bottom: var(--spacing-3xl);
+  
+  h2 {
+    font-size: clamp(2rem, 4vw, 3rem);
+    margin-bottom: var(--spacing-sm);
+  }
+  
+  p {
+    font-size: 1.125rem;
+    color: var(--color-text-secondary);
+  }
+}
+
+.steps-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--spacing-lg);
+}
+
+.step-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  padding: var(--spacing-xl);
+  position: relative;
+  
+  .step-number {
+    font-size: 3rem;
+    font-weight: 700;
+    color: var(--color-primary);
+    opacity: 0.3;
+    line-height: 1;
+  }
+  
+  .step-content {
+    h3 {
+      font-size: 1.25rem;
+      margin-bottom: var(--spacing-sm);
+    }
+    
+    p {
+      font-size: 0.9375rem;
+      line-height: 1.6;
+    }
+  }
+}

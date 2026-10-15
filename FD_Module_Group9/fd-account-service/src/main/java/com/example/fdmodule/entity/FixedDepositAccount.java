@@ -37,6 +37,18 @@ public class FixedDepositAccount {
     @Column(length = 20)
     private String status;
 
+    @Column(name = "approval_status", length = 20)
+    private String approvalStatus;
+
+    @Column(name = "approved_by", length = 50)
+    private String approvedBy;
+
+    @Column(name = "approved_at")
+    private LocalDateTime approvedAt;
+
+    @Column(name = "rejection_reason", length = 500)
+    private String rejectionReason;
+
     @Column(name = "maturity_date")
     private LocalDate maturityDate;
 
@@ -59,7 +71,8 @@ public class FixedDepositAccount {
     void prePersist() {
         if (createdAt == null) createdAt = LocalDateTime.now();
         if (uuid == null) uuid = UUID.randomUUID().toString();
-        if (status == null) status = "ACTIVE";
+        if (status == null) status = "PENDING";
+        if (approvalStatus == null) approvalStatus = "PENDING_APPROVAL";
         if (accruedInterest == null) accruedInterest = BigDecimal.ZERO;
     }
 
@@ -81,6 +94,14 @@ public class FixedDepositAccount {
     public void setCompoundingFrequency(String compoundingFrequency) { this.compoundingFrequency = compoundingFrequency; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+    public String getApprovalStatus() { return approvalStatus; }
+    public void setApprovalStatus(String approvalStatus) { this.approvalStatus = approvalStatus; }
+    public String getApprovedBy() { return approvedBy; }
+    public void setApprovedBy(String approvedBy) { this.approvedBy = approvedBy; }
+    public LocalDateTime getApprovedAt() { return approvedAt; }
+    public void setApprovedAt(LocalDateTime approvedAt) { this.approvedAt = approvedAt; }
+    public String getRejectionReason() { return rejectionReason; }
+    public void setRejectionReason(String rejectionReason) { this.rejectionReason = rejectionReason; }
     public LocalDate getMaturityDate() { return maturityDate; }
     public void setMaturityDate(LocalDate maturityDate) { this.maturityDate = maturityDate; }
     public BigDecimal getAccruedInterest() { return accruedInterest; }
