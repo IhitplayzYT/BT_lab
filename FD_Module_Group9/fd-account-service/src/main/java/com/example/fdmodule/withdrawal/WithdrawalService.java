@@ -21,7 +21,7 @@ import java.util.Map;
  * L20 - premature withdrawal (owner: Niranjan; ported from the prototype).
  *
  * <p>Quote and close an ACTIVE FD before its maturity date. Penalty is on interest only:
- * {@code penalty = interest x products.pre_maturity_penalty_pct / 100}, and the customer gets
+ * {@code penalty = interest x product withdrawal fee percentage / 100}, and the customer gets
  * {@code principal + interest - penalty}. Under the FD row lock:
  * <pre>
  * InterestPostingService.accrueThrough(yesterday)      (interest is earned for completed days)
@@ -45,6 +45,7 @@ public class WithdrawalService {
                           BigDecimal penaltyAmount, BigDecimal finalPayoutAmount, LocalDate inquiryDate) {
     }
 
+    private final com.example.fdmodule.client.ProductServiceClient products;
     private final JdbcTemplate jdbc;
     private final InterestPostingService interest;
     private final FDTransactionRepository ledger;
@@ -52,7 +53,8 @@ public class WithdrawalService {
     private final TransactionTemplate tx;
 
     public WithdrawalService(JdbcTemplate jdbc, InterestPostingService interest, FDTransactionRepository ledger,
-                             Outbox outbox, TransactionTemplate tx) {
+                             Outbox outbox, TransactionTemplate tx, com.example.fdmodule.client.ProductServiceClient products) {
+        this.products = products;
         this.jdbc = jdbc;
         this.interest = interest;
         this.ledger = ledger;
@@ -106,8 +108,9 @@ public class WithdrawalService {
         BigDecimal depositBalance = ((BigDecimal) state.get("current_balance")).setScale(2, RoundingMode.HALF_UP);
         BigDecimal unpaidInterest = ((BigDecimal) state.get("accrued_precise")).setScale(2, RoundingMode.HALF_UP);
         BigDecimal totalInterest = depositBalance.subtract(principal).add(unpaidInterest);
-        BigDecimal pct = jdbc.queryForObject("SELECT pre_maturity_penalty_pct FROM products WHERE product_code=?",
-                BigDecimal.class, fd.get("product_code"));
+        var product = products.getProductByCode((String) fd.get("product_code"));
+        var fee = product.path("charges").path("withdrawalFees");
+        BigDecimal pct = fee.isNumber() ? fee.decimalValue() : BigDecimal.ZERO;
         BigDecimal penalty = pct == null ? BigDecimal.ZERO.setScale(2)
                 : totalInterest.multiply(pct).divide(HUNDRED, 2, RoundingMode.HALF_UP);
         BigDecimal payout = principal.add(totalInterest).subtract(penalty);

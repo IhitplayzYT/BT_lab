@@ -1,128 +1,67 @@
 package com.bank.calculator.config;
 
-import com.bank.calculator.security.JwtAuthConverter;
-import com.bank.calculator.security.JwtProperties;
-import io.jsonwebtoken.security.Keys;
+import com.example.fdsecurity.JwtBeans;
+import com.example.fdsecurity.ResourceServerSupport;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
+import org.springframework.context.annotation.Import;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
-import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.security.oauth2.jwt.JwtDecoder;
-import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import javax.crypto.SecretKey;
-import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 
-/**
- * Security configuration for the FD Calculator resource server.
- *
- * <h2>JWT strategy</h2>
- * <p>Currently uses HMAC-256 with a configurable secret ({@code app.jwt.secret}).
- * To switch to an external JWT issuer / RSA validation in production:</p>
- * <ol>
- *   <li>Add {@code spring.security.oauth2.resourceserver.jwt.issuer-uri} to
- *       {@code application-prod.yml}.</li>
- *   <li>Remove the custom {@link #jwtDecoder(JwtProperties)} bean (or guard it
- *       with {@code @ConditionalOnMissingBean}).</li>
- *   <li>Spring Boot auto-configuration will switch to JWKS-backed RSA validation
- *       automatically — no code changes required here.</li>
- * </ol>
- *
- * <h2>Access rules</h2>
- * <ul>
- *   <li>Actuator {@code /actuator/health} — public.</li>
- *   <li>Swagger UI / OpenAPI spec — public.</li>
- *   <li>H2 console — dev-only, whitelisted here (disabled in prod profile).</li>
- *   <li>{@code /api/v1/**} — requires authenticated {@code CUSTOMER} role.</li>
- *   <li>{@code /internal/**} — authenticated (any valid JWT); intended only for
- *       service-to-service calls, never exposed through the public gateway.</li>
- * </ul>
- */
 @Configuration
-@EnableWebSecurity
 @EnableMethodSecurity
+@Import(JwtBeans.class)
 public class SecurityConfig {
-
-    private final JwtAuthConverter jwtAuthConverter;
-    private final JwtProperties jwtProperties;
-
-    public SecurityConfig(JwtAuthConverter jwtAuthConverter, JwtProperties jwtProperties) {
-        this.jwtAuthConverter = jwtAuthConverter;
-        this.jwtProperties = jwtProperties;
-    }
+    private static final Logger log = LoggerFactory.getLogger(SecurityConfig.class);
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-            .csrf(AbstractHttpConfigurer::disable)
-            .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .headers(h -> h
-                .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'self'"))
-                .frameOptions(fo -> fo.sameOrigin()) // needed for H2 console iframe
-                .xssProtection(xss -> xss.disable())
-                .httpStrictTransportSecurity(hsts -> hsts
-                    .includeSubDomains(true)
-                    .maxAgeInSeconds(31536000))
-                .contentTypeOptions(content -> content.disable())
-            )
-            .authorizeHttpRequests(auth -> auth
-                // ── Public / infra ──────────────────────────────────────────
-                .requestMatchers(HttpMethod.GET, "/actuator/health", "/actuator/info").permitAll()
-                .requestMatchers(
-                    "/swagger-ui/**",
-                    "/swagger-ui.html",
-                    "/v3/api-docs/**",
-                    "/v3/api-docs"
-                ).permitAll()
-                .requestMatchers("/h2-console/**").permitAll()   // disabled in prod profile
-                // ── Public FD calculation APIs (JWT required, CUSTOMER role) ──
-                .requestMatchers("/api/v1/**").hasRole("CUSTOMER")
-                // ── Internal service-to-service (any valid JWT) ────────────
-                .requestMatchers("/internal/**").authenticated()
-                // ── Everything else — deny ─────────────────────────────────
-                .anyRequest().denyAll()
-            )
-            .oauth2ResourceServer(oauth2 -> oauth2
-                .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthConverter))
-            );
+    CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:4200", "http://localhost:4201", "http://127.0.0.1:4200"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(Arrays.asList("*"));
+        configuration.setAllowCredentials(true);
+        configuration.setMaxAge(3600L);
 
-        return http.build();
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
     }
 
     /**
-     * Custom {@link JwtDecoder} backed by the HMAC-256 secret from configuration.
-     *
-     * <p>For production migration to RSA / JWKS, remove this bean (or add
-     * {@code @ConditionalOnProperty(name = "spring.security.oauth2.resourceserver.jwt.issuer-uri",
-     * matchIfMissing = false)}) and Spring Boot will auto-configure a JWKS decoder.</p>
+     * JWT-only authentication. All callers must provide a valid JWT token from auth-service.
+     * HTTP Basic auth is disabled for production security.
      */
     @Bean
-    @org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean(JwtDecoder.class)
-    public JwtDecoder jwtDecoder(JwtProperties props) {
-        byte[] secretBytes = props.getSecret().getBytes(StandardCharsets.UTF_8);
-        SecretKey key = Keys.hmacShaKeyFor(secretBytes);
-        NimbusJwtDecoder decoder = NimbusJwtDecoder.withSecretKey(key).build();
+    SecurityFilterChain securityFilterChain(HttpSecurity http, ObjectProvider<JwtDecoder> jwtDecoder,
+                                            JwtAuthenticationConverter jwtConverter,
+                                            @Value("${app.security.basic.enabled:false}") boolean basicEnabled,
+                                            @Value("${app.jwt.secret:}") String jwtSecret,
+                                            @Value("${app.jwt.issuer:fd-platform-auth}") String jwtIssuer) throws Exception {
+        http
+            .sessionManagement(session -> session.sessionCreationPolicy(org.springframework.security.config.http.SessionCreationPolicy.STATELESS))
+            .csrf(csrf -> csrf.disable())
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/error", "/actuator/health", "/actuator/info", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                .requestMatchers("/api/v1/fd/**").hasAnyRole("CUSTOMER", "BANK_OFFICER", "ADMIN")
+                .anyRequest().authenticated()
+            )
+            .formLogin(form -> form.disable());
+        ResourceServerSupport.apply(http, jwtDecoder, jwtConverter, basicEnabled);
 
-        if (props.getIssuer() != null && !props.getIssuer().isBlank()) {
-            org.springframework.security.oauth2.core.OAuth2TokenValidator<Jwt> withIssuer =
-                    org.springframework.security.oauth2.jwt.JwtValidators.createDefaultWithIssuer(props.getIssuer());
-
-            if (props.getAudience() != null && !props.getAudience().isBlank()) {
-                org.springframework.security.oauth2.core.OAuth2TokenValidator<Jwt> withAudience =
-                        new org.springframework.security.oauth2.jwt.JwtClaimValidator<Object>(
-                                "aud",
-                                aud -> aud == null || (aud instanceof java.util.List<?> l ? l.contains(props.getAudience()) : props.getAudience().equals(aud.toString())));
-                decoder.setJwtValidator(new org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator<>(withIssuer, withAudience));
-            } else {
-                decoder.setJwtValidator(withIssuer);
-            }
-        }
-        return decoder;
+        return http.build();
     }
 }

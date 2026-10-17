@@ -17,6 +17,9 @@ import java.math.BigDecimal;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ProductConfigDto {
 
+    private java.util.Map<String, BigDecimal> categoryBonuses;
+    public java.util.Map<String, BigDecimal> getCategoryBonuses() { return categoryBonuses; }
+    public void setCategoryBonuses(java.util.Map<String, BigDecimal> value) { categoryBonuses = value; }
     private String productCode;
     private String productName;
     private String productType;

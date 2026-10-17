@@ -23,6 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(classes=KafkaDeliveryIntegrationTest.App.class,properties={
  "spring.datasource.url=jdbc:h2:mem:kafkaDelivery;DB_CLOSE_DELAY=-1",
  "spring.sql.init.mode=never",
+ "events.enabled=true",
  "spring.kafka.producer.key-serializer=org.apache.kafka.common.serialization.StringSerializer",
  "spring.kafka.producer.value-serializer=org.apache.kafka.common.serialization.StringSerializer",
  "spring.kafka.producer.acks=all",

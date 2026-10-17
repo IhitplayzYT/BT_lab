@@ -1,8 +1,0 @@
-com/example/fdauth/LoginAttemptLimiter.class
-com/example/fdauth/UserDirectory.class
-com/example/fdauth/LoginAttemptLimiter$State.class
-com/example/fdauth/SecurityConfig.class
-com/example/fdauth/AuthController.class
-com/example/fdauth/UserDirectory$Account.class
-com/example/fdauth/Application.class
-com/example/fdauth/AuthController$LoginRequest.class

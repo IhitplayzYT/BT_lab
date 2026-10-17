@@ -24,6 +24,6 @@ public interface ProductClient {
      * @param productCode the FD product code (e.g. "FD001")
      * @return calculator config DTO
      */
-    @GetMapping("/api/v1/products/internal/products/{productCode}/calculator-config")
+    @GetMapping("/internal/products/{productCode}/calculator-config")
     ProductConfigDto getCalculatorConfig(@PathVariable("productCode") String productCode);
 }

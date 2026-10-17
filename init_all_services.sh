@@ -59,7 +59,7 @@ check_port() {
 wait_for_service() {
     local service_name=$1
     local url=$2
-    local max_attempts=60
+    local max_attempts=30
     local attempt=1
     
     log_info "Waiting for $service_name to be healthy..."
@@ -70,11 +70,11 @@ wait_for_service() {
             return 0
         fi
         echo -n "." | tee -a "$LOG_FILE"
-        sleep 5
+        sleep 3
         attempt=$((attempt + 1))
     done
     
-    log_error "$service_name failed to become healthy after $((max_attempts * 5)) seconds"
+    log_error "$service_name failed to become healthy after $((max_attempts * 3)) seconds"
     return 1
 }
 
@@ -89,7 +89,7 @@ check_container_health() {
     # Check if container has healthcheck
     has_healthcheck=$(docker inspect --format='{{.State.Health}}' "$container_name" 2>/dev/null)
     
-    if [ "$has_healthcheck" = "<no value>" ] || [ -z "$has_healthcheck" ]; then
+    if [ "$has_healthcheck" = "<no value>" ] || [ "$has_healthcheck" = "<nil>" ] || [ -z "$has_healthcheck" ]; then
         log_warning "$container_name has no healthcheck defined, skipping health check"
         # Just verify container is running
         if docker ps --format '{{.Names}}' | grep -q "^${container_name}$"; then
@@ -113,7 +113,7 @@ check_container_health() {
         fi
         
         echo -n "." | tee -a "$LOG_FILE"
-        sleep 5
+        sleep 3
         attempt=$((attempt + 1))
     done
     
@@ -180,6 +180,11 @@ build_and_start() {
     
     cd "$PROJECT_ROOT"
     
+    # The other service images consume local JARs; rebuild them from current source.
+    mvn -B -f Auth_Sec/pom.xml install -DskipTests >> "$LOG_FILE" 2>&1
+    mvn -B -f banking-product-backend/pom.xml package -DskipTests >> "$LOG_FILE" 2>&1
+    mvn -B -f FD_Module_Group9/pom.xml -pl fd-account-service -am package -DskipTests >> "$LOG_FILE" 2>&1
+    mvn -B -f "fd_calc/mod 4 backend/pom.xml" package -DskipTests >> "$LOG_FILE" 2>&1
     # Build and start services
     if docker compose -f "$COMPOSE_FILE" up -d --build &>> "$LOG_FILE"; then
         log_success "Containers built and started"
@@ -201,6 +206,7 @@ wait_for_services() {
     check_container_health "fd-mysql"
     check_container_health "product-mysql"
     check_container_health "fd-group9-mysql"
+    check_container_health "auth-mysql"
     
     # Wait for Kafka
     check_container_health "kafka"
@@ -214,28 +220,34 @@ wait_for_services() {
     # Wait for HTTP endpoints to respond
     log_info "Waiting for HTTP endpoints to respond..."
     
-    wait_for_service "Auth Service" "http://localhost:$AUTH_PORT/api/auth/login" || true
-    wait_for_service "Product Service" "http://localhost:$PRODUCT_PORT/api/v1/products/active" || true
-    wait_for_service "Calculator Service" "http://localhost:$CALCULATOR_PORT/actuator/health" || true
-    wait_for_service "Account Service" "http://localhost:$ACCOUNT_PORT/health" || true
+    wait_for_service "Auth Service" "http://localhost:$AUTH_PORT/health"
+    wait_for_service "Product Service" "http://localhost:$PRODUCT_PORT/actuator/health"
+    wait_for_service "Calculator Service" "http://localhost:$CALCULATOR_PORT/actuator/health"
+    wait_for_service "Account Service" "http://localhost:$ACCOUNT_PORT/health"
 }
 
 # Initialize data
 initialize_data() {
     log_info "Checking database initialization..."
     
+    docker exec -i fd-group9-mysql sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD"' < "$PROJECT_ROOT/FD_Module_Group9/fd-account-service/sql/migration_remove_product_fk.sql"
+    docker exec -i product-mysql sh -c 'mysql -uproduct_user -p"$MYSQL_PASSWORD"' < "$PROJECT_ROOT/banking-product-backend/migration_legacy_id.sql"
     # Databases are initialized automatically via docker-entrypoint-initdb.d
     # Check if initialization scripts exist
     if [ -f "$PROJECT_ROOT/fd_calc/mod 4 backend/src/main/resources/db/init.sql" ]; then
         log_success "FD Calculator database init script found"
     fi
     
-    if [ -f "$PROJECT_ROOT/product&pricing module/product&pricing module/banking-product-backend/schema.sql" ]; then
+    if [ -f "$PROJECT_ROOT/banking-product-backend/schema.sql" ]; then
         log_success "Product Service database schema found"
     fi
     
     if [ -f "$PROJECT_ROOT/FD_Module_Group9/scripts/init-local-databases.sql" ]; then
         log_success "FD Account Service database init script found"
+    fi
+    
+    if [ -f "$PROJECT_ROOT/Auth_Sec/auth-service/src/main/resources/db/init.sql" ]; then
+        log_success "Auth Service database init script found"
     fi
     
     log_info "Database initialization will be handled automatically by MySQL containers"
@@ -256,7 +268,7 @@ verify_services() {
     fi
     
     # Check Product Service
-    if curl -s -f "http://localhost:$PRODUCT_PORT/api/v1/products/active" > /dev/null 2>&1; then
+    if curl -s -f "http://localhost:$PRODUCT_PORT/actuator/health" > /dev/null 2>&1; then
         log_success "Product Service is responding on port $PRODUCT_PORT"
     else
         log_warning "Product Service may not be fully ready yet"
@@ -289,6 +301,7 @@ print_service_urls() {
     log_info "Database Ports:"
     echo -e "  ${GREEN}FD Calculator DB:${NC}   localhost:3307"
     echo -e "  ${GREEN}Product DB:${NC}         localhost:3308"
+    echo -e "  ${GREEN}Auth DB:${NC}            localhost:3309"
     echo -e "  ${GREEN}FD Account DB:${NC}      localhost:3310"
     echo ""
 }
@@ -306,7 +319,6 @@ main() {
     echo "Full log available at: $LOG_FILE"
     echo ""
     
-    stop_existing_containers
     build_and_start
     wait_for_services
     initialize_data

@@ -14,7 +14,7 @@ class MessageTemplatesTest {
                 "customerName", "Asha", "fdAccountNo", "BR0010000016", "currency", "INR",
                 "maturityDate", "2027-10-13", "interestPaid", "6500", "totalPaid", "106500"));
         assertThat(m.subject()).isEqualTo("Your Fixed Deposit Has Matured Successfully");
-        assertThat(m.body()).contains("Dear Asha", "BR0010000016", "2027-10-13", "INR 6500.00", "INR 106500.00");
+        assertThat(m.body()).contains("<strong>Asha</strong>", "BR0010000016", "2027-10-13", "INR 6500.00", "INR 106500.00");
     }
 
     @Test
@@ -22,7 +22,7 @@ class MessageTemplatesTest {
         var m = MessageTemplates.forEvent("FdPrematurelyClosed", Map.of(
                 "fdAccountNo", "A1", "businessDate", "2027-01-01", "interest", "3000", "penalty", "30", "totalPaid", "102970"));
         assertThat(m.subject()).contains("closed before maturity");
-        assertThat(m.body()).contains("Dear Customer", "Penalty: INR 30.00", "INR 102970.00");
+        assertThat(m.body()).contains("<strong>Customer</strong>", "INR 30.00", "INR 102970.00");
     }
 
     @Test

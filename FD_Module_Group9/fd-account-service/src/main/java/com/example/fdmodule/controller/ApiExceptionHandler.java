@@ -38,8 +38,8 @@ public class ApiExceptionHandler {
         return ResponseEntity.badRequest().body(body);
     }
 
-    @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<Map<String, Object>> handleMalformedJson(HttpMessageNotReadableException ex, HttpServletRequest req) {
+    @ExceptionHandler({HttpMessageNotReadableException.class, org.springframework.web.bind.MissingServletRequestParameterException.class})
+    public ResponseEntity<Map<String, Object>> handleMalformedJson(Exception ex, HttpServletRequest req) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(createErrorBody(HttpStatus.BAD_REQUEST, "MALFORMED_REQUEST",
                         "Request body is malformed or missing", req.getRequestURI()));
@@ -57,6 +57,19 @@ public class ApiExceptionHandler {
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(createErrorBody(HttpStatus.FORBIDDEN, "FORBIDDEN",
                         "You do not have permission to access this resource", req.getRequestURI()));
+    }
+
+    @ExceptionHandler(org.springframework.web.client.HttpStatusCodeException.class)
+    public ResponseEntity<Map<String, Object>> upstream(org.springframework.web.client.HttpStatusCodeException ex, HttpServletRequest req) {
+        int code = ex.getStatusCode().value();
+        HttpStatus status = code == 400 || code == 404 || code == 422 ? HttpStatus.valueOf(code) : HttpStatus.SERVICE_UNAVAILABLE;
+        return ResponseEntity.status(status).body(createErrorBody(status, "PRODUCT_SERVICE_ERROR",
+                status == HttpStatus.SERVICE_UNAVAILABLE ? "Product service is unavailable" : "Product does not exist or does not permit the requested deposit", req.getRequestURI()));
+    }
+
+    @ExceptionHandler(org.springframework.web.client.ResourceAccessException.class)
+    public ResponseEntity<Map<String, Object>> unavailable(Exception ex, HttpServletRequest req) {
+        return ResponseEntity.status(503).body(createErrorBody(HttpStatus.SERVICE_UNAVAILABLE, "PRODUCT_SERVICE_UNAVAILABLE", "Product service is unavailable", req.getRequestURI()));
     }
 
     @ExceptionHandler(Exception.class)

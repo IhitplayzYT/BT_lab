@@ -41,8 +41,6 @@
 /home/ihitplayzyt/Downloads/BT_LAB/fd_calc/mod 4 backend/src/main/java/com/bank/calculator/model/enums/PayoutMode.java
 /home/ihitplayzyt/Downloads/BT_LAB/fd_calc/mod 4 backend/src/main/java/com/bank/calculator/model/enums/TermUnit.java
 /home/ihitplayzyt/Downloads/BT_LAB/fd_calc/mod 4 backend/src/main/java/com/bank/calculator/repository/CalculationAuditRepository.java
-/home/ihitplayzyt/Downloads/BT_LAB/fd_calc/mod 4 backend/src/main/java/com/bank/calculator/security/JwtAuthConverter.java
-/home/ihitplayzyt/Downloads/BT_LAB/fd_calc/mod 4 backend/src/main/java/com/bank/calculator/security/JwtProperties.java
 /home/ihitplayzyt/Downloads/BT_LAB/fd_calc/mod 4 backend/src/main/java/com/bank/calculator/service/AuditService.java
 /home/ihitplayzyt/Downloads/BT_LAB/fd_calc/mod 4 backend/src/main/java/com/bank/calculator/service/CalculationEngine.java
 /home/ihitplayzyt/Downloads/BT_LAB/fd_calc/mod 4 backend/src/main/java/com/bank/calculator/service/CategoryBonusService.java

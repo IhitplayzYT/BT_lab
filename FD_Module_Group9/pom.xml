@@ -24,18 +24,11 @@
                 <artifactId>event-common</artifactId>
                 <version>1.0.0</version>
             </dependency>
-            <dependency>
-                <groupId>com.example</groupId>
-                <artifactId>security-common</artifactId>
-                <version>1.0.0</version>
-            </dependency>
         </dependencies>
     </dependencyManagement>
     
     <modules>
         <module>event-common</module>
-        <module>security-common</module>
-        <module>auth-service</module>
         <module>fd-account-service</module>
         <module>interest-batch-service</module>
         <module>notification-service</module>

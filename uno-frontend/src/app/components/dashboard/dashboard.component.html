@@ -1,0 +1,693 @@
+<div class="dashboard">
+  <div class="container">
+    <div class="dashboard-header">
+      <div>
+        <h1>Welcome back, {{ user()?.username || 'User' }}</h1>
+        <p>Manage your fixed deposits and track your investments</p>
+      </div>
+      <div class="header-actions">
+        <button class="theme-toggle" (click)="toggleTheme()" title="Toggle dark/light mode">
+          @if (isDarkMode) {
+            <span>☀️</span>
+          } @else {
+            <span>🌙</span>
+          }
+        </button>
+        <button class="btn btn-accent" (click)="advanceTimeByMonth()" [disabled]="isAdvancingTime()" title="Advance time by 1 month (Test Mode)">
+          @if (isAdvancingTime()) {
+            <span>⏳ Advancing...</span>
+          } @else {
+            <span>⏰ +1 Month</span>
+          }
+        </button>
+        <button class="btn btn-primary" (click)="navigateToApplyFD()">Apply for FD</button>
+        <button class="btn btn-secondary" (click)="logout()">Logout</button>
+      </div>
+    </div>
+
+    @if (isLoading()) {
+      <div class="loading-state">
+        <p>Loading your dashboard...</p>
+      </div>
+    } @else {
+      <div class="dashboard-content">
+        <!-- Tab Navigation -->
+        <div class="tab-navigation">
+          <button class="tab-btn" [class.active]="activeTab() === 'portfolio'" (click)="setActiveTab('portfolio')">
+            <span>Portfolio</span>
+          </button>
+          <button class="tab-btn" [class.active]="activeTab() === 'applications'" (click)="setActiveTab('applications')">
+            <span>Applications</span>
+          </button>
+          <button class="tab-btn" [class.active]="activeTab() === 'contracts'" (click)="setActiveTab('contracts')">
+            <span>Contracts</span>
+          </button>
+          <button class="tab-btn" [class.active]="activeTab() === 'export'" (click)="setActiveTab('export')">
+            <span>Export</span>
+          </button>
+          <button class="tab-btn" [class.active]="activeTab() === 'settings'" (click)="setActiveTab('settings')">
+            <span>Settings</span>
+          </button>
+          <button class="tab-btn" [class.active]="activeTab() === 'help'" (click)="setActiveTab('help')">
+            <span>Help</span>
+          </button>
+        </div>
+
+        <!-- Portfolio Tab -->
+        @if (activeTab() === 'portfolio') {
+          <div class="tab-content">
+            <div class="stats-grid">
+              <div class="stat-card card">
+                <span class="stat-label">Total FD Accounts</span>
+                <span class="stat-value">{{ fdAccounts().length }}</span>
+              </div>
+              <div class="stat-card card">
+                <span class="stat-label">Available Products</span>
+                <span class="stat-value">{{ products().length }}</span>
+              </div>
+              <div class="stat-card card">
+                <span class="stat-label">Account Type</span>
+                <span class="stat-value">CUSTOMER</span>
+              </div>
+            </div>
+
+            <!-- FD Rates Chart -->
+            <div class="dashboard-section">
+              <h2>FD Interest Rates by Tenure</h2>
+              <div class="chart-container card">
+                <div class="chart-bars">
+                  @for (product of products(); track product.productCode) {
+                    @if (product.rateLimit && product.termLimit) {
+                      <div class="chart-bar-group">
+                        <div class="chart-bar" [style.height.%]="((product.termLimit.max || 120) * 0.7) + 20">
+                          <span class="chart-value">{{ product.rateLimit.max || 7.5 }}%</span>
+                        </div>
+                        <span class="chart-label">{{ product.productCode }}</span>
+                      </div>
+                    }
+                  } @empty {
+                    <p class="no-data">Loading rate data...</p>
+                  }
+                </div>
+                <p class="chart-note">Interest rates based on active products. Rates vary by product type and tenure.</p>
+              </div>
+            </div>
+
+            <!-- Recommended Packages -->
+            <div class="dashboard-section">
+              <h2>Recommended FD Packages</h2>
+              <p class="section-description">Quick-purchase portfolios with optimized returns for different investment goals.</p>
+              <div class="packages-grid">
+                @for (pkg of recommendedPackages(); track pkg.id) {
+                  <div class="package-card card">
+                    @if (pkg.badge) {
+                      <span class="package-badge">{{ pkg.badge }}</span>
+                    }
+                    <h3>{{ pkg.name }}</h3>
+                    <p class="package-description">{{ pkg.description }}</p>
+                    <div class="package-details">
+                      <div class="detail-item">
+                        <span class="label">Total Investment</span>
+                        <span class="value">{{ formatCurrency(pkg.totalAmount) }}</span>
+                      </div>
+                      <div class="detail-item">
+                        <span class="label">Est. Returns</span>
+                        <span class="value text-accent">{{ formatCurrency(pkg.estimatedReturn) }}</span>
+                      </div>
+                      <div class="detail-item">
+                        <span class="label">FDs Included</span>
+                        <span class="value">{{ pkg.products.length }}</span>
+                      </div>
+                    </div>
+                    <div class="package-products">
+                      <h4>Includes:</h4>
+                      @for (prod of pkg.products; track $index) {
+                        <div class="mini-product">
+                          <span>{{ prod.productCode }}</span>
+                          <span>{{ formatCurrency(prod.amount) }} / {{ prod.tenure }}m</span>
+                        </div>
+                      }
+                    </div>
+                    <button class="btn btn-primary" (click)="quickPurchase(pkg)">Quick Purchase</button>
+                  </div>
+                }
+              </div>
+            </div>
+
+            <div class="dashboard-section">
+              <h2>Available FD Products</h2>
+              <div class="products-grid">
+                @for (product of products(); track product.productCode) {
+                  <div class="product-card card">
+                    <h3>{{ product.productName }}</h3>
+                    <p class="product-code">{{ product.productCode }}</p>
+                    <div class="product-details">
+                      <div class="detail-item">
+                        <span class="label">Interest Rate:</span>
+                        <span class="value">{{ product.rateLimit?.max || 7.0 }}%</span>
+                      </div>
+                      <div class="detail-item">
+                        <span class="label">Min Deposit:</span>
+                        <span class="value">{{ formatCurrency(product.minDeposit || 10000) }}</span>
+                      </div>
+                      <div class="detail-item">
+                        <span class="label">Tenure:</span>
+                        <span class="value">{{ product.termLimit?.min || 6 }} - {{ product.termLimit?.max || 120 }} months</span>
+                      </div>
+                    </div>
+                    <button class="btn btn-primary" (click)="navigateToCalculator()">Calculate Returns</button>
+                  </div>
+                } @empty {
+                  <p class="no-data">No products available</p>
+                }
+              </div>
+            </div>
+
+            @if (fdAccounts().length > 0) {
+              <div class="dashboard-section">
+                <h2>Your FD Accounts (Portfolio)</h2>
+                <div class="accounts-table">
+                  <table class="table">
+                    <thead>
+                      <tr>
+                        <th>Account No</th>
+                        <th>Principal</th>
+                        <th>Interest Rate</th>
+                        <th>Tenure</th>
+                        <th>Maturity Date</th>
+                        <th>Status</th>
+                        <th>Approval Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (account of fdAccounts(); track account.fdAccountNo) {
+                        <tr>
+                          <td>{{ account.fdAccountNo }}</td>
+                          <td>{{ formatCurrency(account.principalAmount || 0) }}</td>
+                          <td>{{ account.interestRate }}%</td>
+                          <td>{{ account.termMonths }} months</td>
+                          <td>{{ account.maturityDate }}</td>
+                          <td>
+                            <span class="badge" [class.active]="account.status === 'ACTIVE'">
+                              {{ account.status }}
+                            </span>
+                          </td>
+                          <td>
+                            <span class="approval-badge" [class]="account.approvalStatus?.toLowerCase()">
+                              {{ account.approvalStatus || 'PENDING' }}
+                            </span>
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            } @else {
+              <div class="dashboard-section">
+                <h2>Your FD Accounts (Portfolio)</h2>
+                <div class="empty-state card">
+                  <p>You don't have any FD accounts yet.</p>
+                  <button class="btn btn-primary" (click)="navigateToApplyFD()">Apply for your first FD</button>
+                </div>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Applications Tab -->
+        @if (activeTab() === 'applications') {
+          <div class="tab-content">
+            <div class="dashboard-section">
+              <h2>Active Applications</h2>
+              <p class="section-description">Track your FD application status and approval timeline.</p>
+              
+              @if (activeApplications().length === 0) {
+                <div class="empty-state card">
+                  <p>No active applications found.</p>
+                  <button class="btn btn-primary" (click)="navigateToApplyFD()">Apply for FD</button>
+                </div>
+              } @else {
+                <div class="applications-table">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Application ID</th>
+                        <th>Product</th>
+                        <th>Amount</th>
+                        <th>Tenure</th>
+                        <th>Status</th>
+                        <th>Submitted</th>
+                        <th>Approved</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (app of activeApplications(); track app.fdAccountNo) {
+                        <tr>
+                          <td>{{ app.fdAccountNo }}</td>
+                          <td>{{ app.productCode }}</td>
+                          <td>{{ formatCurrency(app.principalAmount) }}</td>
+                          <td>{{ app.tenureMonths }} months</td>
+                          <td>
+                            <span class="status-badge" [class]="app.status?.toLowerCase()">
+                              {{ app.status }}
+                            </span>
+                          </td>
+                          <td>{{ app.createdAt }}</td>
+                          <td>{{ app.approvalStatus || '-' }}</td>
+                          <td>
+                            @if (app.status === 'PENDING' || app.approvalStatus === 'PENDING_APPROVAL') {
+                              <button class="btn btn-sm btn-secondary">Withdraw</button>
+                            }
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Contracts Tab -->
+        @if (activeTab() === 'contracts') {
+          <div class="tab-content">
+            <div class="dashboard-section">
+              <h2>My Contracts</h2>
+              <p class="section-description">Manage your active FD contracts and view aggregate holdings.</p>
+              
+              <div class="contracts-summary card">
+                <h3>Portfolio Summary</h3>
+                <div class="summary-stats">
+                  <div class="stat">
+                    <span class="label">Total Investment</span>
+                    <span class="value">{{ formatCurrency(totalInvestment) }}</span>
+                  </div>
+                  <div class="stat">
+                    <span class="label">Total Interest Earned</span>
+                    <span class="value">{{ formatCurrency(totalInterestEarned) }}</span>
+                  </div>
+                  <div class="stat">
+                    <span class="label">Active Contracts</span>
+                    <span class="value">{{ activeContractsCount }}</span>
+                  </div>
+                </div>
+              </div>
+
+              @if (fdAccounts().length === 0) {
+                <div class="empty-state card">
+                  <p>No active contracts found.</p>
+                  <button class="btn btn-primary" (click)="navigateToApplyFD()">Apply for FD</button>
+                </div>
+              } @else {
+                <div class="contracts-grid">
+                  @for (account of fdAccounts(); track account.fdAccountNo) {
+                    <div class="contract-card card">
+                      <div class="contract-header">
+                        <h4>{{ account.productName || account.productCode }}</h4>
+                        <span class="contract-id">{{ account.fdAccountNo }}</span>
+                      </div>
+                      <div class="contract-details">
+                        <div class="detail">
+                          <span class="label">Principal</span>
+                          <span class="value">{{ formatCurrency(account.principalAmount || 0) }}</span>
+                        </div>
+                        <div class="detail">
+                          <span class="label">Maturity Amount</span>
+                          <span class="value">{{ formatCurrency(account.maturityAmount || 0) }}</span>
+                        </div>
+                        <div class="detail">
+                          <span class="label">Interest Rate</span>
+                          <span class="value">{{ account.interestRate }}%</span>
+                        </div>
+                        <div class="detail">
+                          <span class="label">Tenure</span>
+                          <span class="value">{{ account.tenureMonths }} months</span>
+                        </div>
+                        <div class="detail">
+                          <span class="label">Maturity Date</span>
+                          <span class="value">{{ account.maturityDate }}</span>
+                        </div>
+                        <div class="detail">
+                          <span class="label">Status</span>
+                          <span class="value active">{{ account.status }}</span>
+                        </div>
+                      </div>
+                      <div class="contract-actions">
+                        <button class="btn btn-sm btn-secondary" (click)="viewContractDetails(account)">View Details</button>
+                        @if (account.status === 'ACTIVE') {
+                          <button class="btn btn-sm btn-error" (click)="prematureClose(account)">Premature Close</button>
+                        }
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Export Tab -->
+        @if (activeTab() === 'export') {
+          <div class="tab-content">
+            <div class="dashboard-section">
+              <h2>Export Your Data</h2>
+              <p class="section-description">Download your FD portfolio and earnings reports in various formats.</p>
+              
+              <div class="export-options card">
+                <h3>Available Exports</h3>
+                <div class="export-grid">
+                  <div class="export-option">
+                    <div class="export-icon">📄</div>
+                    <h4>Portfolio PDF</h4>
+                    <p>Download your complete FD portfolio as a PDF document with all account details.</p>
+                    <button class="btn btn-primary" (click)="exportToPDF()">Download PDF</button>
+                  </div>
+                  
+                  <div class="export-option">
+                    <div class="export-icon">📊</div>
+                    <h4>Portfolio CSV</h4>
+                    <p>Export your FD data in CSV format for spreadsheet analysis and record-keeping.</p>
+                    <button class="btn btn-primary" (click)="exportToCSV()">Download CSV</button>
+                  </div>
+                  
+                  <div class="export-option">
+                    <div class="export-icon">💰</div>
+                    <h4>Earnings Report (Excel)</h4>
+                    <p>Comprehensive earnings report with interest calculations, maturity amounts, and tax information.</p>
+                    <button class="btn btn-primary" (click)="exportEarningsReport()">Download Excel</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="export-info card">
+                <h3>Export Information</h3>
+                <ul class="info-list">
+                  <li><strong>PDF Format:</strong> Best for printing and official documentation</li>
+                  <li><strong>CSV Format:</strong> Ideal for data analysis and importing into other systems</li>
+                  <li><strong>Excel Format:</strong> Comprehensive report with detailed calculations and charts</li>
+                  <li><strong>Data Included:</strong> Account details, principal amounts, interest rates, maturity dates, and earnings</li>
+                  <li><strong>Privacy:</strong> Your data is encrypted during download</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- Settings Tab -->
+        @if (activeTab() === 'settings') {
+          <div class="tab-content">
+            <div class="settings-section card">
+              <h2 class="text-gradient">Account Settings</h2>
+              <p class="section-description">Manage your default details for FD applications. These details will be auto-filled for future applications.</p>
+              
+              <form class="settings-form" (ngSubmit)="saveSettings()">
+                <div class="form-grid">
+                  <div class="form-group">
+                    <label for="defaultCurrency">Default Currency</label>
+                    <select id="defaultCurrency" [(ngModel)]="settingsData.defaultCurrency" name="defaultCurrency">
+                      @for (currency of supportedCurrencies; track currency.code) {
+                        <option [value]="currency.code">{{ currency.name }} ({{ currency.code }})</option>
+                      }
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="firstName">First Name</label>
+                    <input type="text" id="firstName" [(ngModel)]="settingsData.firstName" name="firstName" placeholder="Enter your first name" />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="middleName">Middle Name</label>
+                    <input type="text" id="middleName" [(ngModel)]="settingsData.middleName" name="middleName" placeholder="Enter your middle name (optional)" />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="lastName">Last Name</label>
+                    <input type="text" id="lastName" [(ngModel)]="settingsData.lastName" name="lastName" placeholder="Enter your last name" />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input 
+                      type="email" 
+                      id="email" 
+                      [(ngModel)]="settingsData.email" 
+                      name="email"
+                      placeholder="Enter your email"
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="phone">Phone Number</label>
+                    <input 
+                      type="tel" 
+                      id="phone" 
+                      [(ngModel)]="settingsData.phone" 
+                      name="phone"
+                      placeholder="Enter your phone number"
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="panNumber">PAN Number</label>
+                    <input 
+                      type="text" 
+                      id="panNumber" 
+                      [(ngModel)]="settingsData.panNumber" 
+                      name="panNumber"
+                      placeholder="Enter your PAN number"
+                      maxlength="10"
+                      style="text-transform: uppercase"
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="age">Age</label>
+                    <input 
+                      type="number" 
+                      id="age" 
+                      [(ngModel)]="settingsData.age" 
+                      name="age"
+                      placeholder="Enter your age"
+                      min="18"
+                      max="120"
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="gender">Gender</label>
+                    <select id="gender" [(ngModel)]="settingsData.gender" name="gender">
+                      <option value="">-- Select Gender --</option>
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="occupation">Occupation</label>
+                    <input 
+                      type="text" 
+                      id="occupation" 
+                      [(ngModel)]="settingsData.occupation" 
+                      name="occupation"
+                      placeholder="Enter your occupation"
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="annualIncome">Annual Income (₹)</label>
+                    <input 
+                      type="number" 
+                      id="annualIncome" 
+                      [(ngModel)]="settingsData.annualIncome" 
+                      name="annualIncome"
+                      placeholder="Enter your annual income"
+                      min="0"
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="maritalStatus">Marital Status</label>
+                    <select id="maritalStatus" [(ngModel)]="settingsData.maritalStatus" name="maritalStatus">
+                      <option value="">-- Select --</option>
+                      <option value="Single">Single</option>
+                      <option value="Married">Married</option>
+                      <option value="Divorced">Divorced</option>
+                      <option value="Widowed">Widowed</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="nationality">Nationality</label>
+                    <input 
+                      type="text" 
+                      id="nationality" 
+                      [(ngModel)]="settingsData.nationality" 
+                      name="nationality"
+                      placeholder="Enter your nationality"
+                    />
+                  </div>
+
+                  <div class="form-group full-width">
+                    <label for="address">Address</label>
+                    <textarea 
+                      id="address" 
+                      [(ngModel)]="settingsData.address" 
+                      name="address"
+                      placeholder="Enter your complete address"
+                      rows="3"
+                    ></textarea>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="city">City</label>
+                    <input 
+                      type="text" 
+                      id="city" 
+                      [(ngModel)]="settingsData.city" 
+                      name="city"
+                      placeholder="Enter your city"
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="state">State</label>
+                    <input 
+                      type="text" 
+                      id="state" 
+                      [(ngModel)]="settingsData.state" 
+                      name="state"
+                      placeholder="Enter your state"
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="pincode">Pincode</label>
+                    <input 
+                      type="text" 
+                      id="pincode" 
+                      [(ngModel)]="settingsData.pincode" 
+                      name="pincode"
+                      placeholder="Enter 6-digit pincode"
+                      maxlength="6"
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="accountNumber">Bank Account Number</label>
+                    <input 
+                      type="text" 
+                      id="accountNumber" 
+                      [(ngModel)]="settingsData.accountNumber" 
+                      name="accountNumber"
+                      placeholder="Enter bank account number"
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="ifscCode">IFSC Code</label>
+                    <input 
+                      type="text" 
+                      id="ifscCode" 
+                      [(ngModel)]="settingsData.ifscCode" 
+                      name="ifscCode"
+                      placeholder="Enter IFSC code"
+                      style="text-transform: uppercase"
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="nomineeName">Nominee Name</label>
+                    <input 
+                      type="text" 
+                      id="nomineeName" 
+                      [(ngModel)]="settingsData.nomineeName" 
+                      name="nomineeName"
+                      placeholder="Enter nominee name (optional)"
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="nomineeRelation">Nominee Relation</label>
+                    <input 
+                      type="text" 
+                      id="nomineeRelation" 
+                      [(ngModel)]="settingsData.nomineeRelation" 
+                      name="nomineeRelation"
+                      placeholder="Relationship with nominee"
+                    />
+                  </div>
+                </div>
+
+                <div class="form-actions">
+                  <button type="submit" class="btn btn-primary">Save Settings</button>
+                  <button type="button" class="btn btn-secondary" (click)="loadSettings()">Reset to Saved</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        }
+
+        <!-- Help Tab -->
+        @if (activeTab() === 'help') {
+          <div class="tab-content">
+            <div class="help-section">
+              <div class="help-card card">
+                <h2 class="text-gradient">Terms & Conditions</h2>
+                <ul class="help-list">
+                  @for (term of helpContent.terms; track term) {
+                    <li>{{ term }}</li>
+                  }
+                </ul>
+              </div>
+
+              <div class="help-card card">
+                <h2 class="text-gradient">Eligibility Criteria</h2>
+                <ul class="help-list">
+                  @for (item of helpContent.eligibility; track item) {
+                    <li>{{ item }}</li>
+                  }
+                </ul>
+              </div>
+
+              <div class="help-card card">
+                <h2 class="text-gradient">Required Documents</h2>
+                <ul class="help-list">
+                  @for (req of helpContent.requirements; track req) {
+                    <li>{{ req }}</li>
+                  }
+                </ul>
+              </div>
+
+              <div class="help-card card contact-card">
+                <h2 class="text-gradient">Contact Us</h2>
+                <div class="contact-details">
+                  <div class="contact-item">
+                    <span class="contact-label">Phone:</span>
+                    <span class="contact-value">{{ helpContent.contact.phone }}</span>
+                  </div>
+                  <div class="contact-item">
+                    <span class="contact-label">Email:</span>
+                    <span class="contact-value">{{ helpContent.contact.email }}</span>
+                  </div>
+                  <div class="contact-item">
+                    <span class="contact-label">Address:</span>
+                    <span class="contact-value">{{ helpContent.contact.address }}</span>
+                  </div>
+                  <div class="contact-item">
+                    <span class="contact-label">Working Hours:</span>
+                    <span class="contact-value">{{ helpContent.contact.workingHours }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </div>
+</div>

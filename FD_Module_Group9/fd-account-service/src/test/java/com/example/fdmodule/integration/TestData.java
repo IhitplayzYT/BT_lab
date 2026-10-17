@@ -2,9 +2,9 @@ package com.example.fdmodule.integration;
 
 import com.example.fdmodule.dto.FDAccountRequest;
 import com.example.fdmodule.entity.CustomerProfile;
-import com.example.fdmodule.entity.Product;
+
 import com.example.fdmodule.repository.CustomerProfileRepository;
-import com.example.fdmodule.repository.ProductRepository;
+import com.example.fdmodule.client.ProductServiceClient;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.math.BigDecimal;
@@ -21,10 +21,10 @@ final class TestData {
     private TestData() {
     }
 
-    static void reset(JdbcTemplate jdbc, ProductRepository products, CustomerProfileRepository customers) {
+    static void reset(JdbcTemplate jdbc, ProductServiceClient products, CustomerProfileRepository customers) {
         jdbc.update("DELETE FROM fd_transactions");
         jdbc.update("DELETE FROM fd_accounts");
-        products.deleteAll();
+
         customers.deleteAll();
         // The real database has a users table; the H2 test schema does not, so create it and link customer1 to CUST001.
         jdbc.execute("CREATE TABLE IF NOT EXISTS users(id BIGINT AUTO_INCREMENT PRIMARY KEY,username VARCHAR(50) NOT NULL,"
@@ -33,24 +33,15 @@ final class TestData {
         jdbc.update("DELETE FROM users");
         jdbc.update("INSERT INTO users(username,password_hash,role) VALUES('customer1','x','CUSTOMER')");
 
-        Product p = new Product();
-        p.setProductCode("FDSTD");
-        p.setProductName("Fixed Deposit - Standard");
-        p.setProductType("FD");
-        p.setCurrency("INR");
-        p.setEffectiveDate(LocalDate.now().minusYears(1));
-        p.setMinTermMonths(6);
-        p.setMaxTermMonths(36);
-        p.setMinRate(new BigDecimal("6.50"));
-        p.setMaxRate(new BigDecimal("8.50"));
-        p.setMinDeposit(new BigDecimal("10000.00"));
-        p.setRateCapAddon(new BigDecimal("2.00"));
-        p.setPreMaturityPenaltyPct(new BigDecimal("1.00"));
-        p.setCompoundingFrequency("QUARTERLY");
-        p.setStatus("ACTIVE");
-        p.setCreatedAt(LocalDateTime.now());
-        p.setCreatedBy("admin1");
-        products.save(p);
+        var mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+        var product = mapper.createObjectNode().put("productCode", "FDSTD").put("productType", "FD")
+                .put("currency", "INR").put("status", "ACTIVE").put("effectiveDate", LocalDate.now().minusYears(1).toString())
+                .put("minDeposit", 10000).put("maxDeposit", 10000000);
+        product.putObject("termLimit").put("min", 6).put("max", 36);
+        product.putObject("rateLimit").put("min", 6.5).put("max", 8.5);
+        org.mockito.Mockito.when(products.getProductByCode(org.mockito.ArgumentMatchers.anyString())).thenReturn(product);
+        org.mockito.Mockito.when(products.calculateRate(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyInt(), org.mockito.ArgumentMatchers.anyDouble()))
+                .thenReturn(mapper.createObjectNode().put("finalRate", 6.5));
 
         CustomerProfile c = new CustomerProfile();
         c.setCustomerId("CUST001");

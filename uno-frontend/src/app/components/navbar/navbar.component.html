@@ -1,0 +1,42 @@
+<nav class="navbar" [class.scrolled]="isScrolled">
+  <div class="container">
+    <div class="navbar-content">
+      <a href="/" class="logo">
+        <span class="logo-text">UNO</span>
+        <span class="logo-subtitle">Bank</span>
+      </a>
+
+      <div class="nav-links" [class.mobile-open]="isMobileMenuOpen">
+        <a href="#about" class="nav-link" (click)="navigateTo('/')">About Us</a>
+        <a href="#features" class="nav-link" (click)="navigateTo('/')">Features</a>
+        <a href="#how-it-works" class="nav-link" (click)="navigateTo('/')">How It Works</a>
+        <a href="/calculator" class="nav-link" (click)="navigateTo('/calculator')">Calculator</a>
+        <a href="/terms" class="nav-link" (click)="navigateTo('/terms')">Terms</a>
+        <a href="/privacy" class="nav-link" (click)="navigateTo('/privacy')">Privacy</a>
+        
+        <button class="theme-toggle" (click)="toggleTheme()" title="Toggle dark/light mode">
+          @if (isDarkMode) {
+            <span>☀️</span>
+          } @else {
+            <span>🌙</span>
+          }
+        </button>
+        
+        @if (!isLoggedIn()) {
+          <button class="btn btn-secondary" (click)="navigateTo('/login')">Login</button>
+          <button class="btn btn-primary" (click)="navigateTo('/signup')">Get Started</button>
+        } @else {
+          <button class="btn btn-secondary" (click)="navigateTo('/apply-fd')">Apply FD</button>
+          <button class="btn btn-secondary" (click)="navigateTo('/dashboard')">Dashboard</button>
+          <button class="btn btn-primary" (click)="logout()">Logout</button>
+        }
+      </div>
+
+      <button class="mobile-menu-toggle" (click)="toggleMobileMenu()">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+  </div>
+</nav>

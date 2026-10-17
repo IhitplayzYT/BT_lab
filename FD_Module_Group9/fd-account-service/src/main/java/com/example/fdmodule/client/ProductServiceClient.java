@@ -26,7 +26,10 @@ public class ProductServiceClient {
     public ProductServiceClient(ServiceProperties serviceProperties, OutboundServiceAuth outboundAuth) {
         this.serviceProperties = serviceProperties;
         this.outboundAuth = outboundAuth;
-        this.restTemplate = new RestTemplate();
+        var factory = new org.springframework.http.client.SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(3000);
+        factory.setReadTimeout(5000);
+        this.restTemplate = new RestTemplate(factory);
         this.objectMapper = new ObjectMapper();
     }
 
@@ -34,7 +37,7 @@ public class ProductServiceClient {
      * Get active products from Product & Pricing service.
      */
     public List<JsonNode> getActiveProducts(String productType) {
-        String url = serviceProperties.getProduct().getBaseUrl() + "/api/v1/products/active";
+        String url = serviceProperties.getProduct().getBaseUrl() + "/api/product/active";
         if (productType != null && !productType.isEmpty()) {
             url += "?type=" + productType;
         }
@@ -64,7 +67,7 @@ public class ProductServiceClient {
      * Get product by code from Product & Pricing service.
      */
     public JsonNode getProductByCode(String productCode) {
-        String url = serviceProperties.getProduct().getBaseUrl() + "/api/v1/products/" + productCode;
+        String url = serviceProperties.getProduct().getBaseUrl() + "/api/product/" + productCode;
 
         ResponseEntity<String> response = restTemplate.exchange(
                 url,
@@ -84,7 +87,7 @@ public class ProductServiceClient {
      * Validate product for account creation.
      */
     public JsonNode validateProduct(String productCode, Integer termMonths, Double amount, Integer age) {
-        String url = serviceProperties.getProduct().getBaseUrl() + "/api/v1/products/" + productCode + "/validate";
+        String url = serviceProperties.getProduct().getBaseUrl() + "/api/product/" + productCode + "/validate";
         if (termMonths != null) {
             url += "?termMonths=" + termMonths;
         }
@@ -106,6 +109,31 @@ public class ProductServiceClient {
             return objectMapper.readTree(response.getBody());
         } catch (Exception e) {
             throw new RuntimeException("Failed to parse validation response", e);
+        }
+    }
+
+    /**
+     * Calculate final interest rate for a product.
+     */
+    public JsonNode calculateRate(String productCode, String customerCategory, Integer termMonths, Double amount) {
+        String url = serviceProperties.getProduct().getBaseUrl() + "/api/product/" + productCode + "/rate";
+        
+        var jsonBody = objectMapper.createObjectNode();
+        if (customerCategory != null) jsonBody.put("customerCategory", customerCategory);
+        if (termMonths != null) jsonBody.put("termMonths", termMonths);
+        if (amount != null) jsonBody.put("amount", amount);
+
+        ResponseEntity<String> response = restTemplate.exchange(
+                url,
+                HttpMethod.POST,
+                ServiceClientSupport.jsonEntity(outboundAuth.headers(OutboundServiceAuth.Target.PRODUCT), jsonBody.toString()),
+                String.class
+        );
+
+        try {
+            return objectMapper.readTree(response.getBody());
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to parse rate calculation response", e);
         }
     }
 }

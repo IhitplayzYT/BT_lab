@@ -54,6 +54,76 @@ All GET reports take `format=json` (default), `csv`, `pdf` or `xlsx`; files come
 
 The same extract is written automatically every night at 05:30 IST (`app.extract.cron`, switch off with `app.extract.enabled=false`; folder `app.extract.dir`, default `extracts`). Python settings: `app.python.executable` (default `python`), `app.python.script`, `app.python.timeout-seconds`.
 
+## Product & Pricing Service (Product Backend :8080)
+
+| Method and path | Role | Notes |
+| --- | --- | --- |
+| POST /api/products | ADMIN | Create new product with advanced charge configurations |
+| GET /api/products | ADMIN BANK_OFFICER CUSTOMER | List all active products |
+| GET /api/products/{code} | ADMIN BANK_OFFICER CUSTOMER | Get product details by code |
+| PUT /api/products/{code} | ADMIN | Update product configuration |
+| DELETE /api/products/{code} | ADMIN | Deactivate product |
+
+Product configuration includes advanced charge fields: tax_rate, service_fee_rate, service_fee_flat, documentation_fee, gst_rate (default 18%), premature_penalty_rate (default 1%).
+
+## FD Calculator Service (Product Backend :8080)
+
+| Method and path | Role | Notes |
+| --- | --- | --- |
+| POST /api/fd/calculate | ADMIN BANK_OFFICER CUSTOMER | Basic FD maturity calculation |
+| POST /api/fd/calculate/advanced | ADMIN BANK_OFFICER CUSTOMER | Advanced calculation with detailed charge breakdown |
+| GET /api/fd/categories | ADMIN BANK_OFFICER CUSTOMER | Get available customer categories and rate modifiers |
+| GET /api/fd/history | ADMIN BANK_OFFICER | Get calculation history |
+
+Basic calculation request: `{"principal":100000,"term":{"value":12,"unit":"MONTHS"},"productCode":"FD_STD_SHORT","interestType":"COMPOUND","compoundingFrequency":4,"categories":["GENERAL"]}`
+
+Advanced calculation request: `{"principal":100000,"term":{"value":12,"unit":"MONTHS"},"productCode":"FD_STD_SHORT","interestType":"COMPOUND","compoundingFrequency":4,"categories":["GENERAL"],"age":35,"includePrematureWithdrawal":false}`
+
+Advanced calculation response includes category-wise charge breakdown:
+- **TAX**: Tax Deducted at Source (10% on interest above ₹40,000, ₹50,000 for senior citizens)
+- **SERVICE**: Account maintenance and processing fees (0.1% of principal, min ₹100, max ₹1,000)
+- **DOCUMENTATION**: Documentation and processing charges (flat ₹250)
+- **PENALTY**: Premature withdrawal penalty (1% of interest if withdrawn before 6 months, 0.5% if 6-12 months)
+- **TAX**: GST on service charges (18% on service fees and documentation)
+
+Response structure:
+```json
+{
+  "grossInterest": 7500.00,
+  "netInterest": 6455.00,
+  "totalDeductions": 1045.00,
+  "charges": [
+    {
+      "chargeType": "TDS",
+      "chargeCategory": "TAX",
+      "description": "Tax Deducted at Source",
+      "chargeAmount": 350.00,
+      "chargeUnit": "PERCENTAGE",
+      "chargeRate": 10.0,
+      "isDeductible": true
+    },
+    ...
+  ],
+  "maturityAmount": 106455.00,
+  "effectiveRate": 7.5,
+  "currency": "INR",
+  "isConverted": false,
+  "conversionRate": null
+}
+```
+
+Available FD Products (10 products now available):
+- FD_STD_SHORT: Standard FD - Short Term (6-24 months)
+- FD_STD_MED: Standard FD - Medium Term (24-60 months)
+- FD_STD_LONG: Standard FD - Long Term (60-120 months)
+- FD_SENIOR: Senior Citizen Special FD (age 60+)
+- FD_TAX_SAVER: Tax Saver FD (5-year lock-in)
+- FD_NRE: NRE Fixed Deposit (USD currency)
+- FD_NRO: NRO Fixed Deposit (INR currency)
+- FD_CORP: Corporate Fixed Deposit
+- FD_FLEXI: Flexible FD with Partial Withdrawal
+- FD_CUMULATIVE: Cumulative Interest FD
+
 ## Login (JWT, auth-service :8090)
 
 `POST /api/auth/login` with `{"username":"officer1","password":"officer123"}` returns `{"accessToken":"...","tokenType":"Bearer","expiresIn":3600,"username":"officer1","roles":["BANK_OFFICER"]}`. Send it on every call as `Authorization: Bearer <accessToken>`.

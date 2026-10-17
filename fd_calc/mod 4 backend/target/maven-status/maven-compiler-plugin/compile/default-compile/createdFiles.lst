@@ -33,7 +33,6 @@ com/bank/calculator/exception/InactiveProductException.class
 com/bank/calculator/exception/CalculationNotFoundException.class
 com/bank/calculator/model/enums/TermUnit.class
 com/bank/calculator/exception/ServiceUnavailableException.class
-com/bank/calculator/security/JwtProperties.class
 com/bank/calculator/service/impl/FdCalculatorServiceImpl.class
 com/bank/calculator/model/CalculationAudit$Builder.class
 com/bank/calculator/config/FeignConfig.class
@@ -49,7 +48,6 @@ com/bank/calculator/dto/response/ErrorResponse.class
 com/bank/calculator/client/ProductClient.class
 com/bank/calculator/service/impl/FdCalculatorServiceImpl$1.class
 com/bank/calculator/service/CalculationEngine.class
-com/bank/calculator/security/JwtAuthConverter.class
 com/bank/calculator/exception/InvalidPrincipalException.class
 com/bank/calculator/exception/ProductNotFoundException.class
 com/bank/calculator/client/CustomerClient.class
@@ -59,7 +57,6 @@ com/bank/calculator/dto/response/CategoryBenefitDto.class
 com/bank/calculator/service/AuditService.class
 com/bank/calculator/model/enums/CustomerCategory.class
 com/bank/calculator/service/FdCalculatorService.class
-com/bank/calculator/config/SecurityConfig.class
 com/bank/calculator/service/ProductCatalogService.class
 com/bank/calculator/model/enums/CompoundingFrequency.class
 com/bank/calculator/util/CorrelationIdFilter.class

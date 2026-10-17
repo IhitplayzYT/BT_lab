@@ -1,270 +1,437 @@
 [0;34m[INFO][0m Checking prerequisites...
 [0;32m[SUCCESS][0m Prerequisites check passed
 [0;34m[INFO][0m Starting initialization process...
-[0;34m[INFO][0m Stopping existing containers...
-time="2026-10-14T19:35:21+05:30" level=warning msg="/home/ihitplayzyt/Downloads/BT_LAB/docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
- Container fd-calculator Stopping 
- Container fd-auth-service Stopping 
- Container product-service Stopping 
- Container fd-account-service Stopping 
- Container fd-auth-service Stopped 
- Container fd-auth-service Removing 
- Container fd-auth-service Removed 
- Container fd-calculator Stopped 
- Container fd-calculator Removing 
- Container fd-calculator Removed 
- Container fd-mysql Stopping 
- Container product-service Stopped 
- Container product-service Removing 
- Container product-service Removed 
- Container product-mysql Stopping 
- Container fd-account-service Stopped 
- Container fd-account-service Removing 
- Container fd-account-service Removed 
- Container fd-group9-mysql Stopping 
- Container kafka Stopping 
- Container fd-mysql Stopped 
- Container fd-mysql Removing 
- Container fd-mysql Removed 
- Container product-mysql Stopped 
- Container product-mysql Removing 
- Container product-mysql Removed 
- Container kafka Stopped 
- Container kafka Removing 
- Container kafka Removed 
- Container zookeeper Stopping 
- Container fd-group9-mysql Stopped 
- Container fd-group9-mysql Removing 
- Container fd-group9-mysql Removed 
- Container zookeeper Stopped 
- Container zookeeper Removing 
- Container zookeeper Removed 
- Network bt_lab_banking-network Removing 
- Network bt_lab_banking-network Removed 
-[0;32m[SUCCESS][0m Existing containers stopped
 [0;34m[INFO][0m Building and starting all containers...
-time="2026-10-14T19:35:24+05:30" level=warning msg="/home/ihitplayzyt/Downloads/BT_LAB/docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
-time="2026-10-14T19:35:24+05:30" level=warning msg="buildx Docker CLI plugin not found: falling back to the classic builder. BuildKit-only build features (multi-arch, secrets, ssh, additional contexts, ...) will not be available"
- Image bt_lab-fd-auth-service Building 
- Image bt_lab-fd-account-service Building 
- Image bt_lab-product-service Building 
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO] 
+[INFO] parth-fd-platform                                                  [pom]
+[INFO] security-common                                                    [jar]
+[INFO] auth-service                                                       [jar]
+[INFO] 
+[INFO] -------------------< com.example:parth-fd-platform >--------------------
+[INFO] Building parth-fd-platform 1.0.0                                   [1/3]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO] 
+[INFO] --- install:3.1.3:install (default-install) @ parth-fd-platform ---
+[INFO] Installing /home/ihitplayzyt/Downloads/BT_LAB/Auth_Sec/pom.xml to /home/ihitplayzyt/.m2/repository/com/example/parth-fd-platform/1.0.0/parth-fd-platform-1.0.0.pom
+[INFO] 
+[INFO] --------------------< com.example:security-common >---------------------
+[INFO] Building security-common 1.0.0                                     [2/3]
+[INFO]   from security-common/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ security-common ---
+[INFO] skip non existing resourceDirectory /home/ihitplayzyt/Downloads/BT_LAB/Auth_Sec/security-common/src/main/resources
+[INFO] skip non existing resourceDirectory /home/ihitplayzyt/Downloads/BT_LAB/Auth_Sec/security-common/src/main/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ security-common ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ security-common ---
+[INFO] skip non existing resourceDirectory /home/ihitplayzyt/Downloads/BT_LAB/Auth_Sec/security-common/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ security-common ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- surefire:3.2.5:test (default-test) @ security-common ---
+[INFO] Tests are skipped.
+[INFO] 
+[INFO] --- jar:3.4.2:jar (default-jar) @ security-common ---
+[INFO] 
+[INFO] --- install:3.1.3:install (default-install) @ security-common ---
+[INFO] Installing /home/ihitplayzyt/Downloads/BT_LAB/Auth_Sec/security-common/pom.xml to /home/ihitplayzyt/.m2/repository/com/example/security-common/1.0.0/security-common-1.0.0.pom
+[INFO] Installing /home/ihitplayzyt/Downloads/BT_LAB/Auth_Sec/security-common/target/security-common-1.0.0.jar to /home/ihitplayzyt/.m2/repository/com/example/security-common/1.0.0/security-common-1.0.0.jar
+[INFO] 
+[INFO] ----------------------< com.example:auth-service >----------------------
+[INFO] Building auth-service 1.0.0                                        [3/3]
+[INFO]   from auth-service/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ auth-service ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ auth-service ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ auth-service ---
+[INFO] skip non existing resourceDirectory /home/ihitplayzyt/Downloads/BT_LAB/Auth_Sec/auth-service/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ auth-service ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- surefire:3.2.5:test (default-test) @ auth-service ---
+[INFO] Tests are skipped.
+[INFO] 
+[INFO] --- jar:3.4.2:jar (default-jar) @ auth-service ---
+[INFO] 
+[INFO] --- spring-boot:3.3.4:repackage (repackage) @ auth-service ---
+[INFO] Replacing main artifact /home/ihitplayzyt/Downloads/BT_LAB/Auth_Sec/auth-service/target/auth-service-1.0.0.jar with repackaged archive, adding nested dependencies in BOOT-INF/.
+[INFO] The original artifact has been renamed to /home/ihitplayzyt/Downloads/BT_LAB/Auth_Sec/auth-service/target/auth-service-1.0.0.jar.original
+[INFO] 
+[INFO] --- install:3.1.3:install (default-install) @ auth-service ---
+[INFO] Installing /home/ihitplayzyt/Downloads/BT_LAB/Auth_Sec/auth-service/pom.xml to /home/ihitplayzyt/.m2/repository/com/example/auth-service/1.0.0/auth-service-1.0.0.pom
+[INFO] Installing /home/ihitplayzyt/Downloads/BT_LAB/Auth_Sec/auth-service/target/auth-service-1.0.0.jar to /home/ihitplayzyt/.m2/repository/com/example/auth-service/1.0.0/auth-service-1.0.0.jar
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for parth-fd-platform 1.0.0:
+[INFO] 
+[INFO] parth-fd-platform .................................. SUCCESS [  0.103 s]
+[INFO] security-common .................................... SUCCESS [  0.795 s]
+[INFO] auth-service ....................................... SUCCESS [  0.373 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  1.499 s
+[INFO] Finished at: 2026-10-17T18:33:22+05:30
+[INFO] ------------------------------------------------------------------------
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] --------------------------< com.bank:product >--------------------------
+[INFO] Building product 0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ product ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ product ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ product ---
+[INFO] Copying 2 resources from src/test/resources to target/test-classes
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ product ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- surefire:3.2.5:test (default-test) @ product ---
+[INFO] Tests are skipped.
+[INFO] 
+[INFO] --- jar:3.4.2:jar (default-jar) @ product ---
+[INFO] 
+[INFO] --- spring-boot:3.3.2:repackage (repackage) @ product ---
+[INFO] Replacing main artifact /home/ihitplayzyt/Downloads/BT_LAB/banking-product-backend/target/product-0.0.1-SNAPSHOT.jar with repackaged archive, adding nested dependencies in BOOT-INF/.
+[INFO] The original artifact has been renamed to /home/ihitplayzyt/Downloads/BT_LAB/banking-product-backend/target/product-0.0.1-SNAPSHOT.jar.original
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  1.471 s
+[INFO] Finished at: 2026-10-17T18:33:25+05:30
+[INFO] ------------------------------------------------------------------------
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO] 
+[INFO] parth-fd-platform                                                  [pom]
+[INFO] event-common                                                       [jar]
+[INFO] fd-account-service                                                 [jar]
+[INFO] 
+[INFO] -------------------< com.example:parth-fd-platform >--------------------
+[INFO] Building parth-fd-platform 1.0.0                                   [1/3]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO] 
+[INFO] ----------------------< com.example:event-common >----------------------
+[INFO] Building event-common 1.0.0                                        [2/3]
+[INFO]   from event-common/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ event-common ---
+[INFO] skip non existing resourceDirectory /home/ihitplayzyt/Downloads/BT_LAB/FD_Module_Group9/event-common/src/main/resources
+[INFO] skip non existing resourceDirectory /home/ihitplayzyt/Downloads/BT_LAB/FD_Module_Group9/event-common/src/main/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ event-common ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ event-common ---
+[INFO] skip non existing resourceDirectory /home/ihitplayzyt/Downloads/BT_LAB/FD_Module_Group9/event-common/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ event-common ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- surefire:3.2.5:test (default-test) @ event-common ---
+[INFO] Tests are skipped.
+[INFO] 
+[INFO] --- jar:3.4.2:jar (default-jar) @ event-common ---
+[INFO] 
+[INFO] -------------------< com.example:fd-account-service >-------------------
+[INFO] Building fd-account-service 1.0.0                                  [3/3]
+[INFO]   from fd-account-service/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ fd-account-service ---
+[INFO] Copying 2 resources from src/main/resources to target/classes
+[INFO] Copying 0 resource from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ fd-account-service ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ fd-account-service ---
+[INFO] Copying 3 resources from src/test/resources to target/test-classes
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ fd-account-service ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- surefire:3.2.5:test (default-test) @ fd-account-service ---
+[INFO] Tests are skipped.
+[INFO] 
+[INFO] --- jar:3.4.2:jar (default-jar) @ fd-account-service ---
+[INFO] 
+[INFO] --- spring-boot:3.3.4:repackage (repackage) @ fd-account-service ---
+[INFO] Replacing main artifact /home/ihitplayzyt/Downloads/BT_LAB/FD_Module_Group9/fd-account-service/target/fd-account-service-1.0.0.jar with repackaged archive, adding nested dependencies in BOOT-INF/.
+[INFO] The original artifact has been renamed to /home/ihitplayzyt/Downloads/BT_LAB/FD_Module_Group9/fd-account-service/target/fd-account-service-1.0.0.jar.original
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for parth-fd-platform 1.0.0:
+[INFO] 
+[INFO] parth-fd-platform .................................. SUCCESS [  0.002 s]
+[INFO] event-common ....................................... SUCCESS [  1.013 s]
+[INFO] fd-account-service ................................. SUCCESS [  0.561 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  1.818 s
+[INFO] Finished at: 2026-10-17T18:33:27+05:30
+[INFO] ------------------------------------------------------------------------
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] -----------------------< com.bank:fd-calculator >-----------------------
+[INFO] Building FD Calculator Service 1.0.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ fd-calculator ---
+[INFO] Copying 3 resources from src/main/resources to target/classes
+[INFO] Copying 2 resources from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ fd-calculator ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ fd-calculator ---
+[INFO] skip non existing resourceDirectory /home/ihitplayzyt/Downloads/BT_LAB/fd_calc/mod 4 backend/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ fd-calculator ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- surefire:3.2.5:test (default-test) @ fd-calculator ---
+[INFO] Tests are skipped.
+[INFO] 
+[INFO] --- jar:3.4.2:jar (default-jar) @ fd-calculator ---
+[INFO] 
+[INFO] --- spring-boot:3.3.4:repackage (repackage) @ fd-calculator ---
+[INFO] Replacing main artifact /home/ihitplayzyt/Downloads/BT_LAB/fd_calc/mod 4 backend/target/fd-calculator-1.0.0-SNAPSHOT.jar with repackaged archive, adding nested dependencies in BOOT-INF/.
+[INFO] The original artifact has been renamed to /home/ihitplayzyt/Downloads/BT_LAB/fd_calc/mod 4 backend/target/fd-calculator-1.0.0-SNAPSHOT.jar.original
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  1.550 s
+[INFO] Finished at: 2026-10-17T18:33:30+05:30
+[INFO] ------------------------------------------------------------------------
+time="2026-10-17T18:33:30+05:30" level=warning msg="buildx Docker CLI plugin not found: falling back to the classic builder. BuildKit-only build features (multi-arch, secrets, ssh, additional contexts, ...) will not be available"
  Image bt_lab-fd-calculator Building 
  Image bt_lab-product-service Building 
- Image bt_lab-fd-calculator Building 
- Image bt_lab-fd-account-service Building 
  Image bt_lab-fd-auth-service Building 
-Sending build context to Docker daemon  542.5kBSending build context to Docker daemon  542.5kBSending build context to Docker daemon  524.3kBSending build context to Docker daemon  524.5kBSending build context to Docker daemon  6.407MBSending build context to Docker daemon  6.407MBSending build context to Docker daemon  5.323MBSending build context to Docker daemon  5.276MBSending build context to Docker daemon  13.37MBSending build context to Docker daemon  13.37MBSending build context to Docker daemon  13.91MBSending build context to Docker daemon   13.9MBSending build context to Docker daemon  20.28MBSending build context to Docker daemon   20.8MBSending build context to Docker daemon  20.29MBSending build context to Docker daemon  19.21MBSending build context to Docker daemon  26.67MBSending build context to Docker daemon  24.54MBSending build context to Docker daemon  25.06MBSending build context to Docker daemon  25.06MBSending build context to Docker daemon  30.88MBSending build context to Docker daemon  30.94MBSending build context to Docker daemon  33.04MBSending build context to Docker daemon  32.51MBSending build context to Docker daemon  36.75MBSending build context to Docker daemon  47.26MBSending build context to Docker daemon  36.81MBSending build context to Docker daemon  47.79MBSending build context to Docker daemon  42.02MBSending build context to Docker daemon  52.02MBSending build context to Docker daemon  46.35MBSending build context to Docker daemon  52.58MBSending build context to Docker daemon  48.93MBSending build context to Docker daemon  60.07MBSending build context to Docker daemon  61.14MBSending build context to Docker daemon   52.2MBSending build context to Docker daemon  56.36MBSending build context to Docker daemon  65.94MBSending build context to Docker daemon  66.46MBSending build context to Docker daemon  61.26MBSending build context to Docker daemon  72.75MBSending build context to Docker daemon   72.9MBSending build context to Docker daemon  73.42MBSending build context to Docker daemon  69.19MBSending build context to Docker daemon  79.93MB
-Step 1/9 : FROM eclipse-temurin:21-jre-alpine
+ Image bt_lab-fd-account-service Building 
+ Image bt_lab-fd-calculator Building 
+ Image bt_lab-fd-auth-service Building 
+ Image bt_lab-product-service Building 
+ Image bt_lab-fd-account-service Building 
+Sending build context to Docker daemon  525.6kBSending build context to Docker daemon  524.5kBSending build context to Docker daemon  524.3kBSending build context to Docker daemon  524.4kBSending build context to Docker daemon  6.379MBSending build context to Docker daemon  4.769MBSending build context to Docker daemon  3.404MB
+Sending build context to Docker daemon  5.878MBStep 1/15 : FROM maven:3.9-eclipse-temurin-21 AS build
+ ---> 99e61abcff91
+Step 2/15 : WORKDIR /build
+ ---> Using cache
+ ---> 281552ac35a4
+Step 3/15 : COPY Auth_Sec/pom.xml Auth_Sec/pom.xml
+Sending build context to Docker daemon   12.2MB ---> Using cache
+ ---> dd4739bdb4aa
+Step 4/15 : COPY Auth_Sec/security-common Auth_Sec/security-common
+Sending build context to Docker daemon  11.23MBSending build context to Docker daemon  20.16MB ---> Using cache
+ ---> 3c225deaa47f
+Step 5/15 : RUN mvn -B -f Auth_Sec/pom.xml -N install && mvn -B -f Auth_Sec/security-common/pom.xml install -DskipTests
+ ---> Using cache
+ ---> 00cb4a85badf
+Step 6/15 : COPY banking-product-backend banking-product-backend
+Sending build context to Docker daemon   19.7MBSending build context to Docker daemon  18.19MB ---> Using cache
+ ---> 9b84558c8320
+Step 7/15 : RUN mvn -B -f banking-product-backend/pom.xml clean package -DskipTests
+Sending build context to Docker daemon  27.02MB ---> Using cache
+ ---> e4d277a51c6a
+Step 8/15 : FROM eclipse-temurin:21-jre-alpine
  ---> 51ab5e3302e7
-Step 2/9 : WORKDIR /app
-Sending build context to Docker daemon   83.5MBSending build context to Docker daemon  77.66MBSending build context to Docker daemon  77.66MB ---> Using cache
- ---> dc36806fc0ae
-Step 3/9 : RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+Step 9/15 : WORKDIR /app
+Sending build context to Docker daemon  26.59MBSending build context to Docker daemon  24.02MBSending build context to Docker daemon  35.58MBSending build context to Docker daemon  34.03MBSending build context to Docker daemon  30.43MBSending build context to Docker daemon  42.02MBSending build context to Docker daemon  38.76MBSending build context to Docker daemon  36.78MB ---> Using cache
+ ---> 45a279c10f9a
+Step 10/15 : RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+Sending build context to Docker daemon     49MB ---> Using cache
+ ---> 4e631640bf82
+Step 11/15 : COPY --from=build /build/banking-product-backend/target/product-0.0.1-SNAPSHOT.jar app.jar
+Sending build context to Docker daemon  45.79MBSending build context to Docker daemon  44.68MBSending build context to Docker daemon  53.22MB ---> Using cache
+ ---> ad1ac202f028
+Step 12/15 : USER appuser
  ---> Using cache
- ---> a68a9a758a6c
-Step 4/9 : RUN mkdir -p /app/logs && chown -R appuser:appgroup /app/logs
+ ---> 7c13a742dc95
+Step 13/15 : EXPOSE 8080
+Sending build context to Docker daemon  49.51MBSending build context to Docker daemon  49.97MB ---> Using cache
+ ---> 33af3f1de8bb
+Step 14/15 : ENTRYPOINT ["java", "-jar", "app.jar"]
+Sending build context to Docker daemon  58.55MB ---> Using cache
+ ---> 49d2496534b8
+Step 15/15 : LABEL com.docker.compose.image.builder=classic
+Sending build context to Docker daemon  51.78MB
+Step 1/10 : FROM eclipse-temurin:21-jre AS base
  ---> Using cache
- ---> 45d3f72df020
-Step 5/9 : USER appuser
-Sending build context to Docker daemon  87.74MBSending build context to Docker daemon  84.65MBSending build context to Docker daemon  84.65MB ---> Using cache
- ---> 8a46bee0abf9
-Step 6/9 : COPY target/product-*.jar app.jar
-Sending build context to Docker daemon  88.22MB
-Step 1/9 : FROM eclipse-temurin:21-jre-alpine
- ---> 51ab5e3302e7
-Step 2/9 : WORKDIR /app
-Sending build context to Docker daemon  97.37MBSending build context to Docker daemon  96.85MB ---> Using cache
- ---> 56bf761388ed
-Step 7/9 : EXPOSE 8080
- ---> Using cache
- ---> 313c4ae3e508
-Step 8/9 : ENTRYPOINT ["java", "-XX:+UseContainerSupport", "-XX:MaxRAMPercentage=75.0", "-Djava.security.egd=file:/dev/./urandom", "-jar", "/app/app.jar"]
- ---> Using cache
- ---> 03605097a936
-Step 9/9 : LABEL com.docker.compose.image.builder=classic
- ---> Using cache
- ---> dc36806fc0ae
-Step 3/9 : RUN addgroup -S appgroup && adduser -S appuser -G appgroup
- ---> Using cache
- ---> ab005d2c9a82
-Successfully built ab005d2c9a82
- ---> Using cache
- ---> a68a9a758a6c
-Step 4/9 : RUN mkdir -p /app/logs && chown -R appuser:appgroup /app/logs
+ ---> 980098758c9c
+ ---> ccbad9e7cb84
+Step 2/10 : RUN groupadd --system app && useradd --system --gid app --home-dir /app app
+Successfully built 980098758c9c
 Successfully tagged bt_lab-product-service:latest
  Image bt_lab-product-service Built 
  Image bt_lab-product-service Built 
- ---> Using cache
- ---> 45d3f72df020
-Step 5/9 : USER appuser
- ---> Using cache
- ---> 8a46bee0abf9
-Step 6/9 : COPY target/fd-calculator-*.jar app.jar
-Sending build context to Docker daemon  103.8MBSending build context to Docker daemon  103.3MB ---> Using cache
- ---> 3451c4e7a0ed
-Step 7/9 : EXPOSE 8084
-Sending build context to Docker daemon  110.3MB ---> Using cache
- ---> 7eacb1205f75
-Step 8/9 : ENTRYPOINT ["java", "-XX:+UseContainerSupport", "-XX:MaxRAMPercentage=75.0", "-Djava.security.egd=file:/dev/./urandom", "-jar", "/app/app.jar"]
-Sending build context to Docker daemon  109.7MB ---> Using cache
- ---> 07fa2891a610
-Step 9/9 : LABEL com.docker.compose.image.builder=classic
- ---> Using cache
- ---> 0d989d819c2b
-Successfully built 0d989d819c2b
-Successfully tagged bt_lab-fd-calculator:latest
- Image bt_lab-fd-calculator Built 
- Image bt_lab-fd-calculator Built 
-Sending build context to Docker daemon  118.3MBSending build context to Docker daemon  117.8MBSending build context to Docker daemon  125.2MBSending build context to Docker daemon  125.8MBSending build context to Docker daemon  142.7MBSending build context to Docker daemon  142.7MBSending build context to Docker daemon  148.5MBSending build context to Docker daemon  148.5MBSending build context to Docker daemon  154.5MBSending build context to Docker daemon    155MBSending build context to Docker daemon  163.5MBSending build context to Docker daemon  164.6MBSending build context to Docker daemon    171MBSending build context to Docker daemon  171.5MBSending build context to Docker daemon  187.4MBSending build context to Docker daemon  187.4MBSending build context to Docker daemon  194.8MBSending build context to Docker daemon  194.8MBSending build context to Docker daemon  203.3MBSending build context to Docker daemon  203.3MBSending build context to Docker daemon  212.3MBSending build context to Docker daemon  212.3MBSending build context to Docker daemon  220.8MBSending build context to Docker daemon  220.8MBSending build context to Docker daemon  237.2MBSending build context to Docker daemon  237.8MBSending build context to Docker daemon  243.1MBSending build context to Docker daemon  243.6MBSending build context to Docker daemon  251.6MBSending build context to Docker daemon  252.7MBSending build context to Docker daemon  260.2MBSending build context to Docker daemon  260.5MB
-Step 1/10 : FROM eclipse-temurin:21-jre AS base
-Sending build context to Docker daemon  260.5MB
-Step 1/19 : FROM eclipse-temurin:21-jre AS base
- ---> ccbad9e7cb84
-Step 2/10 : RUN groupadd --system app && useradd --system --gid app --home-dir /app app
- ---> ccbad9e7cb84
-Step 2/19 : RUN groupadd --system app && useradd --system --gid app --home-dir /app app
- ---> Using cache
- ---> 2336377a6784
+Sending build context to Docker daemon  58.53MBSending build context to Docker daemon  70.24MB ---> Using cache
+ ---> deaee7f8c97f
 Step 3/10 : WORKDIR /app
- ---> Using cache
- ---> 2336377a6784
-Step 3/19 : WORKDIR /app
- ---> Using cache
- ---> d65b28ff5928
+Sending build context to Docker daemon  67.09MB ---> Using cache
+ ---> eab6e1cdedee
 Step 4/10 : ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=70 -XX:+ExitOnOutOfMemoryError"
- ---> Using cache
- ---> d65b28ff5928
-Step 4/19 : ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=70 -XX:+ExitOnOutOfMemoryError"
- ---> Using cache
- ---> 1a414778da18
+Sending build context to Docker daemon  78.24MB ---> Using cache
+ ---> 3649bb7013a4
 Step 5/10 : USER app
  ---> Using cache
- ---> 1a414778da18
-Step 5/19 : USER app
- ---> Using cache
- ---> 1b44fc63c835
+ ---> 1095969d2c69
 Step 6/10 : FROM base AS auth-service
- ---> Using cache
- ---> 1b44fc63c835
-Step 6/19 : FROM base AS auth-service
- ---> 1b44fc63c835
+ ---> 1095969d2c69
 Step 7/10 : COPY --chown=app:app auth-service/target/auth-service-1.0.0.jar app.jar
- ---> 1b44fc63c835
-Step 7/19 : COPY --chown=app:app auth-service/target/auth-service-1.0.0.jar app.jar
- ---> Using cache
- ---> cd8ebab29d25
+Sending build context to Docker daemon  81.34MB ---> Using cache
+ ---> 8e3d7f5d0bd0
 Step 8/10 : EXPOSE 8090
- ---> Using cache
- ---> cd8ebab29d25
-Step 8/19 : EXPOSE 8090
- ---> Using cache
- ---> df5943127893
+Sending build context to Docker daemon  82.49MB ---> Using cache
+ ---> b4c87ce2a928
 Step 9/10 : ENTRYPOINT ["java", "-jar", "app.jar"]
  ---> Using cache
- ---> df5943127893
-Step 9/19 : ENTRYPOINT ["java", "-jar", "app.jar"]
- ---> Using cache
- ---> 49a3496c1be1
+ ---> 2e10c1d3ae79
 Step 10/10 : LABEL com.docker.compose.image.builder=classic
  ---> Using cache
- ---> 49a3496c1be1
-Step 10/19 : FROM base AS fd-account-service
- ---> 1b44fc63c835
-Step 11/19 : USER root
- ---> Using cache
- ---> 59506aecfca2
-Successfully built 59506aecfca2
+ ---> 0b4bcb6155ee
+Successfully built 0b4bcb6155ee
 Successfully tagged bt_lab-fd-auth-service:latest
  Image bt_lab-fd-auth-service Built 
  Image bt_lab-fd-auth-service Built 
+Sending build context to Docker daemon  86.15MBSending build context to Docker daemon  87.81MBSending build context to Docker daemon  88.22MB
+Step 1/9 : FROM eclipse-temurin:21-jre-alpine
+ ---> 51ab5e3302e7
+Step 2/9 : WORKDIR /app
+Sending build context to Docker daemon  96.36MBSending build context to Docker daemon  109.6MB ---> Using cache
+ ---> 45a279c10f9a
+Step 3/9 : RUN addgroup -S appgroup && adduser -S appuser -G appgroup
  ---> Using cache
- ---> 9ad5fedb286e
-Step 12/19 : RUN apt-get update && apt-get install -y --no-install-recommends python3 && rm -rf /var/lib/apt/lists/*     && mkdir -p /app/extracts && chown app:app /app/extracts
+ ---> 4e631640bf82
+Step 4/9 : RUN mkdir -p /app/logs && chown -R appuser:appgroup /app/logs
+Sending build context to Docker daemon  121.4MB ---> Using cache
+ ---> 8b1f1bf313ba
+Step 5/9 : USER appuser
  ---> Using cache
- ---> 38297fae2f41
-Step 13/19 : USER app
+ ---> 9fe0a541eb61
+Step 6/9 : COPY target/fd-calculator-*.jar app.jar
+Sending build context to Docker daemon  128.8MB ---> Using cache
+ ---> 342a9ab2bd4b
+Step 7/9 : EXPOSE 8084
  ---> Using cache
- ---> 2ac9c6082775
-Step 14/19 : ENV APP_PYTHON_EXECUTABLE=python3
+ ---> 5c2c435512a3
+Step 8/9 : ENTRYPOINT ["java", "-XX:+UseContainerSupport", "-XX:MaxRAMPercentage=75.0", "-Djava.security.egd=file:/dev/./urandom", "-jar", "/app/app.jar"]
  ---> Using cache
- ---> fad6f655f6d7
-Step 15/19 : COPY --chown=app:app reports /app/reports
+ ---> 783c606cc1b8
+Step 9/9 : LABEL com.docker.compose.image.builder=classic
  ---> Using cache
- ---> f7a14bbccd76
-Step 16/19 : COPY --chown=app:app fd-account-service/target/fd-account-service-1.0.0.jar app.jar
+ ---> e289209c86e5
+Successfully built e289209c86e5
+Successfully tagged bt_lab-fd-calculator:latest
+ Image bt_lab-fd-calculator Built 
+ Image bt_lab-fd-calculator Built 
+Sending build context to Docker daemon  136.9MBSending build context to Docker daemon  144.9MBSending build context to Docker daemon  161.3MBSending build context to Docker daemon  169.3MBSending build context to Docker daemon  176.2MBSending build context to Docker daemon  184.2MBSending build context to Docker daemon  195.3MBSending build context to Docker daemon  214.4MBSending build context to Docker daemon  223.5MBSending build context to Docker daemon  234.6MBSending build context to Docker daemon    236MB
+Step 1/15 : FROM eclipse-temurin:21-jre AS base
+ ---> ccbad9e7cb84
+Step 2/15 : RUN groupadd --system app && useradd --system --gid app --home-dir /app app
  ---> Using cache
- ---> 7538d0bfab76
-Step 17/19 : EXPOSE 8086
+ ---> deaee7f8c97f
+Step 3/15 : WORKDIR /app
  ---> Using cache
- ---> 00212caaf0eb
-Step 18/19 : ENTRYPOINT ["java", "-jar", "app.jar"]
+ ---> eab6e1cdedee
+Step 4/15 : ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=70 -XX:+ExitOnOutOfMemoryError"
  ---> Using cache
- ---> f7d9e342e9d3
-Step 19/19 : LABEL com.docker.compose.image.builder=classic
+ ---> 3649bb7013a4
+Step 5/15 : USER app
  ---> Using cache
- ---> ea06c5ed2f2b
-Successfully built ea06c5ed2f2b
+ ---> 1095969d2c69
+Step 6/15 : FROM base AS fd-account-service
+ ---> 1095969d2c69
+Step 7/15 : USER root
+ ---> Using cache
+ ---> 007ce512c3ff
+Step 8/15 : RUN apt-get update && apt-get install -y --no-install-recommends python3 && rm -rf /var/lib/apt/lists/*     && mkdir -p /app/extracts && chown app:app /app/extracts
+ ---> Using cache
+ ---> 5520e44b4bde
+Step 9/15 : USER app
+ ---> Using cache
+ ---> 5aba4536ee6c
+Step 10/15 : ENV APP_PYTHON_EXECUTABLE=python3
+ ---> Using cache
+ ---> 6c78435bd709
+Step 11/15 : COPY --chown=app:app reports /app/reports
+ ---> Using cache
+ ---> c488dc9e8bde
+Step 12/15 : COPY --chown=app:app fd-account-service/target/fd-account-service-1.0.0.jar app.jar
+ ---> Using cache
+ ---> 914985c70004
+Step 13/15 : EXPOSE 8086
+ ---> Using cache
+ ---> f50f42c9c34c
+Step 14/15 : ENTRYPOINT ["java", "-jar", "app.jar"]
+ ---> Using cache
+ ---> 6eff76431392
+Step 15/15 : LABEL com.docker.compose.image.builder=classic
+ ---> Using cache
+ ---> e425ffa1a0fc
+Successfully built e425ffa1a0fc
 Successfully tagged bt_lab-fd-account-service:latest
  Image bt_lab-fd-account-service Built 
  Image bt_lab-fd-account-service Built 
- Network bt_lab_banking-network Creating 
- Network bt_lab_banking-network Creating 
- Network bt_lab_banking-network Created 
- Network bt_lab_banking-network Created 
- Container fd-mysql Creating 
- Container fd-group9-mysql Creating 
- Container zookeeper Creating 
- Container product-mysql Creating 
- Container fd-auth-service Creating 
- Container fd-auth-service Created 
- Container zookeeper Created 
- Container kafka Creating 
- Container fd-mysql Created 
- Container fd-calculator Creating 
- Container fd-group9-mysql Created 
- Container product-mysql Created 
- Container product-service Creating 
- Container product-service Created 
- Container fd-calculator Created 
- Container kafka Created 
- Container fd-account-service Creating 
- Container fd-account-service Created 
- Container product-mysql Starting 
- Container zookeeper Starting 
- Container fd-auth-service Starting 
- Container fd-mysql Starting 
- Container fd-group9-mysql Starting 
- Container product-mysql Started 
- Container product-mysql Waiting 
- Container zookeeper Started 
- Container kafka Starting 
- Container fd-auth-service Started 
- Container fd-mysql Started 
- Container fd-mysql Waiting 
- Container fd-group9-mysql Started 
- Container kafka Started 
+ Container fd-group9-mysql Running 
+ Container product-service Running 
+ Container auth-mysql Running 
+ Container zookeeper Running 
+ Container fd-calculator Running 
+ Container product-mysql Running 
+ Container fd-mysql Running 
+ Container kafka Running 
+ Container fd-auth-service Running 
+ Container fd-account-service Recreate 
+ Container fd-account-service Recreated 
  Container fd-group9-mysql Waiting 
- Container product-mysql Healthy 
- Container product-service Starting 
- Container product-service Started 
+ Container product-mysql Waiting 
+ Container auth-mysql Waiting 
+ Container fd-mysql Waiting 
  Container fd-group9-mysql Healthy 
  Container fd-account-service Starting 
  Container fd-mysql Healthy 
- Container fd-calculator Starting 
+ Container auth-mysql Healthy 
+ Container product-mysql Healthy 
  Container fd-account-service Started 
- Container fd-calculator Started 
 [0;32m[SUCCESS][0m Containers built and started
 [0;34m[INFO][0m Running containers:
-NAME                 IMAGE                             COMMAND                  SERVICE              CREATED         STATUS                                     PORTS
-fd-account-service   bt_lab-fd-account-service         "java -jar app.jar"      fd-account-service   7 seconds ago   Up Less than a second                      0.0.0.0:8086->8086/tcp, [::]:8086->8086/tcp
-fd-auth-service      bt_lab-fd-auth-service            "java -jar app.jar"      fd-auth-service      7 seconds ago   Up 6 seconds                               0.0.0.0:8090->8090/tcp, [::]:8090->8090/tcp
-fd-calculator        bt_lab-fd-calculator              "java -XX:+UseContai…"   fd-calculator        7 seconds ago   Up Less than a second (health: starting)   0.0.0.0:8084->8084/tcp, [::]:8084->8084/tcp
-fd-group9-mysql      mysql:8.0                         "docker-entrypoint.s…"   fd-group9-mysql      7 seconds ago   Up 5 seconds (healthy)                     33060/tcp, 0.0.0.0:3310->3306/tcp, [::]:3310->3306/tcp
-fd-mysql             mysql:8.0                         "docker-entrypoint.s…"   fd-mysql             7 seconds ago   Up 6 seconds (healthy)                     33060/tcp, 0.0.0.0:3307->3306/tcp, [::]:3307->3306/tcp
-kafka                confluentinc/cp-kafka:7.5.0       "/etc/confluent/dock…"   kafka                7 seconds ago   Up 5 seconds                               0.0.0.0:9092->9092/tcp, [::]:9092->9092/tcp, 0.0.0.0:19092->19092/tcp, [::]:19092->19092/tcp
-product-mysql        mysql:8.0                         "docker-entrypoint.s…"   product-mysql        7 seconds ago   Up 6 seconds (healthy)                     33060/tcp, 0.0.0.0:3308->3306/tcp, [::]:3308->3306/tcp
-product-service      bt_lab-product-service            "java -XX:+UseContai…"   product-service      7 seconds ago   Up Less than a second (health: starting)   0.0.0.0:8080->8080/tcp, [::]:8080->8080/tcp
-zookeeper            confluentinc/cp-zookeeper:7.5.0   "/etc/confluent/dock…"   zookeeper            7 seconds ago   Up 6 seconds                               2888/tcp, 0.0.0.0:2181->2181/tcp, [::]:2181->2181/tcp, 3888/tcp
+NAME                 IMAGE                             COMMAND                  SERVICE              CREATED             STATUS                                     PORTS
+auth-mysql           mysql:8.0                         "docker-entrypoint.s…"   auth-mysql           About an hour ago   Up About an hour (healthy)                 33060/tcp, 0.0.0.0:3309->3306/tcp, [::]:3309->3306/tcp
+fd-account-service   bt_lab-fd-account-service         "java -jar app.jar"      fd-account-service   2 seconds ago       Up Less than a second (health: starting)   0.0.0.0:8086->8086/tcp, [::]:8086->8086/tcp
+fd-auth-service      bt_lab-fd-auth-service            "java -jar app.jar"      fd-auth-service      About an hour ago   Up About an hour (healthy)                 0.0.0.0:8090->8090/tcp, [::]:8090->8090/tcp
+fd-calculator        bt_lab-fd-calculator              "java -XX:+UseContai…"   fd-calculator        About an hour ago   Up About an hour (healthy)                 0.0.0.0:8084->8084/tcp, [::]:8084->8084/tcp
+fd-group9-mysql      mysql:8.0                         "docker-entrypoint.s…"   fd-group9-mysql      About an hour ago   Up About an hour (healthy)                 33060/tcp, 0.0.0.0:3310->3306/tcp, [::]:3310->3306/tcp
+fd-mysql             mysql:8.0                         "docker-entrypoint.s…"   fd-mysql             About an hour ago   Up About an hour (healthy)                 33060/tcp, 0.0.0.0:3307->3306/tcp, [::]:3307->3306/tcp
+kafka                confluentinc/cp-kafka:7.5.0       "/etc/confluent/dock…"   kafka                About an hour ago   Up About an hour                           0.0.0.0:9092->9092/tcp, [::]:9092->9092/tcp, 0.0.0.0:19092->19092/tcp, [::]:19092->19092/tcp
+product-mysql        mysql:8.0                         "docker-entrypoint.s…"   product-mysql        About an hour ago   Up About an hour (healthy)                 33060/tcp, 0.0.0.0:3308->3306/tcp, [::]:3308->3306/tcp
+product-service      bt_lab-product-service            "java -jar app.jar"      product-service      About an hour ago   Up About an hour (healthy)                 0.0.0.0:8080->8080/tcp, [::]:8080->8080/tcp
+zookeeper            confluentinc/cp-zookeeper:7.5.0   "/etc/confluent/dock…"   zookeeper            About an hour ago   Up About an hour                           2888/tcp, 0.0.0.0:2181->2181/tcp, [::]:2181->2181/tcp, 3888/tcp
 [0;34m[INFO][0m Waiting for all services to be ready...
 [0;34m[INFO][0m Checking health of container: fd-mysql
 [0;32m[SUCCESS][0m fd-mysql is healthy
@@ -272,5 +439,42 @@ zookeeper            confluentinc/cp-zookeeper:7.5.0   "/etc/confluent/dock…" 
 [0;32m[SUCCESS][0m product-mysql is healthy
 [0;34m[INFO][0m Checking health of container: fd-group9-mysql
 [0;32m[SUCCESS][0m fd-group9-mysql is healthy
+[0;34m[INFO][0m Checking health of container: auth-mysql
+[0;32m[SUCCESS][0m auth-mysql is healthy
 [0;34m[INFO][0m Checking health of container: kafka
-..................................
+[1;33m[WARNING][0m kafka has no healthcheck defined, skipping health check
+[0;32m[SUCCESS][0m kafka is running
+[0;34m[INFO][0m Checking health of container: fd-calculator
+[0;32m[SUCCESS][0m fd-calculator is healthy
+[0;34m[INFO][0m Checking health of container: product-service
+[0;32m[SUCCESS][0m product-service is healthy
+[0;34m[INFO][0m Checking health of container: fd-account-service
+....[0;32m[SUCCESS][0m fd-account-service is healthy
+[0;34m[INFO][0m Checking health of container: fd-auth-service
+[0;32m[SUCCESS][0m fd-auth-service is healthy
+[0;34m[INFO][0m Waiting for HTTP endpoints to respond...
+[0;34m[INFO][0m Waiting for Auth Service to be healthy...
+[0;32m[SUCCESS][0m Auth Service is healthy!
+[0;34m[INFO][0m Waiting for Product Service to be healthy...
+[0;32m[SUCCESS][0m Product Service is healthy!
+[0;34m[INFO][0m Waiting for Calculator Service to be healthy...
+[0;32m[SUCCESS][0m Calculator Service is healthy!
+[0;34m[INFO][0m Waiting for Account Service to be healthy...
+[0;32m[SUCCESS][0m Account Service is healthy!
+[0;34m[INFO][0m Checking database initialization...
+[0;32m[SUCCESS][0m FD Calculator database init script found
+[0;32m[SUCCESS][0m Product Service database schema found
+[0;32m[SUCCESS][0m FD Account Service database init script found
+[0;32m[SUCCESS][0m Auth Service database init script found
+[0;34m[INFO][0m Database initialization will be handled automatically by MySQL containers
+[0;34m[INFO][0m Verifying all services are running...
+[0;32m[SUCCESS][0m Auth Service is responding on port 8090
+[0;32m[SUCCESS][0m Product Service is responding on port 8080
+[0;32m[SUCCESS][0m Calculator Service is responding on port 8084
+[0;32m[SUCCESS][0m Account Service is responding on port 8086
+[0;34m[INFO][0m Service URLs:
+[0;34m[INFO][0m Database Ports:
+[0;32m[SUCCESS][0m Initialization complete!
+[0;34m[INFO][0m You can now run the smoke test:
+[0;34m[INFO][0m To view logs:
+[0;34m[INFO][0m To stop all services:

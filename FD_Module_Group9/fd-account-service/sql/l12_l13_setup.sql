@@ -41,29 +41,6 @@ CREATE TABLE IF NOT EXISTS customer_profile (
     CONSTRAINT fk_customer_profile_user FOREIGN KEY (user_id) REFERENCES users (id)
 );
 
--- products  ->  entity Product
-CREATE TABLE IF NOT EXISTS products (
-    product_code              VARCHAR(10)   NOT NULL,
-    product_name              VARCHAR(255)  NULL,
-    product_type              VARCHAR(20)   NULL,
-    interest_type             VARCHAR(20)   NULL,
-    currency                  VARCHAR(3)    NULL,
-    effective_date            DATE          NULL,
-    min_term_months           INT           NULL,
-    max_term_months           INT           NULL,
-    min_rate                  DECIMAL(5,2)  NULL,
-    max_rate                  DECIMAL(5,2)  NULL,
-    min_deposit               DECIMAL(18,2) NULL,
-    max_deposit               DECIMAL(18,2) NULL,
-    rate_cap_addon            DECIMAL(5,2)  NULL,
-    pre_maturity_penalty_pct  DECIMAL(5,2)  NULL,
-    compounding_frequency     VARCHAR(20)   NULL,
-    status                    VARCHAR(20)   NULL,      -- ACTIVE / INACTIVE
-    created_at                TIMESTAMP     NULL DEFAULT CURRENT_TIMESTAMP,
-    created_by                VARCHAR(50)   NULL,
-    PRIMARY KEY (product_code)
-);
-
 -- fd_accounts  ->  entity FixedDepositAccount
 CREATE TABLE IF NOT EXISTS fd_accounts (
     fd_account_no          VARCHAR(20)   NOT NULL,
@@ -75,6 +52,18 @@ CREATE TABLE IF NOT EXISTS fd_accounts (
     tenure_months          INT           NULL,
     compounding_frequency  VARCHAR(20)   NULL,
     status                 VARCHAR(20)   NULL,      -- ACTIVE / CLOSED / MATURED
+    approval_status        VARCHAR(20)   NULL,      -- PENDING_APPROVAL / APPROVED / REJECTED
+    approved_by            VARCHAR(50)   NULL,
+    approved_at            TIMESTAMP     NULL,
+    rejection_reason       VARCHAR(500)  NULL,
+    nominee_name           VARCHAR(255)  NULL,
+    nominee_relation       VARCHAR(50)   NULL,
+    applicant_full_name    VARCHAR(255)  NULL,
+    applicant_email        VARCHAR(255)  NULL,
+    applicant_phone        VARCHAR(20)   NULL,
+    applicant_pan          VARCHAR(20)   NULL,
+    applicant_account_number VARCHAR(50) NULL,
+    applicant_ifsc         VARCHAR(20)   NULL,
     maturity_date          DATE          NULL,
     accrued_interest       DECIMAL(18,2) NULL,
     created_at             TIMESTAMP     NULL DEFAULT CURRENT_TIMESTAMP,
@@ -82,22 +71,24 @@ CREATE TABLE IF NOT EXISTS fd_accounts (
     modified_at            TIMESTAMP     NULL,
     uuid                   VARCHAR(255)  NULL,
     PRIMARY KEY (fd_account_no),
-    KEY idx_fd_accounts_customer (customer_id),
-    CONSTRAINT fk_fd_accounts_product FOREIGN KEY (product_code) REFERENCES products (product_code)
+    KEY idx_fd_accounts_customer (customer_id)
+);
+
+-- fd_nominees  ->  entity Nominee (for multiple nominees support)
+CREATE TABLE IF NOT EXISTS fd_nominees (
+    id              BIGINT       NOT NULL AUTO_INCREMENT,
+    fd_account_no   VARCHAR(20)  NOT NULL,
+    nominee_name    VARCHAR(255) NOT NULL,
+    nominee_relation VARCHAR(50)  NOT NULL,
+    created_at      TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    KEY idx_fd_nominees_account (fd_account_no),
+    CONSTRAINT fk_fd_nominees_account FOREIGN KEY (fd_account_no) REFERENCES fd_accounts (fd_account_no) ON DELETE CASCADE
 );
 
 -- ---------------------------------------------------------------------
 -- Test data (from the L12/L13 report and Lab Manual examples).
 -- INSERT IGNORE skips rows that already exist.
 -- ---------------------------------------------------------------------
-INSERT IGNORE INTO products
-    (product_code, product_name, product_type, currency, effective_date,
-     min_term_months, max_term_months, min_rate, max_rate, min_deposit,
-     rate_cap_addon, pre_maturity_penalty_pct, compounding_frequency, status, created_by)
-VALUES
-    ('FDSTD', 'Fixed Deposit - Standard', 'FD', 'INR', '2025-01-01',
-     6, 36, 6.50, 8.50, 10000.00,
-     2.00, 1.00, 'QUARTERLY', 'ACTIVE', 'admin1');
-
 INSERT IGNORE INTO customer_profile (customer_id, full_name, phone, category)
 VALUES ('CUST001', 'Test Customer', '9999999999', 'GENERAL');

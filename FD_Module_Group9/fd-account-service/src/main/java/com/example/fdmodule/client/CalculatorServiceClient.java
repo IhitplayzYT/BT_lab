@@ -17,11 +17,13 @@ import org.springframework.web.client.RestTemplate;
 @Component
 public class CalculatorServiceClient {
 
+    private final OutboundServiceAuth outboundAuth;
     private final RestTemplate restTemplate;
     private final ServiceProperties serviceProperties;
     private final ObjectMapper objectMapper;
 
-    public CalculatorServiceClient(ServiceProperties serviceProperties) {
+    public CalculatorServiceClient(ServiceProperties serviceProperties, OutboundServiceAuth outboundAuth) {
+        this.outboundAuth = outboundAuth;
         this.serviceProperties = serviceProperties;
         this.restTemplate = new RestTemplate();
         this.objectMapper = new ObjectMapper();
@@ -31,17 +33,18 @@ public class CalculatorServiceClient {
      * Calculate FD maturity using the Calculator service.
      */
     public JsonNode calculateMaturity(String productCode, Double principal, Integer termMonths, String interestType) {
-        String url = serviceProperties.getCalculator().getBaseUrl() + "/api/v1/fd/calculations/custom";
+        String url = serviceProperties.getCalculator().getBaseUrl() + "/api/fd/calculate";
 
-        HttpHeaders headers = new HttpHeaders();
+        HttpHeaders headers = outboundAuth.headers(OutboundServiceAuth.Target.CALCULATOR);
         headers.set("Content-Type", "application/json");
         headers.set("Accept", "application/json");
 
-        // Build request body
-        String requestBody = String.format(
-                "{\"principal\": %s, \"termMonths\": %s, \"interestType\": \"%s\", \"productCode\": \"%s\"}",
-                principal, termMonths, interestType != null ? interestType : "CREDIT", productCode
-        );
+        var request = objectMapper.createObjectNode();
+        request.put("productCode", productCode);
+        request.put("principal", principal);
+        request.putObject("term").put("value", termMonths).put("unit", "MONTHS");
+        request.put("interestType", interestType);
+        String requestBody = request.toString();
 
         HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
         ResponseEntity<String> response = restTemplate.exchange(
@@ -60,11 +63,13 @@ public class CalculatorServiceClient {
 
     /**
      * Get product preview from Calculator service.
+     * Note: This endpoint may not exist in the current calculator service implementation.
+     * Consider using the product service directly for product details.
      */
     public JsonNode previewProduct(String productCode) {
-        String url = serviceProperties.getCalculator().getBaseUrl() + "/api/v1/fd/products/" + productCode + "/preview";
+        String url = serviceProperties.getCalculator().getBaseUrl() + "/api/fd/products/" + productCode + "/preview";
 
-        HttpHeaders headers = new HttpHeaders();
+        HttpHeaders headers = outboundAuth.headers(OutboundServiceAuth.Target.CALCULATOR);
         headers.set("Accept", "application/json");
 
         HttpEntity<?> entity = new HttpEntity<>(headers);

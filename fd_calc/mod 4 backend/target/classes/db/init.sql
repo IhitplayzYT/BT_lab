@@ -1,6 +1,10 @@
 -- MySQL DDL for FD Calculator audit table
 -- Run once on initial deployment (Flyway/Liquibase handles subsequent migrations)
 
+-- Grant permissions to fd_user (needed for Docker container access)
+GRANT ALL PRIVILEGES ON fd_calculator.* TO 'fd_user'@'%';
+FLUSH PRIVILEGES;
+
 CREATE TABLE IF NOT EXISTS fd_calculation_audit (
     calculation_id          VARCHAR(30)     NOT NULL,
     uuid                    VARCHAR(36)     NOT NULL UNIQUE,

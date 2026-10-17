@@ -6,7 +6,7 @@ import com.example.fdmodule.entity.FixedDepositAccount;
 import com.example.fdmodule.repository.CustomerProfileRepository;
 import com.example.fdmodule.repository.FDTransactionRepository;
 import com.example.fdmodule.repository.FixedDepositAccountRepository;
-import com.example.fdmodule.repository.ProductRepository;
+import com.example.fdmodule.client.ProductServiceClient;
 import com.example.fdmodule.service.FDTransactionService;
 import com.example.fdmodule.service.GLAccounts;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -14,7 +14,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -48,7 +48,7 @@ class FDTransactionApiIntegrationTest {
     @Autowired private MockMvc mvc;
     @Autowired private ObjectMapper objectMapper;
     @Autowired private JdbcTemplate jdbc;
-    @Autowired private ProductRepository productRepository;
+    @org.springframework.boot.test.mock.mockito.MockBean private ProductServiceClient productRepository;
     @Autowired private CustomerProfileRepository customerRepository;
     @Autowired private FixedDepositAccountRepository fdRepository;
     @Autowired private FDTransactionRepository transactionRepository;
@@ -65,7 +65,7 @@ class FDTransactionApiIntegrationTest {
     @Test
     void createWithTxn_createsAccountAndExactlyOneBalancedDeposit() throws Exception {
         JsonNode body = createAs("officer1", "officer123");
-        String fdAccountNo = body.get("fdAccountNo").asString();
+        String fdAccountNo = body.get("fdAccountNo").asText();
         long initialTransactionId = body.get("initialTransactionId").asLong();
 
         assertThat(fdRepository.existsById(fdAccountNo)).isTrue();
@@ -96,19 +96,19 @@ class FDTransactionApiIntegrationTest {
     @Test
     void createWithTxn_responseMatchesLabManualContractPlusHistoryLink() throws Exception {
         JsonNode body = createAs("officer1", "officer123");
-        String fdAccountNo = body.get("fdAccountNo").asString();
+        String fdAccountNo = body.get("fdAccountNo").asText();
 
         assertThat(fdAccountNo).startsWith("BR001");
         assertThat(body.get("initialTransactionId").isNumber()).isTrue();
-        assertThat(body.get("message").asString()).isEqualTo("Account and initial deposit created.");
-        assertThat(body.get("transactionHistoryUrl").asString())
+        assertThat(body.get("message").asText()).isEqualTo("Account and initial deposit created.");
+        assertThat(body.get("transactionHistoryUrl").asText())
                 .isEqualTo("/api/fd/account/" + fdAccountNo + "/transactions");
     }
 
     @Test
     void historyLink_returnsTheInitialDeposit() throws Exception {
         JsonNode created = createAs("officer1", "officer123");
-        String historyUrl = created.get("transactionHistoryUrl").asString();
+        String historyUrl = created.get("transactionHistoryUrl").asText();
         long txnId = created.get("initialTransactionId").asLong();
 
         mvc.perform(get(historyUrl).with(httpBasic("officer1", "officer123")))
@@ -124,8 +124,8 @@ class FDTransactionApiIntegrationTest {
 
     @Test
     void history_isScopedToTheRequestedAccount() throws Exception {
-        String first = createAs("officer1", "officer123").get("fdAccountNo").asString();
-        String second = createAs("officer1", "officer123").get("fdAccountNo").asString();
+        String first = createAs("officer1", "officer123").get("fdAccountNo").asText();
+        String second = createAs("officer1", "officer123").get("fdAccountNo").asText();
         assertThat(first).isNotEqualTo(second);
 
         mvc.perform(get("/api/fd/account/" + first + "/transactions").with(httpBasic("officer1", "officer123")))
@@ -217,7 +217,7 @@ class FDTransactionApiIntegrationTest {
 
     @Test
     void history_customerRole_canRead() throws Exception {
-        String fdAccountNo = createAs("officer1", "officer123").get("fdAccountNo").asString();
+        String fdAccountNo = createAs("officer1", "officer123").get("fdAccountNo").asText();
         mvc.perform(get("/api/fd/account/" + fdAccountNo + "/transactions").with(httpBasic("customer1", "customer123")))
                 .andExpect(status().isOk());
     }
@@ -232,7 +232,7 @@ class FDTransactionApiIntegrationTest {
                 .andExpect(jsonPath("$.termMonths").value(12))
                 .andExpect(jsonPath("$.createdBy").value("officer1"))
                 .andReturn().getResponse().getContentAsString();
-        String fdAccountNo = objectMapper.readTree(response).get("fdAccountNo").asString();
+        String fdAccountNo = objectMapper.readTree(response).get("fdAccountNo").asText();
 
         assertThat(fdRepository.existsById(fdAccountNo)).isTrue();
         // L13 endpoint is Vritika's, left untouched: it does not log a DEPOSIT (see handover).

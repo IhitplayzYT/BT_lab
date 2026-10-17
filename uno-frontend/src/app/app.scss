@@ -1,0 +1,27 @@
+/* Dark Mode Styles */
+body.dark-mode {
+  --color-bg-primary: #0f172a;
+  --color-bg-secondary: #1e293b;
+  --color-bg-card: #334155;
+  --color-text-primary: #f1f5f9;
+  --color-text-secondary: #cbd5e1;
+  --color-border: #475569;
+  --color-primary: #3b82f6;
+  --color-accent: #60a5fa;
+  --glass-bg: rgba(15, 23, 42, 0.8);
+  --glass-border: rgba(71, 85, 105, 0.3);
+}
+
+/* Light Mode (default) */
+body {
+  --color-bg-primary: #ffffff;
+  --color-bg-secondary: #f8fafc;
+  --color-bg-card: #ffffff;
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #64748b;
+  --color-border: #e2e8f0;
+  --color-primary: #3b82f6;
+  --color-accent: #60a5fa;
+  --glass-bg: rgba(255, 255, 255, 0.8);
+  --glass-border: rgba(226, 232, 240, 0.3);
+}

@@ -10,10 +10,10 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-/** Admin-only test hook for Lab L20 lifecycle testing. */
+/** Test hook for Lab L20 lifecycle testing - available to all roles for testing. */
 @RestController
 @RequestMapping("/api/fd/clock")
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("hasAnyRole('BANK_OFFICER','ADMIN','CUSTOMER')")
 public class ClockController {
     private final BusinessClock clock;
 

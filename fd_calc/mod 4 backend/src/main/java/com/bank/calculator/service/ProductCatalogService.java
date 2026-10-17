@@ -44,7 +44,7 @@ public class ProductCatalogService {
      * @param productCode the product identifier
      * @return authoritative product configuration
      */
-    @Cacheable(value = CacheConfig.PRODUCT_RATES_CACHE, key = "#productCode")
+    // Read current product status and pricing on every calculation; retired products must fail immediately.
     public ProductConfigDto getProductConfig(String productCode) {
         log.info("ProductCatalogService: Getting config for productCode='{}', ProductClient class='{}'", productCode, productClient.getClass().getName());
         log.debug("Cache miss for productCode='{}' — invoking ProductClient", productCode);
@@ -59,6 +59,8 @@ public class ProductCatalogService {
             throw e;
         } catch (FeignException.NotFound e) {
             throw new ProductNotFoundException(productCode);
+        } catch (FeignException.UnprocessableEntity e) {
+            throw new com.bank.calculator.exception.InactiveProductException(productCode);
         } catch (FeignException e) {
             log.error("ProductCatalogService: FeignException calling Product Service", e);
             throw new ServiceUnavailableException("Product Service", e);

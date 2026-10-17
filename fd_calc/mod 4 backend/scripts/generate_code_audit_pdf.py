@@ -736,7 +736,7 @@ def main():
     
     # Generate Product & Pricing audit
     pp_audit = generate_product_pricing_audit()
-    pp_output = f"{base_dir}/product&pricing module/product&pricing module/banking-product-backend/Product_Pricing_Code_Audit.md"
+    pp_output = f"{base_dir}/banking-product-backend/Product_Pricing_Code_Audit.md"
     with open(pp_output, 'w') as f:
         f.write(pp_audit)
     print(f"Product & Pricing audit report generated: {pp_output}")

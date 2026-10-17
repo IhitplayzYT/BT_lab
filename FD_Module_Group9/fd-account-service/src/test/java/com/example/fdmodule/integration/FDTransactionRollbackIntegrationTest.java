@@ -2,7 +2,7 @@ package com.example.fdmodule.integration;
 
 import com.example.fdmodule.repository.CustomerProfileRepository;
 import com.example.fdmodule.repository.FDTransactionRepository;
-import com.example.fdmodule.repository.ProductRepository;
+import com.example.fdmodule.client.ProductServiceClient;
 import com.example.fdmodule.service.FDTransactionService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -10,7 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.boot.test.mock.mockito.MockBean;
 
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
@@ -32,11 +32,11 @@ import static org.mockito.Mockito.when;
 @ActiveProfiles("test")
 class FDTransactionRollbackIntegrationTest {
 
-    @MockitoBean private FDTransactionRepository transactionRepository;
+    @MockBean private FDTransactionRepository transactionRepository;
 
     @Autowired private FDTransactionService fdTransactionService;
     @Autowired private JdbcTemplate jdbc;
-    @Autowired private ProductRepository productRepository;
+    @org.springframework.boot.test.mock.mockito.MockBean private ProductServiceClient productRepository;
     @Autowired private CustomerProfileRepository customerRepository;
 
     @BeforeEach

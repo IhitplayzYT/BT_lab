@@ -1,0 +1,806 @@
+<section class="apply-fd-section section">
+  <div class="container">
+    <div class="section-header">
+      @if (isBundleMode()) {
+        <h1 class="text-gradient">Apply for FD Package</h1>
+        <p>Complete your application for the {{ bundleName() }} package</p>
+      } @else {
+        <h1 class="text-gradient">Apply for Fixed Deposit</h1>
+        <p>Start your investment journey in just a few simple steps</p>
+      }
+    </div>
+
+    @if (!submitSuccess) {
+      <div class="apply-fd-container">
+        <!-- Progress Steps -->
+        <div class="progress-steps">
+          @for (step of [1, 2, 3]; track step) {
+            <div class="step-item" [class.active]="currentStep >= step" [class.completed]="currentStep > step">
+              <div class="step-number">
+                @if (currentStep > step) {
+                  <span>✓</span>
+                } @else {
+                  <span>{{ step }}</span>
+                }
+              </div>
+              <div class="step-label">
+                @if (step === 1) { Personal Details }
+                @if (step === 2) { FD Details }
+                @if (step === 3) { Bank Details }
+                @if (step === 4) { Terms & Conditions }
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Form -->
+        <form class="apply-fd-form" (submit)="submitApplication()">
+          
+          <!-- Bundle Info Banner -->
+          @if (isBundleMode()) {
+            <div class="bundle-info-banner card">
+              <h3 class="text-gradient">{{ bundleName() }}</h3>
+              <p>{{ bundleDescription() }}</p>
+              <div class="bundle-stats">
+                <div class="bundle-stat">
+                  <span class="stat-label">Total Investment</span>
+                  <span class="stat-value">₹{{ formatNumber(bundleTotalAmount()) }}</span>
+                </div>
+                <div class="bundle-stat">
+                  <span class="stat-label">Estimated Return</span>
+                  <span class="stat-value text-accent">₹{{ formatNumber(bundleEstimatedReturn()) }}</span>
+                </div>
+                <div class="bundle-stat">
+                  <span class="stat-label">Number of FDs</span>
+                  <span class="stat-value">{{ bundleFDItems().length }}</span>
+                </div>
+              </div>
+            </div>
+          }
+
+          <!-- Step 1: Personal Details -->
+          @if (currentStep === 1) {
+            <div class="form-section">
+              <h2 class="text-gradient">Personal Information</h2>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label for="firstName">First Name *</label>
+                  <input 
+                    type="text" 
+                    id="firstName" 
+                    [(ngModel)]="formData.firstName" 
+                    (blur)="validateFirstName()"
+                    name="firstName"
+                    required
+                    placeholder="Enter your first name"
+                    [class.error]="firstNameError"
+                  />
+                  @if (firstNameError) {
+                    <div class="validation-error">{{ firstNameError }}</div>
+                  }
+                </div>
+
+                <div class="form-group">
+                  <label for="middleName">Middle Name</label>
+                  <input 
+                    type="text" 
+                    id="middleName" 
+                    [(ngModel)]="formData.middleName" 
+                    name="middleName"
+                    placeholder="Enter your middle name (optional)"
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label for="lastName">Last Name *</label>
+                  <input 
+                    type="text" 
+                    id="lastName" 
+                    [(ngModel)]="formData.lastName" 
+                    (blur)="validateLastName()"
+                    name="lastName"
+                    required
+                    placeholder="Enter your last name"
+                    [class.error]="lastNameError"
+                  />
+                  @if (lastNameError) {
+                    <div class="validation-error">{{ lastNameError }}</div>
+                  }
+                </div>
+
+                <div class="form-group">
+                  <label for="email">Email Address *</label>
+                  <input 
+                    type="email" 
+                    id="email" 
+                    [(ngModel)]="formData.email" 
+                    (blur)="validateEmail()"
+                    name="email"
+                    required
+                    placeholder="Enter your email"
+                    [class.error]="emailError"
+                  />
+                  @if (emailError) {
+                    <div class="validation-error">{{ emailError }}</div>
+                  }
+                </div>
+
+                <div class="form-group">
+                  <label for="phone">Phone Number *</label>
+                  <input 
+                    type="tel" 
+                    id="phone" 
+                    [(ngModel)]="formData.phone" 
+                    (blur)="validatePhone()"
+                    name="phone"
+                    required
+                    placeholder="Enter your phone number"
+                    [class.error]="phoneError"
+                  />
+                  @if (phoneError) {
+                    <div class="validation-error">{{ phoneError }}</div>
+                  }
+                </div>
+
+                <div class="form-group">
+                  <label for="panNumber">PAN Number *</label>
+                  <input 
+                    type="text" 
+                    id="panNumber" 
+                    [(ngModel)]="formData.panNumber" 
+                    (blur)="validatePanNumber()"
+                    name="panNumber"
+                    required
+                    placeholder="Enter your PAN number"
+                    maxlength="10"
+                    style="text-transform: uppercase"
+                    [class.error]="panNumberError"
+                  />
+                  @if (panNumberError) {
+                    <div class="validation-error">{{ panNumberError }}</div>
+                  }
+                </div>
+
+                <div class="form-group">
+                  <label for="age">Age *</label>
+                  <input 
+                    type="number" 
+                    id="age" 
+                    [(ngModel)]="formData.age" 
+                    (blur)="validateAge()"
+                    name="age"
+                    required
+                    placeholder="Enter your age"
+                    min="18"
+                    max="120"
+                    [class.error]="ageError"
+                  />
+                  @if (ageError) {
+                    <div class="validation-error">{{ ageError }}</div>
+                  }
+                </div>
+
+                <div class="form-group">
+                  <label for="gender">Gender *</label>
+                  <select id="gender" [(ngModel)]="formData.gender" name="gender" (blur)="validateGender()" required [class.error]="genderError">
+                    <option value="">-- Select Gender --</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                  </select>
+                  @if (genderError) {
+                    <div class="validation-error">{{ genderError }}</div>
+                  }
+                </div>
+
+                <div class="form-group">
+                  <label for="occupation">Occupation</label>
+                  <input 
+                    type="text" 
+                    id="occupation" 
+                    [(ngModel)]="formData.occupation" 
+                    name="occupation"
+                    placeholder="Enter your occupation"
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label for="annualIncome">Annual Income (₹) *</label>
+                  <input 
+                    type="number" 
+                    id="annualIncome" 
+                    [(ngModel)]="formData.annualIncome" 
+                    (blur)="validateAnnualIncome()"
+                    name="annualIncome"
+                    required
+                    placeholder="Enter your annual income"
+                    min="0"
+                    [class.error]="annualIncomeError"
+                  />
+                  @if (annualIncomeError) {
+                    <div class="validation-error">{{ annualIncomeError }}</div>
+                  }
+                </div>
+
+                <div class="form-group">
+                  <label for="maritalStatus">Marital Status</label>
+                  <select id="maritalStatus" [(ngModel)]="formData.maritalStatus" name="maritalStatus">
+                    <option value="">-- Select --</option>
+                    <option value="Single">Single</option>
+                    <option value="Married">Married</option>
+                    <option value="Divorced">Divorced</option>
+                    <option value="Widowed">Widowed</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label for="nationality">Nationality</label>
+                  <input 
+                    type="text" 
+                    id="nationality" 
+                    [(ngModel)]="formData.nationality" 
+                    name="nationality"
+                    placeholder="Enter your nationality"
+                  />
+                </div>
+
+                <div class="form-group full-width">
+                  <label for="address">Address *</label>
+                  <textarea 
+                    id="address" 
+                    [(ngModel)]="formData.address" 
+                    (blur)="validateAddress()"
+                    name="address"
+                    required
+                    placeholder="Enter your complete address"
+                    rows="3"
+                    [class.error]="addressError"
+                  ></textarea>
+                  @if (addressError) {
+                    <div class="validation-error">{{ addressError }}</div>
+                  }
+                </div>
+
+                <div class="form-group">
+                  <label for="city">City *</label>
+                  <input 
+                    type="text" 
+                    id="city" 
+                    [(ngModel)]="formData.city" 
+                    (blur)="validateCity()"
+                    name="city"
+                    required
+                    placeholder="Enter your city"
+                    [class.error]="cityError"
+                  />
+                  @if (cityError) {
+                    <div class="validation-error">{{ cityError }}</div>
+                  }
+                </div>
+
+                <div class="form-group">
+                  <label for="state">State *</label>
+                  <input 
+                    type="text" 
+                    id="state" 
+                    [(ngModel)]="formData.state" 
+                    (blur)="validateState()"
+                    name="state"
+                    required
+                    placeholder="Enter your state"
+                    [class.error]="stateError"
+                  />
+                  @if (stateError) {
+                    <div class="validation-error">{{ stateError }}</div>
+                  }
+                </div>
+
+                <div class="form-group">
+                  <label for="pincode">Pincode *</label>
+                  <input 
+                    type="text" 
+                    id="pincode" 
+                    [(ngModel)]="formData.pincode" 
+                    (blur)="validatePincode()"
+                    name="pincode"
+                    required
+                    placeholder="Enter 6-digit pincode"
+                    maxlength="6"
+                    [class.error]="pincodeError"
+                  />
+                  @if (pincodeError) {
+                    <div class="validation-error">{{ pincodeError }}</div>
+                  }
+                </div>
+              </div>
+            </div>
+          }
+
+          <!-- Step 2: FD Details -->
+          @if (currentStep === 2) {
+            <div class="form-section">
+              @if (isBundleMode()) {
+                <h2 class="text-gradient">Package FD Details</h2>
+                <p class="bundle-note">This package contains {{ bundleFDItems().length }} fixed deposits with pre-configured amounts and tenures.</p>
+                <div class="bundle-fd-items">
+                  @for (item of bundleFDItems(); track $index) {
+                    <div class="bundle-fd-item card">
+                      <div class="fd-item-header">
+                        <span class="fd-item-number">FD #{{ $index + 1 }}</span>
+                        <span class="fd-item-product">{{ item.productCode }}</span>
+                      </div>
+                      <div class="fd-item-details">
+                        <div class="fd-item-detail">
+                          <span class="detail-label">Amount</span>
+                          <span class="detail-value">₹{{ formatNumber(item.principalAmount) }}</span>
+                        </div>
+                        <div class="fd-item-detail">
+                          <span class="detail-label">Tenure</span>
+                          <span class="detail-value">{{ item.tenureMonths }} months</span>
+                        </div>
+                        <div class="fd-item-detail">
+                          <span class="detail-label">Interest Type</span>
+                          <span class="detail-value">{{ item.interestType || 'COMPOUND' }}</span>
+                        </div>
+                      </div>
+                    </div>
+                  }
+                </div>
+              } @else {
+                <h2 class="text-gradient">Fixed Deposit Details</h2>
+                <div class="form-grid">
+                  <div class="form-group">
+                    <label for="principalAmount">Principal Amount ({{ currencyService.getCurrencySymbol(formData.currency) }}) *</label>
+                    <input
+                      type="number"
+                      id="principalAmount"
+                      [(ngModel)]="formData.principalAmount"
+                      (blur)="validatePrincipalAmount()"
+                      (input)="validatePrincipalAmount()"
+                      name="principalAmount"
+                      [min]="minAmount()"
+                      [max]="maxAmount()"
+                      required
+                      [class.error]="principalAmountError"
+                    />
+                    @if (principalAmountError) {
+                      <div class="validation-error">{{ principalAmountError }}</div>
+                    }
+                    <div class="slider-container">
+                      <input
+                        type="range"
+                        [value]="formData.principalAmount"
+                        (input)="formData.principalAmount = $any($event.target).value; validatePrincipalAmount()"
+                        [min]="minAmount()"
+                        [max]="maxAmount()"
+                        step="5000"
+                        class="slider"
+                      />
+                    </div>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="tenureMonths">Tenure (Months) *</label>
+                    <input 
+                      type="number" 
+                      id="tenureMonths" 
+                      [(ngModel)]="formData.tenureMonths" 
+                      (input)="validateTenureMonths()"
+                      name="tenureMonths"
+                      min="6"
+                      max="120"
+                      required
+                      [class.error]="tenureMonthsError"
+                    />
+                    @if (tenureMonthsError) {
+                      <div class="validation-error">{{ tenureMonthsError }}</div>
+                    }
+                    <div class="slider-container">
+                      <input 
+                        type="range" 
+                        [value]="formData.tenureMonths"
+                        (input)="formData.tenureMonths = $any($event.target).value; validateTenureMonths()"
+                        min="6" 
+                        max="120" 
+                        step="6"
+                        class="slider"
+                      />
+                    </div>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="currency">Currency *</label>
+                    <select id="currency" [(ngModel)]="formData.currency" name="currency" (change)="onCurrencyChange(formData.currency)">
+                      @for (currency of supportedCurrencies; track currency.code) {
+                        <option [value]="currency.code">{{ currency.name }} ({{ currency.code }})</option>
+                      }
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="interestType">Interest Type *</label>
+                    <select id="interestType" [(ngModel)]="formData.interestType" name="interestType">
+                      <option value="COMPOUND">Compound Interest</option>
+                      <option value="SIMPLE">Simple Interest</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="product">Product Type *</label>
+                    @if (isLoadingProducts()) {
+                      <div class="loading-state">Loading products...</div>
+                    } @else if (productsError()) {
+                      <div class="error-state">
+                        <span>{{ productsError() }}</span>
+                        <button type="button" class="btn btn-secondary btn-sm" (click)="loadProducts()">Retry</button>
+                      </div>
+                    } @else {
+                      <select id="product" [(ngModel)]="formData.productCode" name="productCode" (change)="selectedProduct.set(products().find(p => p.productCode === formData.productCode)); calculateBilling(); validateProductCode(); validatePrincipalAmount(); validateTenureMonths()" (blur)="validateProductCode()" required [class.error]="productCodeError">
+                        <option value="">-- Select a Product --</option>
+                        @for (product of products(); track product.productCode) {
+                          <option [value]="product.productCode">{{ product.productName }} ({{ product.productCode }})</option>
+                        }
+                      </select>
+                      @if (productCodeError) {
+                        <div class="validation-error">{{ productCodeError }}</div>
+                      }
+                      @if (selectedProduct()) {
+                        <div class="product-info">
+                          <p class="product-description">{{ selectedProduct().productType }} - {{ selectedProduct().productCode }}</p>
+                          <div class="product-specs">
+                            <span class="spec">Rate: {{ selectedProduct().rateLimit?.max || 7.0 }}%</span>
+                            <span class="spec">Min: {{ selectedProduct().currency || 'INR' }} {{ formatNumber(selectedProduct().minDeposit) }}</span>
+                            <span class="spec">Max: {{ selectedProduct().currency || 'INR' }} {{ formatNumber(selectedProduct().maxDeposit) }}</span>
+                            <span class="spec">Tenure: {{ selectedProduct().termLimit?.min || 6 }}-{{ selectedProduct().termLimit?.max || 120 }}m</span>
+                            @if (selectedProduct().rateVariations && selectedProduct().rateVariations.length > 0) {
+                              <span class="spec offer-badge">🎁 Special rates available</span>
+                            }
+                          </div>
+                        </div>
+                      }
+                    }
+                  </div>
+
+                  <div class="form-group full-width">
+                    <label>Nominees (Optional)</label>
+                    <div class="nominees-container">
+                      @for (nominee of formData.nominees; track $index) {
+                        <div class="nominee-row">
+                          <div class="nominee-inputs">
+                            <input
+                              type="text"
+                              [(ngModel)]="nominee.name"
+                              name="nomineeName_{{ $index }}"
+                              placeholder="Nominee name"
+                            />
+                            <input
+                              type="text"
+                              [(ngModel)]="nominee.relation"
+                              name="nomineeRelation_{{ $index }}"
+                              placeholder="Relationship"
+                            />
+                            <button type="button" class="btn btn-error btn-sm" (click)="removeNominee($index)">
+                              Remove
+                            </button>
+                          </div>
+                        </div>
+                      }
+                      <button type="button" class="btn btn-secondary btn-sm" (click)="addNominee()">
+                        + Add Nominee
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+
+          <!-- Step 3: Bank Details -->
+          @if (currentStep === 3) {
+            <div class="form-section">
+              <h2 class="text-gradient">Bank Account Details</h2>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label for="accountNumber">Account Number *</label>
+                  <input 
+                    type="text" 
+                    id="accountNumber" 
+                    [(ngModel)]="formData.accountNumber" 
+                    (blur)="validateAccountNumber()"
+                    name="accountNumber"
+                    required
+                    placeholder="Enter your bank account number"
+                    [class.error]="accountNumberError"
+                  />
+                  @if (accountNumberError) {
+                    <div class="validation-error">{{ accountNumberError }}</div>
+                  }
+                </div>
+
+                <div class="form-group">
+                  <label for="ifscCode">IFSC Code *</label>
+                  <input 
+                    type="text" 
+                    id="ifscCode" 
+                    [(ngModel)]="formData.ifscCode" 
+                    (blur)="validateIfscCode()"
+                    name="ifscCode"
+                    required
+                    placeholder="Enter IFSC code"
+                    style="text-transform: uppercase"
+                    [class.error]="ifscCodeError"
+                  />
+                  @if (ifscCodeError) {
+                    <div class="validation-error">{{ ifscCodeError }}</div>
+                  }
+                </div>
+              </div>
+
+              <div class="summary-card card">
+                <h3 class="text-gradient">Application Summary</h3>
+                <div class="summary-grid">
+                  <div class="summary-item">
+                    <span class="summary-label">Name</span>
+                    <span class="summary-value">{{ formData.firstName }} {{ formData.middleName }} {{ formData.lastName }}</span>
+                  </div>
+                  <div class="summary-item">
+                    <span class="summary-label">Amount</span>
+                    <span class="summary-value">{{ currencyService.getCurrencySymbol(formData.currency) }}{{ formatNumber(formData.principalAmount) }}</span>
+                  </div>
+                  <div class="summary-item">
+                    <span class="summary-label">Amount in INR</span>
+                    <span class="summary-value">₹{{ formatNumber(principalAmountINR) }}</span>
+                  </div>
+                  <div class="summary-item">
+                    <span class="summary-label">Tenure</span>
+                    <span class="summary-value">{{ formData.tenureMonths }} months</span>
+                  </div>
+                  <div class="summary-item">
+                    <span class="summary-label">Interest Type</span>
+                    <span class="summary-value">{{ formData.interestType }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="billing-summary-card card">
+                <h3 class="text-gradient">Billing Summary</h3>
+                <div class="billing-grid">
+                  <div class="billing-item">
+                    <span class="billing-label">Principal Amount</span>
+                    <span class="billing-value">{{ currencyService.getCurrencySymbol(formData.currency) }}{{ formatNumber(formData.principalAmount) }}</span>
+                  </div>
+                  <div class="billing-item">
+                    <span class="billing-label">Estimated Interest</span>
+                    <span class="billing-value text-accent">+{{ currencyService.getCurrencySymbol(formData.currency) }}{{ formatNumber(calculatedInterest()) }}</span>
+                  </div>
+                  <div class="billing-item">
+                    <span class="billing-label">Gross Maturity Amount</span>
+                    <span class="billing-value">{{ currencyService.getCurrencySymbol(formData.currency) }}{{ formatNumber(calculatedMaturity()) }}</span>
+                  </div>
+                  <div class="billing-item">
+                    <span class="billing-label">Processing Fee</span>
+                    <span class="billing-value text-error">-{{ currencyService.getCurrencySymbol(formData.currency) }}{{ formatNumber(processingFee()) }}</span>
+                  </div>
+                  @if (serviceFee() > 0) {
+                    <div class="billing-item">
+                      <span class="billing-label">Service Fee</span>
+                      <span class="billing-value text-error">-{{ currencyService.getCurrencySymbol(formData.currency) }}{{ formatNumber(serviceFee()) }}</span>
+                    </div>
+                  }
+                  @if (documentationFee() > 0) {
+                    <div class="billing-item">
+                      <span class="billing-label">Documentation Fee</span>
+                      <span class="billing-value text-error">-{{ currencyService.getCurrencySymbol(formData.currency) }}{{ formatNumber(documentationFee()) }}</span>
+                    </div>
+                  }
+                  @if (gstAmount() > 0) {
+                    <div class="billing-item">
+                      <span class="billing-label">GST (18%)</span>
+                      <span class="billing-value text-error">-{{ currencyService.getCurrencySymbol(formData.currency) }}{{ formatNumber(gstAmount()) }}</span>
+                    </div>
+                  }
+                  <div class="billing-item total">
+                    <span class="billing-label">Net Maturity Amount</span>
+                    <span class="billing-value total-value">{{ currencyService.getCurrencySymbol(formData.currency) }}{{ formatNumber(netMaturity()) }}</span>
+                  </div>
+                </div>
+                <p class="billing-note">* Interest calculated based on selected product. Actual rate may vary based on customer category and tenure.</p>
+              </div>
+            </div>
+          }
+
+          <!-- Step 4: Terms & Conditions -->
+          @if (currentStep === 4) {
+            <div class="form-section">
+              <h2 class="text-gradient">Terms & Conditions</h2>
+              <div class="terms-container card">
+                <div class="terms-content">
+                  <h3>Fixed Deposit Terms and Conditions</h3>
+                  
+                  <h4>1. Eligibility</h4>
+                  <ul>
+                    <li>Applicant must be a resident Indian citizen aged 18 years or above.</li>
+                    <li>Valid PAN card is mandatory for all FD applications.</li>
+                    <li>Non-Resident Indians (NRIs) may apply subject to RBI regulations.</li>
+                    <li>Senior citizens (60+ years) are eligible for additional interest rate benefits.</li>
+                  </ul>
+
+                  <h4>2. Deposit Amount and Tenure</h4>
+                  <ul>
+                    <li>Minimum deposit amount: ₹10,000</li>
+                    <li>Maximum deposit amount: ₹1,00,00,000 (1 crore)</li>
+                    <li>Tenure range: 6 months to 120 months (10 years)</li>
+                    <li>Tax Saver FD has a minimum tenure of 5 years with lock-in period.</li>
+                  </ul>
+
+                  <h4>3. Interest Rates</h4>
+                  <ul>
+                    <li>Interest rates are subject to change and determined by the bank's policy.</li>
+                    <li>Interest is calculated quarterly and compounded as per the selected product.</li>
+                    <li>Senior citizens receive an additional 0.50% interest rate benefit.</li>
+                    <li>Women's FD products receive an additional 0.30% interest rate benefit.</li>
+                  </ul>
+
+                  <h4>4. Premature Withdrawal</h4>
+                  <ul>
+                    <li>Premature withdrawal is allowed subject to penalty charges.</li>
+                    <li>Penalty of 1.0% will be levied on the applicable interest rate.</li>
+                    <li>Tax Saver FDs cannot be withdrawn before the 5-year lock-in period.</li>
+                    <li>Partial withdrawal is not permitted for standard FD products.</li>
+                  </ul>
+
+                  <h4>5. Taxation</h4>
+                  <ul>
+                    <li>Interest earned on FD is taxable as per the Income Tax Act.</li>
+                    <li>TDS (Tax Deducted at Source) will be deducted if interest exceeds ₹40,000 per year (₹50,000 for senior citizens).</li>
+                    <li>Form 15G/15H can be submitted to avoid TDS if eligible.</li>
+                    <li>Tax Saver FD offers tax deduction under Section 80C up to ₹1.5 lakh.</li>
+                  </ul>
+
+                  <h4>6. Nomination</h4>
+                  <ul>
+                    <li>Nomination facility is available for all FD accounts.</li>
+                    <li>Nominee details can be updated during the account tenure.</li>
+                    <li>In case of the depositor's demise, the amount will be transferred to the nominee.</li>
+                  </ul>
+
+                  <h4>7. Maturity</h4>
+                  <ul>
+                    <li>On maturity, the principal and accrued interest will be credited to the linked bank account.</li>
+                    <li>If no instructions are given, the FD will be automatically renewed for the same tenure.</li>
+                    <li>Maturity instructions can be given up to 7 days before the maturity date.</li>
+                  </ul>
+
+                  <h4>8. Account Operations</h4>
+                  <ul>
+                    <li>FD account cannot be used for transaction purposes like a savings account.</li>
+                    <li>No overdraft facility is available against FD (unless specifically opted for).</li>
+                    <li>Loan against FD is available up to 90% of the deposit amount.</li>
+                  </ul>
+
+                  <h4>9. KYC Requirements</h4>
+                  <ul>
+                    <li>Complete KYC (Know Your Customer) verification is mandatory.</li>
+                    <li>Documents required: Aadhaar card, PAN card, passport size photograph.</li>
+                    <li>Additional documents may be required for high-value deposits (above ₹50 lakh).</li>
+                  </ul>
+
+                  <h4>10. Dispute Resolution</h4>
+                  <ul>
+                    <li>All disputes will be subject to the jurisdiction of Mumbai courts.</li>
+                    <li>Customers can approach the Banking Ombudsman for unresolved complaints.</li>
+                    <li>Grievance redressal mechanism is available within 30 working days.</li>
+                  </ul>
+
+                  <h4>11. Data Privacy</h4>
+                  <ul>
+                    <li>Customer information will be handled as per the bank's privacy policy.</li>
+                    <li>Data will not be shared with third parties without customer consent.</li>
+                    <li>All communications will be encrypted and secured.</li>
+                  </ul>
+
+                  <h4>12. Modifications</h4>
+                  <ul>
+                    <li>The bank reserves the right to modify these terms with prior notice.</li>
+                    <li>Changes will be communicated via email and SMS.</li>
+                    <li>Continued use of the service constitutes acceptance of modified terms.</li>
+                  </ul>
+                </div>
+
+                <div class="terms-acceptance">
+                  <label class="checkbox-label">
+                    <input type="checkbox" [(ngModel)]="termsAccepted" name="termsAccepted" />
+                    <span>I have read, understood, and agree to the above Terms & Conditions</span>
+                  </label>
+                  @if (termsError) {
+                    <div class="validation-error">{{ termsError }}</div>
+                  }
+                </div>
+              </div>
+
+              <div class="summary-card card">
+                <h3 class="text-gradient">Final Application Summary</h3>
+                <div class="summary-grid">
+                  <div class="summary-item">
+                    <span class="summary-label">Name</span>
+                    <span class="summary-value">{{ formData.firstName }} {{ formData.middleName }} {{ formData.lastName }}</span>
+                  </div>
+                  <div class="summary-item">
+                    <span class="summary-label">Email</span>
+                    <span class="summary-value">{{ formData.email }}</span>
+                  </div>
+                  <div class="summary-item">
+                    <span class="summary-label">Phone</span>
+                    <span class="summary-value">{{ formData.phone }}</span>
+                  </div>
+                  <div class="summary-item">
+                    <span class="summary-label">Amount</span>
+                    <span class="summary-value">{{ currencyService.getCurrencySymbol(formData.currency) }}{{ formatNumber(formData.principalAmount) }}</span>
+                  </div>
+                  <div class="summary-item">
+                    <span class="summary-label">Amount in INR</span>
+                    <span class="summary-value">₹{{ formatNumber(principalAmountINR) }}</span>
+                  </div>
+                  <div class="summary-item">
+                    <span class="summary-label">Tenure</span>
+                    <span class="summary-value">{{ formData.tenureMonths }} months</span>
+                  </div>
+                  <div class="summary-item">
+                    <span class="summary-label">Interest Type</span>
+                    <span class="summary-value">{{ formData.interestType }}</span>
+                  </div>
+                  <div class="summary-item">
+                    <span class="summary-label">Product</span>
+                    <span class="summary-value">{{ selectedProduct()?.productName || formData.productCode }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
+
+          <!-- Navigation Buttons -->
+          <div class="form-actions">
+            @if (currentStep > 1) {
+              <button type="button" class="btn btn-secondary" (click)="prevStep()">
+                ← Previous
+              </button>
+            }
+
+            @if (currentStep < totalSteps) {
+              <button type="button" class="btn btn-primary" (click)="nextStep()">
+                Next →
+              </button>
+            }
+
+            @if (currentStep === totalSteps) {
+              <button type="submit" class="btn btn-primary" [disabled]="isSubmitting">
+                @if (isSubmitting) {
+                  <span class="spinner"></span>
+                  Processing...
+                } @else {
+                  Submit Application
+                }
+              </button>
+            }
+          </div>
+
+          @if (errorMessage) {
+            <div class="error-message">{{ errorMessage }}</div>
+          }
+        </form>
+      </div>
+    } @else {
+      <div class="success-section">
+        <div class="success-card card">
+          <div class="success-icon">✓</div>
+          <h2 class="text-gradient">Application Submitted Successfully!</h2>
+          <p>Your FD application has been received and is being processed. You will receive a confirmation email shortly with your FD details.</p>
+          <div class="success-actions">
+            <button class="btn btn-primary" (click)="resetForm()">Apply Another FD</button>
+            <button class="btn btn-secondary">View Dashboard</button>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+</section>

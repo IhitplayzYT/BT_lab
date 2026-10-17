@@ -1,0 +1,138 @@
+{
+  "hash": "9dd17715",
+  "configHash": "ea4915aa",
+  "lockfileHash": "1dced64b",
+  "browserHash": "f44a19d1",
+  "optimized": {
+    "@angular/animations": {
+      "src": "../../../../../../node_modules/@angular/animations/fesm2022/animations.mjs",
+      "file": "@angular_animations.js",
+      "fileHash": "349e19f3",
+      "needsInterop": false
+    },
+    "@angular/common": {
+      "src": "../../../../../../node_modules/@angular/common/fesm2022/common.mjs",
+      "file": "@angular_common.js",
+      "fileHash": "814f9698",
+      "needsInterop": false
+    },
+    "@angular/common/http": {
+      "src": "../../../../../../node_modules/@angular/common/fesm2022/http.mjs",
+      "file": "@angular_common_http.js",
+      "fileHash": "7b9bd058",
+      "needsInterop": false
+    },
+    "@angular/core": {
+      "src": "../../../../../../node_modules/@angular/core/fesm2022/core.mjs",
+      "file": "@angular_core.js",
+      "fileHash": "ac70ae19",
+      "needsInterop": false
+    },
+    "@angular/forms": {
+      "src": "../../../../../../node_modules/@angular/forms/fesm2022/forms.mjs",
+      "file": "@angular_forms.js",
+      "fileHash": "6cdcbd0e",
+      "needsInterop": false
+    },
+    "@angular/platform-browser": {
+      "src": "../../../../../../node_modules/@angular/platform-browser/fesm2022/platform-browser.mjs",
+      "file": "@angular_platform-browser.js",
+      "fileHash": "77bf7636",
+      "needsInterop": false
+    },
+    "@angular/platform-browser/animations/async": {
+      "src": "../../../../../../node_modules/@angular/platform-browser/fesm2022/animations-async.mjs",
+      "file": "@angular_platform-browser_animations_async.js",
+      "fileHash": "564f6696",
+      "needsInterop": false
+    },
+    "@angular/router": {
+      "src": "../../../../../../node_modules/@angular/router/fesm2022/router.mjs",
+      "file": "@angular_router.js",
+      "fileHash": "e262969a",
+      "needsInterop": false
+    },
+    "gsap": {
+      "src": "../../../../../../../node_modules/gsap/index.js",
+      "file": "gsap.js",
+      "fileHash": "227e31cb",
+      "needsInterop": false
+    },
+    "gsap/ScrollTrigger": {
+      "src": "../../../../../../../node_modules/gsap/ScrollTrigger.js",
+      "file": "gsap_ScrollTrigger.js",
+      "fileHash": "99d87023",
+      "needsInterop": false
+    },
+    "lenis": {
+      "src": "../../../../../../../node_modules/lenis/dist/lenis.mjs",
+      "file": "lenis.js",
+      "fileHash": "ec642498",
+      "needsInterop": false
+    },
+    "rxjs": {
+      "src": "../../../../../../node_modules/rxjs/dist/esm5/index.js",
+      "file": "rxjs.js",
+      "fileHash": "4135e75e",
+      "needsInterop": false
+    },
+    "rxjs/operators": {
+      "src": "../../../../../../node_modules/rxjs/dist/esm5/operators/index.js",
+      "file": "rxjs_operators.js",
+      "fileHash": "1cd552c7",
+      "needsInterop": false
+    },
+    "three": {
+      "src": "../../../../../../../node_modules/three/build/three.module.js",
+      "file": "three.js",
+      "fileHash": "7517bdc6",
+      "needsInterop": false
+    }
+  },
+  "chunks": {
+    "_dom_renderer-chunk-B4Flrlw7": {
+      "file": "_dom_renderer-chunk-B4Flrlw7.js",
+      "isDynamicEntry": false
+    },
+    "_private_export-chunk-B79wGh9b": {
+      "file": "_private_export-chunk-B79wGh9b.js",
+      "isDynamicEntry": false
+    },
+    "_xhr-chunk-BAX-lOkS": {
+      "file": "_xhr-chunk-BAX-lOkS.js",
+      "isDynamicEntry": false
+    },
+    "browser-CjT5h4rz": {
+      "file": "browser-CjT5h4rz.js",
+      "isDynamicEntry": true
+    },
+    "common-CrHjF_j8": {
+      "file": "common-CrHjF_j8.js",
+      "isDynamicEntry": false
+    },
+    "core-Bfwnsk4L": {
+      "file": "core-Bfwnsk4L.js",
+      "isDynamicEntry": false
+    },
+    "esm5-ZXh7Ahry": {
+      "file": "esm5-ZXh7Ahry.js",
+      "isDynamicEntry": false
+    },
+    "http-TtVJOq0Y": {
+      "file": "http-TtVJOq0Y.js",
+      "isDynamicEntry": false
+    },
+    "operators-DdygPeWq": {
+      "file": "operators-DdygPeWq.js",
+      "isDynamicEntry": false
+    },
+    "platform-browser-wOhfj0Ji": {
+      "file": "platform-browser-wOhfj0Ji.js",
+      "isDynamicEntry": false
+    },
+    "zipWith-llrjS8GZ": {
+      "file": "zipWith-llrjS8GZ.js",
+      "isDynamicEntry": false
+    }
+  }
+}

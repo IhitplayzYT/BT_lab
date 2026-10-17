@@ -1,31 +1,36 @@
 package com.example.fdmodule.service;
 
 import com.example.fdmodule.clock.BusinessClock;
-import com.example.fdmodule.entity.Product;
-import com.example.fdmodule.repository.ProductRepository;
+import com.example.fdmodule.client.ProductServiceClient;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyString;
 
 class ProductValidationServiceTest {
 
     private ProductValidationService service(LocalDate effectiveFrom) {
-        Product p = new Product();
-        p.setProductCode("FDSTD");
-        p.setStatus("ACTIVE");
-        p.setEffectiveDate(effectiveFrom);
-        p.setMinTermMonths(6);
-        p.setMaxTermMonths(36);
-        p.setMinDeposit(new BigDecimal("10000"));
-        ProductRepository repo = Mockito.mock(ProductRepository.class);
-        Mockito.when(repo.findById("FDSTD")).thenReturn(Optional.of(p));
-        return new ProductValidationService(repo);
+        ProductServiceClient client = Mockito.mock(ProductServiceClient.class);
+        ObjectMapper mapper = new ObjectMapper();
+        
+        ObjectNode productJson = mapper.createObjectNode();
+        productJson.put("productCode", "FDSTD");
+        productJson.put("status", "ACTIVE");
+        productJson.put("effectiveDate", effectiveFrom.toString());
+        productJson.put("productType", "FD");
+        productJson.putObject("termLimit").put("min", 6).put("max", 36);
+        productJson.put("minDeposit", "10000");
+        
+        Mockito.when(client.getProductByCode(anyString())).thenReturn(productJson);
+        
+        return new ProductValidationService(client);
     }
 
     @Test

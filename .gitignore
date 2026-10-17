@@ -1,1 +1,6 @@
 product&pricing module/product&pricing module/banking-product-frontend
+.env*
+**/target/
+node_modules/
+*.log
+startup.log

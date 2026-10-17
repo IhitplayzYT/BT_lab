@@ -32,6 +32,23 @@ public interface CategoryBonusService {
                              BigDecimal baseRate,
                              BigDecimal productMaxRate);
 
+    default BonusResult computeProductBonus(List<String> categories, BigDecimal baseRate, BigDecimal maxRate,
+                                             java.util.Map<String, BigDecimal> bonuses) {
+        // The product rate endpoint accepts one category; select the greatest eligible modifier.
+        String selected = "GENERAL";
+        BigDecimal modifier = bonuses.getOrDefault(selected, BigDecimal.ZERO);
+        for (String category : new java.util.HashSet<>(categories)) {
+            if (category == null) continue;
+            String normalized = category.trim().toUpperCase();
+            BigDecimal candidate = bonuses.getOrDefault(normalized, BigDecimal.ZERO);
+            if (candidate.compareTo(modifier) > 0) { selected = normalized; modifier = candidate; }
+        }
+        BigDecimal rate = baseRate.add(modifier).max(baseRate).min(maxRate).setScale(2, java.math.RoundingMode.HALF_UP);
+        BigDecimal applied = rate.subtract(baseRate);
+        return new BonusResult(List.of(new com.bank.calculator.dto.response.CategoryBenefitDto(selected, modifier, applied)),
+                modifier, applied, maxRate.subtract(baseRate), rate, applied.compareTo(modifier) != 0);
+    }
+
     /**
      * Value object carrying all bonus computation outputs.
      *

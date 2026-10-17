@@ -60,6 +60,6 @@ const fdPdf = '/home/ihitplayzyt/Downloads/BT_LAB/fd_calc/mod 4 backend/FD_Calcu
 convertMarkdownToPDF(fdMd, fdPdf);
 
 // Convert Product & Pricing audit
-const ppMd = '/home/ihitplayzyt/Downloads/BT_LAB/product&pricing module/product&pricing module/banking-product-backend/Product_Pricing_Code_Audit.md';
-const ppPdf = '/home/ihitplayzyt/Downloads/BT_LAB/product&pricing module/product&pricing module/banking-product-backend/Product_Pricing_Code_Audit.pdf';
+const ppMd = '/home/ihitplayzyt/Downloads/BT_LAB/banking-product-backend/Product_Pricing_Code_Audit.md';
+const ppPdf = '/home/ihitplayzyt/Downloads/BT_LAB/banking-product-backend/Product_Pricing_Code_Audit.pdf';
 convertMarkdownToPDF(ppMd, ppPdf);

@@ -154,7 +154,9 @@ public class FdCalculatorServiceImpl implements FdCalculatorService {
         List<String> categories = fetchCategories(username);
 
         // 4. Apply category bonuses
-        CategoryBonusService.BonusResult bonus = categoryBonusService.computeBonus(
+        CategoryBonusService.BonusResult bonus = product.getCategoryBonuses() != null
+                ? categoryBonusService.computeProductBonus(categories, product.getBaseRate(), product.getRateLimit().getMaxRate(), product.getCategoryBonuses())
+                : categoryBonusService.computeBonus(
                 categories,
                 product.getBaseRate(),
                 product.getRateLimit().getMaxRate());

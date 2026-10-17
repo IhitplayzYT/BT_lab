@@ -54,13 +54,15 @@ public class ReportService {
     public ReportData portfolioForUsername(String username) {
         List<Map<String, Object>> rows = jdbc.queryForList(PORTFOLIO_SELECT
                 + "JOIN customer_profile c ON c.customer_id=a.customer_id JOIN users u ON u.id=c.user_id "
-                + "WHERE u.username=? ORDER BY a.created_at, a.fd_account_no", username);
+                + "WHERE u.username=? AND (a.approval_status='APPROVED' OR a.approval_status IS NULL) "
+                + "ORDER BY a.created_at, a.fd_account_no", username);
         return new ReportData("Customer portfolio", PORTFOLIO_COLUMNS, rows);
     }
 
     public ReportData portfolioForCustomer(String customerId) {
         List<Map<String, Object>> rows = jdbc.queryForList(PORTFOLIO_SELECT
-                + "WHERE a.customer_id=? ORDER BY a.created_at, a.fd_account_no", customerId);
+                + "WHERE a.customer_id=? AND (a.approval_status='APPROVED' OR a.approval_status IS NULL) "
+                + "ORDER BY a.created_at, a.fd_account_no", customerId);
         return new ReportData("Customer portfolio " + customerId, PORTFOLIO_COLUMNS, rows);
     }
 
