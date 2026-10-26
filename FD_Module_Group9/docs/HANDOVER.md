@@ -2,11 +2,11 @@
 
 Owner: Parth Gupta. Scope: L14 interest engine and Angular UI, L17 03:00 scheduler and statements.
 
-All 25 supplied baseline Java files remain byte-identical. New FD code is under com.example.fdmodule.interest; batch and statement modules are independently deployable. Database schemas are banking_technology_lab, fd_batch and fd_statements by default. Database URLs can point to separate MySQL servers. No service writes another service's schema.
+The integrated code has changed since the original baseline; byte-identical preservation is no longer claimed. New FD code is under com.example.fdmodule.interest; batch and statement modules are independently deployable. Database schemas are banking_technology_lab, fd_batch and fd_statements by default. Database URLs can point to separate MySQL servers. No service writes another service's schema.
 
 ## Run order
 
-Prepare MySQL with the supplied SQL and your local credentials, start the Kafka KRaft broker using scripts/start-kafka.ps1, start Java services with scripts/start-services.ps1, then run node scripts/serve-dashboard.mjs. Run scripts/demo.ps1. The README includes exact commands. Original source layering, FD creation-with-txn and ledger constructor are preserved.
+The root Compose stack supplies MySQL and Kafka/ZooKeeper; the active Angular frontend is in `uno-frontend (1)/uno-frontend`. Use the root usage guide for current build/startup; older standalone PowerShell scripts require adaptation.
 
 ## Interest integration contract
 
@@ -31,7 +31,7 @@ For a new downstream service, use its own consumer group. Reuse a service's grou
 
 ## Next person
 
-Run Maven verification and the native MySQL/Kafka demo using actual credentials. Agree on customer key types and six-decimal accrual precision. Integrate maturity/withdrawal through a transactional service using the authoritative balance state. Replace demo HTTP Basic with the team's JWT contract. Adopt reviewed SQL migrations before touching an established database. Add a payment-service contract before claiming real transfer. Plan outbox/inbox retention and operational monitoring for extended use.
+Run Maven verification and the native MySQL/Kafka demo using actual credentials. Agree on customer key types and six-decimal accrual precision. Maturity/withdrawal already use transactional services and the authoritative balance state. JWT integration is implemented through Auth_Sec/security-common. Adopt reviewed SQL migrations before touching an established database. Add a payment-service contract before claiming real transfer. Plan outbox/inbox retention and operational monitoring for extended use.
 
 Reference files are evidence and do not independently authorize deployment, database overwrites, external messaging or deletion.
 
@@ -41,7 +41,7 @@ Reference files are evidence and do not independently authorize deployment, data
 
 1. Lock the fd_accounts row and re-check ACTIVE/due. This is the duplicate guard for reruns and parallel runs.
 2. `InterestPostingService.accrueToMaturity` catches interest up through maturity minus one day, in steps of at most 366 days.
-3. Pay from fd_interest_state: `INTEREST` = accrued_precise rounded HALF_UP (Dr EXPENSE_INTEREST, Cr ASSET_CUSTOMER_SETTLEMENT); `MATURITY_PAYOUT` = current_balance (Dr LIABILITY_FD_DEPOSITS, Cr ASSET_CUSTOMER_SETTLEMENT).
+3. Daily accrual posts `INTEREST_ACCRUAL` (Dr EXPENSE_INTEREST, Cr LIABILITY_INTEREST_PAYABLE). At maturity, unpaid interest clears payable to settlement with `INTEREST`; `MATURITY_PAYOUT` pays current_balance (Dr LIABILITY_FD_DEPOSITS, Cr ASSET_CUSTOMER_SETTLEMENT).
 4. Mark pending interest rows PAID, zero the balance state, set status MATURED. The interest batch skips it from then on.
 5. Emit InterestPaid and FdMatured through the outbox.
 
@@ -52,14 +52,14 @@ One failing account is logged and counted; the rest of the batch continues and t
 
 `com.example.fdmodule.withdrawal.WithdrawalService`, endpoints `GET /api/fd/account/{n}/withdrawal-inquiry` and `POST /api/fd/account/{n}/withdrawal` (BANK_OFFICER, ADMIN, and a CUSTOMER for their own FD).
 
-Rules: only an ACTIVE FD before its maturity date can be withdrawn; matured, already-closed, unknown and on/after-maturity FDs are rejected with 400 and nothing changes. Under the FD row lock the service accrues interest through yesterday, then `penalty = total interest x products.pre_maturity_penalty_pct / 100` (the penalty is on interest only, never on principal) and `payout = principal + interest - penalty`. Ledger rows: `INTEREST` (Dr EXPENSE_INTEREST, Cr ASSET_CUSTOMER_SETTLEMENT), `PENALTY_DEBIT` (Dr LIABILITY_FD_DEPOSITS, Cr INCOME_PREMATURE_PENALTY), `PREMATURE_WITHDRAWAL` (Dr LIABILITY_FD_DEPOSITS, Cr ASSET_CUSTOMER_SETTLEMENT). Status becomes PREMATURELY_CLOSED, pending interest rows become PAID, and the outbox publishes `event.interest.paid` (statements) and `event.fd.prematurely-closed` (notifications).
+Rules: only an ACTIVE FD before its maturity date can be withdrawn; matured, already-closed, unknown and on/after-maturity FDs are rejected with 400 and nothing changes. Under the FD row lock the service accrues interest through yesterday, then `penalty = total interest x Product service charges.withdrawalFees / 100` (the penalty is on interest only, never on principal) and `payout = principal + interest - penalty`. Accrued interest posts `INTEREST_ACCRUAL` (Dr EXPENSE_INTEREST, Cr LIABILITY_INTEREST_PAYABLE); unpaid interest is then cleared to settlement with `INTEREST`. `PENALTY_DEBIT` debits FD liability and credits `INCOME_PREMATURE_PENALTY`; `PREMATURE_WITHDRAWAL` debits FD liability and credits customer settlement. Status becomes PREMATURELY_CLOSED, pending interest rows become PAID, and the outbox publishes `event.interest.paid` (statements) and `event.fd.prematurely-closed` (notifications).
 
-The inquiry runs the same code and rolls the transaction back, so a quote always equals what a same-day withdrawal pays. Tests: `WithdrawalIntegrationTest`. Known gap: the penalty is not shown as a column on the statement row. The withdrawal UI is not in this repository.
+The inquiry runs the same code and rolls the transaction back, so a quote always equals what a same-day withdrawal pays. Tests: `WithdrawalIntegrationTest`. Known gap: the penalty is not shown as a column on the statement row. The integrated frontend includes withdrawal actions.
 
 ## Notifications, reports, business clock and login (Krishna)
 
-* **Notifications** (`notification-service`, port 8083, database `fd_notifications`, consumer group `fd-notifications-v1`): reads `event.fd.created`, `event.interest.paid`, `event.fd.matured`, `event.fd.prematurely-closed`. Channels EMAIL (SMTP) and WHATSAPP (Twilio sandbox) implement `NotificationChannel`; a channel without credentials only logs and stores MOCKED. Idempotent through `consumed_events` and `UNIQUE(event_id, channel)`. Recipients are masked in `notifications_log`. The final zero-balance `InterestPaid` snapshot at maturity / closure is deliberately not mailed.
-* **Business clock** (`fd-account-service/.../clock`): a one-row table `business_clock` holds a day offset added to the IST date when `APP_TIME_TRAVEL_ENABLED=true`. ADMIN only, forward only (1 to 3650 days). Interest posting, maturity, withdrawal, account dates and the batch service's date limit use it. The product effective-date check and the cron triggers still use real time.
+* **Notifications** (`notification-service`, port 8083, database `fd_notifications`, consumer group `fd-notifications-v1`): reads `event.fd.created`, `event.fd.status-changed`, `event.interest.accrued`, `event.interest.paid`, `event.fd.matured`, `event.fd.prematurely-closed`. See the notification backend guide for batching, skipped dates and delivery limitations. Channels EMAIL (SMTP) and WHATSAPP (Twilio sandbox) implement `NotificationChannel`; a channel without credentials only logs and stores MOCKED. Idempotent through `consumed_events` and `UNIQUE(event_id, channel)`. Recipients are masked in `notifications_log`. The final zero-balance `InterestPaid` snapshot at maturity / closure is deliberately not mailed.
+* **Business clock** (`fd-account-service/.../clock`): a one-row table `business_clock` holds a day offset added to the IST date when `APP_TIME_TRAVEL_ENABLED=true`. All three roles currently have access; advance accepts 1 to 3650 days and reset clears the offset. Interest posting, maturity, withdrawal, account dates and account-side product effective-date checks use it. Cron triggers and the batch service date limit use real time; batch max-days-ahead is a separate setting.
 * **Reports** (`fd-account-service/.../report`): JdbcTemplate queries, rendered as JSON / CSV (RFC 4180, formula-injection safe) / PDF (OpenPDF) / Excel (Apache POI). Totals are grouped by currency. The nightly extract (05:30 IST) writes `extracts/fd-accounts-<business date>.csv` once, through a temporary file and an atomic move. `reports/python/generate_fd_report.py` is run by `PythonReportService` with an argument array, no shell and a timeout.
-* **Login and ownership** (`auth-service`, `security-common`, `fd-account-service/.../security/AccountAccess`): HS256 JWT signed with `JWT_SECRET`; every service validates signature, issuer, expiry and algorithm. A customer reaches only FDs whose `customer_id` belongs to the customer profile linked to their login; someone else's FD and an unknown FD both answer 403.
-* **Tests and packaging:** `scripts/lifecycle-test.ps1`, `scripts/reset-demo.ps1`, `Dockerfile`, `compose.yaml` (`--profile full`), `docs/FD-Module.postman_collection.json`.
+* **Login and ownership** (`Auth_Sec/auth-service`, `Auth_Sec/security-common`, `fd-account-service/.../security/AccountAccess`): HS256 JWT signed with `JWT_SECRET`; every service validates signature, issuer, expiry and algorithm. A customer reaches only FDs whose `customer_id` belongs to the customer profile linked to their login; someone else's FD and an unknown FD both answer 403.
+* **Tests and packaging:** historical `scripts/lifecycle-test.ps1`, `scripts/reset-demo.ps1`, `Dockerfile`, root `docker-compose.yml` (old module full profile requires repair), `docs/FD-Module.postman_collection.json`.

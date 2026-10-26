@@ -1,0 +1,29 @@
+<section class="testimonials section">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="text-gradient">{{ 'What Our Customers Say' | translate }}</h2>
+      <p>{{ 'Trusted by thousands of investors across India' | translate }}</p>
+    </div>
+
+    <div class="testimonials-grid">
+      @for (testimonial of testimonials; track testimonial.name) {
+        <div class="testimonial-card card">
+          <span class="quote-mark script" aria-hidden="true">“</span>
+          <div class="testimonial-rating" [attr.aria-label]="testimonial.rating + ' out of 5 stars'">
+            @for (i of getStars(testimonial.rating); track $index) {
+              <svg class="star" [style.--i]="$index" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z" /></svg>
+            }
+          </div>
+          <p class="testimonial-content">{{ testimonial.content }}</p>
+          <div class="testimonial-author">
+            <span class="avatar" aria-hidden="true">{{ testimonial.name.charAt(0) }}</span>
+            <div>
+              <strong>{{ testimonial.name }}</strong>
+              <span>{{ testimonial.role }}</span>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</section>

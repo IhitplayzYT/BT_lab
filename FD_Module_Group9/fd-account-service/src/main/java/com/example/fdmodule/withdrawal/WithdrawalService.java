@@ -26,7 +26,7 @@ import java.util.Map;
  * <pre>
  * InterestPostingService.accrueThrough(yesterday)      (interest is earned for completed days)
  * read fd_interest_state: current_balance + accrued_precise
- * INTEREST              Dr EXPENSE_INTEREST      Cr ASSET_CUSTOMER_SETTLEMENT   unpaid interest
+ * INTEREST              Dr LIABILITY_INTEREST_PAYABLE Cr ASSET_CUSTOMER_SETTLEMENT   unpaid interest
  * PENALTY_DEBIT         Dr LIABILITY_FD_DEPOSITS Cr INCOME_PREMATURE_PENALTY    penalty
  * PREMATURE_WITHDRAWAL  Dr LIABILITY_FD_DEPOSITS Cr ASSET_CUSTOMER_SETTLEMENT   deposit balance - penalty
  * settle interest sub-ledger, zero the balance state, status = PREMATURELY_CLOSED
@@ -108,9 +108,19 @@ public class WithdrawalService {
         BigDecimal depositBalance = ((BigDecimal) state.get("current_balance")).setScale(2, RoundingMode.HALF_UP);
         BigDecimal unpaidInterest = ((BigDecimal) state.get("accrued_precise")).setScale(2, RoundingMode.HALF_UP);
         BigDecimal totalInterest = depositBalance.subtract(principal).add(unpaidInterest);
-        var product = products.getProductByCode((String) fd.get("product_code"));
-        var fee = product.path("charges").path("withdrawalFees");
-        BigDecimal pct = fee.isNumber() ? fee.decimalValue() : BigDecimal.ZERO;
+        
+        // Try to get product withdrawal fee, use default if product doesn't exist
+        BigDecimal pct = BigDecimal.ZERO;
+        try {
+            var product = products.getProductByCode((String) fd.get("product_code"));
+            var fee = product.path("charges").path("withdrawalFees");
+            pct = fee.isNumber() ? fee.decimalValue() : BigDecimal.ZERO;
+        } catch (Exception e) {
+            // Product may have been deleted; use default penalty of 1%
+            System.out.println("Product not found for account " + account + ", using default penalty rate: " + e.getMessage());
+            pct = new BigDecimal("1.0"); // Default 1% penalty
+        }
+        
         BigDecimal penalty = pct == null ? BigDecimal.ZERO.setScale(2)
                 : totalInterest.multiply(pct).divide(HUNDRED, 2, RoundingMode.HALF_UP);
         BigDecimal payout = principal.add(totalInterest).subtract(penalty);
@@ -119,7 +129,7 @@ public class WithdrawalService {
 
         if (unpaidInterest.signum() > 0) {
             ledger.save(new FDTransaction(account, FDTransaction.TYPE_INTEREST, unpaidInterest, currency,
-                    GLAccounts.EXPENSE_INTEREST, GLAccounts.ASSET_CUSTOMER_SETTLEMENT,
+                    GLAccounts.LIABILITY_INTEREST_PAYABLE, GLAccounts.ASSET_CUSTOMER_SETTLEMENT,
                     "Interest paid on premature closure" + why, actor));
         }
         if (penalty.signum() > 0) {
@@ -149,7 +159,8 @@ public class WithdrawalService {
         paid.put("closingBalance", BigDecimal.ZERO);
         paid.put("outstandingInterest", BigDecimal.ZERO);
         paid.put("actor", actor);
-        outbox.emit("event.interest.paid", "InterestPaid", account, paid);
+        com.example.fdmodule.service.NotificationContacts.enrich(jdbc, account, paid);
+   outbox.emit("event.interest.paid", "InterestPaid", account, paid);
 
         var closed = new LinkedHashMap<String, Object>();
         closed.put("fdAccountNo", account);
@@ -162,7 +173,8 @@ public class WithdrawalService {
         closed.put("totalPaid", payout);
         closed.put("reason", reason);
         closed.put("actor", actor);
-        outbox.emit("event.fd.prematurely-closed", "FdPrematurelyClosed", account, closed);
+        com.example.fdmodule.service.NotificationContacts.enrich(jdbc, account, closed);
+   outbox.emit("event.fd.prematurely-closed", "FdPrematurelyClosed", account, closed);
 
         return new Inquiry(account, principal, totalInterest, penalty, payout, today);
     }

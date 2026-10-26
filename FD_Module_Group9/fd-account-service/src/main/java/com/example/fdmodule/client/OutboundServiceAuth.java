@@ -23,7 +23,8 @@ public class OutboundServiceAuth {
 
     public enum Target {
         PRODUCT(List.of("BANK_OFFICER", "ADMIN")),
-        CALCULATOR(List.of("CUSTOMER"));
+        CALCULATOR(List.of("CUSTOMER")),
+        AUTH(List.of("ADMIN"));
 
         private final List<String> roles;
 

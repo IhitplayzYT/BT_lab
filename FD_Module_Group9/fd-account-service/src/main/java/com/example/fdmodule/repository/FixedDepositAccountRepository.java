@@ -8,4 +8,10 @@ public interface FixedDepositAccountRepository extends JpaRepository<FixedDeposi
     long countByProductCode(String productCode);
     List<FixedDepositAccount> findByApprovalStatus(String approvalStatus);
     List<FixedDepositAccount> findByCustomerId(String customerId);
+    
+    /** Search accounts by customer name (full name or parts) */
+    List<FixedDepositAccount> findByApplicantFullNameContainingIgnoreCase(String name);
+    
+    /** Search accounts by customer ID */
+    List<FixedDepositAccount> findByCustomerIdContainingIgnoreCase(String customerId);
 }

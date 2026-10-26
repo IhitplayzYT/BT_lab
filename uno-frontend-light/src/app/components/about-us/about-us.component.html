@@ -1,0 +1,86 @@
+<section class="about-section section" id="about">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="text-gradient">{{ 'About UNO Bank' | translate }}</h2>
+      <p>{{ 'Building trust through transparency, innovation, and customer-centric banking' | translate }}</p>
+    </div>
+
+    <div class="about-intro">
+      <div class="seal" aria-hidden="true">
+        <svg viewBox="0 0 320 320">
+          <defs>
+            <path id="seal-circle" d="M160,160 m-124,0 a124,124 0 1,1 248,0 a124,124 0 1,1 -248,0" />
+          </defs>
+          <g class="spin">
+            <text><textPath href="#seal-circle" textLength="776" lengthAdjust="spacing">Trust ✦ Transparency ✦ Growth ✦ Trust ✦ Transparency ✦ Growth ✦</textPath></text>
+          </g>
+          <circle class="r1" cx="160" cy="160" r="98" />
+          <circle class="r2" cx="160" cy="160" r="86" />
+          <path class="u" pathLength="1" d="M132 112v50a28 28 0 0 0 56 0v-50" />
+          <path class="swash" pathLength="1" d="M112 204c30 12 66 12 96-4" />
+        </svg>
+      </div>
+
+      <div class="intro-content">
+        <h3 class="script story-title text-gradient">{{ 'Our Story' | translate }}</h3>
+        <p>
+          {{ 'Founded with a vision to revolutionize the banking experience in India, UNO Bank has grown from a small startup to a trusted financial institution serving over a million customers. Our journey began with a simple belief: that banking should be simple, transparent, and accessible to everyone.' | translate }}
+        </p>
+        <p>
+          {{ 'Over the years, we have stayed true to our core values while embracing innovation. Today, we are proud to be at the forefront of digital banking, offering cutting-edge solutions without compromising on the personal touch that sets us apart.' | translate }}
+        </p>
+      </div>
+    </div>
+
+    <div class="values-grid">
+      @for (value of values; track value.title) {
+        <div class="value-card card">
+          <div class="value-icon"><app-icon [name]="value.icon" /></div>
+          <h3>{{ value.title }}</h3>
+          <p>{{ value.description }}</p>
+        </div>
+      }
+    </div>
+
+    <div class="stats-section">
+      <div class="stats-grid">
+        @for (stat of stats; track stat.label) {
+          <div class="stat-card card">
+            <span class="stat-value">{{ stat.value }}</span>
+            <span class="stat-label">{{ stat.label }}</span>
+          </div>
+        }
+      </div>
+    </div>
+
+    <div class="mission-section">
+      <div class="mission-content card">
+        <h3 class="script text-gradient">{{ 'Our Mission' | translate }}</h3>
+        <p>
+          {{ 'To democratize wealth creation by providing secure, transparent, and accessible banking solutions that empower every Indian to achieve their financial dreams. We are committed to building long-term relationships with our customers based on trust, integrity, and mutual growth.' | translate }}
+        </p>
+        <h3 class="script text-gradient">{{ 'Our Vision' | translate }}</h3>
+        <p>
+          {{ 'To become India\'s most trusted and customer-centric bank, known for our innovative products, ethical practices, and unwavering commitment to customer success. We envision a future where quality banking is accessible to every Indian, regardless of their location or financial background.' | translate }}
+        </p>
+      </div>
+    </div>
+
+    <div class="leadership-section">
+      <div class="section-header">
+        <h3 class="text-gradient">{{ 'Leadership Team' | translate }}</h3>
+        <p>{{ 'Meet the people driving our vision forward' | translate }}</p>
+      </div>
+      <div class="leadership-grid">
+        @for (leader of leaders; track leader.name) {
+          <div class="leader-card card">
+            <div class="leader-avatar"><span>{{ leader.initials }}</span></div>
+            <h4>{{ leader.name }}</h4>
+            <p class="leader-role">{{ leader.role }}</p>
+            <p class="leader-bio">{{ leader.bio }}</p>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+</section>

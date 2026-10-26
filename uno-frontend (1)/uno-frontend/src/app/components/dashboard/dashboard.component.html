@@ -1,0 +1,846 @@
+<div class="dashboard">
+  <app-star-background></app-star-background>
+  <div class="container">
+    <div class="dashboard-header">
+      <div class="header-user-info">
+        @if (settingsData.profilePicture) {
+          <div class="header-profile-picture">
+            <img [src]="settingsData.profilePicture" alt="{{ 'Profile' | translate }}" />
+          </div>
+        } @else {
+          <div class="header-profile-picture placeholder">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
+        }
+        <div>
+          <h1>{{ 'Welcome back, {0}' | translate: [user()?.username || 'User'] }}</h1>
+          <p>{{ 'Manage your fixed deposits and track your investments' | translate }}</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <app-language-selector></app-language-selector>
+        <button class="theme-toggle" (click)="toggleTheme()" [attr.title]="'Toggle dark/light mode' | translate">
+          @if (isDarkMode) {
+            <span>{{ 'Light' | translate }}<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg></span>
+          } @else {
+            <span>{{ 'Dark' | translate }}<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg></span>
+          }
+        </button>
+
+        <div class="notification-wrapper">
+          <button class="notification-bell" (click)="toggleNotifications()" [attr.title]="'Notifications' | translate">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+            </svg>
+            @if (unreadNotificationsCount() > 0) {
+              <span class="notification-badge">{{ unreadNotificationsCount() }}</span>
+            }
+          </button>
+
+          @if (showNotifications()) {
+            <div class="notifications-panel">
+              <div class="notifications-header">
+                <h3>{{ 'Notifications' | translate }}</h3>
+                <button class="mark-read-btn" (click)="markAllAsRead()">{{ 'Mark all as read' | translate }}</button>
+              </div>
+              <div class="notifications-list">
+                @if (notifications().length === 0) {
+                  <div class="no-notifications">
+                    <p>{{ 'No notifications' | translate }}</p>
+                  </div>
+                } @else {
+                  @for (notification of notifications(); track notification.id) {
+                    <div class="notification-item" [class.unread]="!notification.read">
+                      <div class="notification-icon">
+                        @if (notification.type === 'accrual') {
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                        } @else if (notification.type === 'maturity') {
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        } @else if (notification.type === 'status') {
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                        } @else {
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                        }
+                      </div>
+                      <div class="notification-content">
+                        <p class="notification-title">{{ notification.title }}</p>
+                        <p class="notification-message">{{ notification.message }}</p>
+                        <span class="notification-time">{{ notification.time }}</span>
+                      </div>
+                      @if (!notification.read) {
+                        <div class="notification-indicator"></div>
+                      }
+                    </div>
+                  }
+                }
+              </div>
+            </div>
+          }
+        </div>
+
+        <button class="btn btn-accent" (click)="advanceTimeByMonth()" [disabled]="isAdvancingTime()" [attr.title]="'Advance time by 1 month (Test Mode)' | translate">
+          @if (isAdvancingTime()) {
+            <span>{{ 'Advancing...' | translate }}</span>
+          } @else {
+            <span>{{ '+1 Month' | translate }}</span>
+          }
+        </button>
+        <button class="btn btn-primary" (click)="navigateToApplyFD()">{{ 'Apply for FD' | translate }}</button>
+        <button class="btn btn-secondary" (click)="logout()">{{ 'Logout' | translate }}</button>
+      </div>
+    </div>
+
+    @if (isLoading()) {
+      <div class="loading-state">
+        <p>{{ 'Loading your dashboard...' | translate }}</p>
+      </div>
+    } @else {
+      <div class="dashboard-content">
+        <!-- Tab Navigation -->
+        <div class="tab-navigation">
+          <button class="tab-btn" [class.active]="activeTab() === 'portfolio'" (click)="setActiveTab('portfolio')">
+            <span>{{ 'Portfolio' | translate }}</span>
+          </button>
+          <button class="tab-btn" [class.active]="activeTab() === 'applications'" (click)="setActiveTab('applications')">
+            <span>{{ 'Applications' | translate }}</span>
+          </button>
+          <button class="tab-btn" [class.active]="activeTab() === 'contracts'" (click)="setActiveTab('contracts')">
+            <span>{{ 'Contracts' | translate }}</span>
+          </button>
+          <button class="tab-btn" [class.active]="activeTab() === 'export'" (click)="setActiveTab('export')">
+            <span>{{ 'Export' | translate }}</span>
+          </button>
+          <button class="tab-btn" [class.active]="activeTab() === 'settings'" (click)="setActiveTab('settings')">
+            <span>{{ 'Settings' | translate }}</span>
+          </button>
+          <button class="tab-btn" [class.active]="activeTab() === 'help'" (click)="setActiveTab('help')">
+            <span>{{ 'Help' | translate }}</span>
+          </button>
+        </div>
+
+        <!-- Portfolio Tab -->
+        @if (activeTab() === 'portfolio') {
+          <div class="tab-content">
+            <div class="stats-grid">
+              <div class="stat-card card">
+                <span class="stat-label">{{ 'Total FD Accounts' | translate }}</span>
+                <span class="stat-value">{{ fdAccounts().length }}</span>
+              </div>
+              <div class="stat-card card">
+                <span class="stat-label">{{ 'Available Products' | translate }}</span>
+                <span class="stat-value">{{ products().length }}</span>
+              </div>
+              <div class="stat-card card">
+                <span class="stat-label">{{ 'Account Type' | translate }}</span>
+                <span class="stat-value">{{ 'CUSTOMER' | translate }}</span>
+              </div>
+            </div>
+
+            <!-- FD Rates Chart -->
+            <div class="dashboard-section">
+              <h2>{{ 'FD Interest Rates by Tenure' | translate }}</h2>
+              <div class="chart-container card">
+                <div class="chart-bars">
+                  @for (product of products(); track product.productCode) {
+                    @if (product.rateLimit && product.termLimit) {
+                      <div class="chart-bar-group">
+                        <div class="chart-bar" [style.height.%]="((product.termLimit.max || 120) * 0.7) + 20">
+                          <span class="chart-value">{{ product.rateLimit.max || 7.5 }}%</span>
+                        </div>
+                        <span class="chart-label">{{ product.productCode }}</span>
+                      </div>
+                    }
+                  } @empty {
+                    <p class="no-data">Loading rate data...</p>
+                  }
+                </div>
+                <p class="chart-note">{{ 'Interest rates based on active products. Rates vary by product type and tenure.' | translate }}</p>
+              </div>
+            </div>
+
+            <!-- Recommended Packages -->
+            <div class="dashboard-section">
+              <h2>{{ 'Recommended FD Packages' | translate }}</h2>
+              <p class="section-description">{{ 'Quick-purchase portfolios with optimized returns for different investment goals.' | translate }}</p>
+              <div class="packages-grid">
+                @for (pkg of recommendedPackages(); track pkg.id) {
+                  <div class="package-card card">
+                    @if (pkg.badge) {
+                      <span class="package-badge">{{ pkg.badge }}</span>
+                    }
+                    <h3>{{ pkg.name }}</h3>
+                    <p class="package-description">{{ pkg.description }}</p>
+                    <div class="package-details">
+                      <div class="detail-item">
+                        <span class="label">{{ 'Total Investment' | translate }}</span>
+                        <span class="value">{{ formatCurrency(pkg.totalAmount) }}</span>
+                      </div>
+                      <div class="detail-item">
+                        <span class="label">{{ 'Est. Returns' | translate }}</span>
+                        <span class="value text-accent">{{ formatCurrency(pkg.estimatedReturn) }}</span>
+                      </div>
+                      <div class="detail-item">
+                        <span class="label">{{ 'FDs Included' | translate }}</span>
+                        <span class="value">{{ pkg.products.length }}</span>
+                      </div>
+                    </div>
+                    <div class="package-products">
+                      <h4>{{ 'Includes:' | translate }}</h4>
+                      @for (prod of pkg.products; track $index) {
+                        <div class="mini-product">
+                          <span>{{ prod.productCode }}</span>
+                          <span>{{ '{0} / {1}m' | translate:[formatCurrency(prod.amount), prod.tenure] }}</span>
+                        </div>
+                      }
+                    </div>
+                    <button class="btn btn-primary" (click)="quickPurchase(pkg)">{{ 'Quick Purchase' | translate }}</button>
+                  </div>
+                }
+              </div>
+            </div>
+
+            <div class="dashboard-section">
+              <h2>{{ 'Available FD Products' | translate }}</h2>
+              <div class="products-grid">
+                @for (product of products(); track product.productCode) {
+                  <div class="product-card card">
+                    <h3>{{ product.productName }}</h3>
+                    <p class="product-code">{{ product.productCode }}</p>
+                    <div class="product-details">
+                      <div class="detail-item">
+                        <span class="label">{{ 'Interest Rate:' | translate }}</span>
+                        <span class="value">{{ product.rateLimit?.max || 7.0 }}%</span>
+                      </div>
+                      <div class="detail-item">
+                        <span class="label">{{ 'Min Deposit:' | translate }}</span>
+                        <span class="value">{{ formatCurrency(product.minDeposit || 10000) }}</span>
+                      </div>
+                      <div class="detail-item">
+                        <span class="label">{{ 'Tenure:' | translate }}</span>
+                        <span class="value">{{ '{0} - {1} months' | translate:[product.termLimit?.min || 6, product.termLimit?.max || 120] }}</span>
+                      </div>
+                    </div>
+                    <button class="btn btn-primary" (click)="calculateReturnsForProduct(product)">{{ 'Calculate Returns' | translate }}</button>
+                  </div>
+                } @empty {
+                  <p class="no-data">No products available</p>
+                }
+              </div>
+            </div>
+
+            @if (fdAccounts().length > 0) {
+              <div class="dashboard-section">
+                <h2>{{ 'Your FD Accounts (Portfolio)' | translate }}</h2>
+                <div class="accounts-table">
+                  <table class="table">
+                    <thead>
+                      <tr>
+                        <th>{{ 'Account No' | translate }}</th>
+                        <th>{{ 'Principal' | translate }}</th>
+                        <th>{{ 'Interest Rate' | translate }}</th>
+                        <th>{{ 'Tenure' | translate }}</th>
+                        <th>{{ 'Maturity Date' | translate }}</th>
+                        <th>{{ 'Status' | translate }}</th>
+                        <th>{{ 'Approval Status' | translate }}</th>
+                        <th>{{ 'Actions' | translate }}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (account of fdAccounts(); track account.fdAccountNo) {
+                        <tr>
+                          <td>{{ account.fdAccountNo }}</td>
+                          <td>{{ formatCurrency(account.principalAmount || 0) }}</td>
+                          <td>{{ account.interestRate }}%</td>
+                          <td>{{ '{0} months' | translate:[account.termMonths] }}</td>
+                          <td>{{ account.maturityDate }}</td>
+                          <td>
+                            <span class="badge" [class.active]="account.status === 'ACTIVE'">
+                              {{ account.status }}
+                            </span>
+                          </td>
+                          <td>
+                            <span class="approval-badge" [class]="account.approvalStatus?.toLowerCase()">
+                              {{ account.approvalStatus || 'PENDING' }}
+                            </span>
+                          </td>
+                          <td>
+                            <button class="btn btn-sm btn-primary" (click)="calculateReturnsForAccount(account)">{{ 'Calculate Returns' | translate }}</button>
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            } @else {
+              <div class="dashboard-section">
+                <h2>{{ 'Your FD Accounts (Portfolio)' | translate }}</h2>
+                <div class="empty-state card">
+                  <p>{{ 'You don\'t have any FD accounts yet.' | translate }}</p>
+                  <button class="btn btn-primary" (click)="navigateToApplyFD()">{{ 'Apply for your first FD' | translate }}</button>
+                </div>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Applications Tab -->
+        @if (activeTab() === 'applications') {
+          <div class="tab-content">
+            <div class="dashboard-section">
+              <h2>{{ 'Active Applications' | translate }}</h2>
+              <p class="section-description">{{ 'Track your FD application status and approval timeline.' | translate }}</p>
+              
+              @if (activeApplications().length === 0) {
+                <div class="empty-state card">
+                  <p>{{ 'No active applications found.' | translate }}</p>
+                  <button class="btn btn-primary" (click)="navigateToApplyFD()">{{ 'Apply for FD' | translate }}</button>
+                </div>
+              } @else {
+                <div class="applications-table">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>{{ 'Application ID' | translate }}</th>
+                        <th>{{ 'Product' | translate }}</th>
+                        <th>{{ 'Amount' | translate }}</th>
+                        <th>{{ 'Tenure' | translate }}</th>
+                        <th>{{ 'Status' | translate }}</th>
+                        <th>{{ 'Submitted' | translate }}</th>
+                        <th>{{ 'Approved' | translate }}</th>
+                        <th>{{ 'Actions' | translate }}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (app of activeApplications(); track app.fdAccountNo) {
+                        <tr>
+                          <td>{{ app.fdAccountNo }}</td>
+                          <td>{{ app.productCode }}</td>
+                          <td>{{ formatCurrency(app.principalAmount) }}</td>
+                          <td>{{ '{0} months' | translate:[app.tenureMonths] }}</td>
+                          <td>
+                            <span class="status-badge" [class]="app.status?.toLowerCase()">
+                              {{ app.status }}
+                            </span>
+                          </td>
+                          <td>{{ app.createdAt }}</td>
+                          <td>{{ app.approvalStatus || '-' }}</td>
+                          <td>
+                            @if (app.status === 'PENDING' || app.approvalStatus === 'PENDING_APPROVAL') {
+                              <button class="btn btn-sm btn-secondary" (click)="withdrawApplication(app)">{{ 'Withdraw' | translate }}</button>
+                            }
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Contracts Tab -->
+        @if (activeTab() === 'contracts') {
+          <div class="tab-content">
+            <div class="dashboard-section">
+              <h2>{{ 'My Contracts' | translate }}</h2>
+              <p class="section-description">{{ 'Manage your active FD contracts and view aggregate holdings.' | translate }}</p>
+              
+              <div class="contracts-summary card">
+                <h3>{{ 'Portfolio Summary' | translate }}</h3>
+                <div class="summary-stats">
+                  <div class="stat">
+                    <span class="label">{{ 'Total Investment' | translate }}</span>
+                    <span class="value">{{ formatCurrency(totalInvestment) }}</span>
+                  </div>
+                  <div class="stat">
+                    <span class="label">{{ 'Total Interest Earned' | translate }}</span>
+                    <span class="value">{{ formatCurrency(totalInterestEarned) }}</span>
+                  </div>
+                  <div class="stat">
+                    <span class="label">{{ 'Total Opportunity Cost' | translate }}</span>
+                    <span class="value">{{ formatCurrency(totalOpportunityCost) }}</span>
+                  </div>
+                  <div class="stat">
+                    <span class="label">{{ 'Active Contracts' | translate }}</span>
+                    <span class="value">{{ activeContractsCount }}</span>
+                  </div>
+                </div>
+              </div>
+
+              @if (fdAccounts().length === 0) {
+                <div class="empty-state card">
+                  <p>{{ 'No active contracts found.' | translate }}</p>
+                  <button class="btn btn-primary" (click)="navigateToApplyFD()">{{ 'Apply for FD' | translate }}</button>
+                </div>
+              } @else {
+                <div class="contracts-grid">
+                  @for (account of sortedContracts; track account.fdAccountNo) {
+                    <div class="contract-card card">
+                      <div class="contract-header">
+                        <h4>{{ account.productName || account.productCode }}</h4>
+                        <span class="contract-id">{{ account.fdAccountNo }}</span>
+                      </div>
+                      <div class="contract-details">
+                        <div class="detail">
+                          <span class="label">{{ 'Principal' | translate }}</span>
+                          <span class="value">{{ formatCurrency(account.principalAmount || 0) }}</span>
+                        </div>
+                        <div class="detail">
+                          <span class="label">{{ 'Maturity Amount' | translate }}</span>
+                          <span class="value">{{ formatCurrency(account.maturityAmount || 0) }}</span>
+                        </div>
+                        <div class="detail">
+                          <span class="label">{{ 'Interest Rate' | translate }}</span>
+                          <span class="value">{{ account.interestRate }}%</span>
+                        </div>
+                        <div class="detail">
+                          <span class="label">{{ 'Tenure' | translate }}</span>
+                          <span class="value">{{ '{0} months' | translate:[account.tenureMonths] }}</span>
+                        </div>
+                        <div class="detail">
+                          <span class="label">{{ 'Remaining Duration' | translate }}</span>
+                          <span class="value">{{ '{0} months' | translate:[getRemainingMonths(account)] }}</span>
+                        </div>
+                        <div class="detail">
+                          <span class="label">{{ 'Maturity Date' | translate }}</span>
+                          <span class="value">{{ account.maturityDate }}</span>
+                        </div>
+                        <div class="detail">
+                          <span class="label">{{ 'Status' | translate }}</span>
+                          <span class="value active">{{ account.status }}</span>
+                        </div>
+                        @if (account.status === 'ACTIVE') {
+                          <div class="detail">
+                            <span class="label">{{ 'Premature Closure Charges' | translate }}</span>
+                            <span class="value">{{ getAccountCharges(account) }}</span>
+                          </div>
+                        }
+                      </div>
+                      <div class="contract-actions">
+                        <button class="btn btn-sm btn-secondary" (click)="viewContractDetails(account)">{{ 'View Details' | translate }}</button>
+                        @if (account.status === 'ACTIVE') {
+                          <button class="btn btn-sm btn-warning" (click)="viewCharges(account)">{{ 'View Charges' | translate }}</button>
+                          <button class="btn btn-sm btn-error" (click)="prematureClose(account)">{{ 'Premature Close' | translate }}</button>
+                        }
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Export Tab -->
+        @if (activeTab() === 'export') {
+          <div class="tab-content">
+            <div class="dashboard-section">
+              <h2>{{ 'Export Your Data' | translate }}</h2>
+              <p class="section-description">{{ 'Download your FD portfolio and earnings reports in various formats.' | translate }}</p>
+              
+              <div class="export-options card">
+                <h3>{{ 'Available Exports' | translate }}</h3>
+                <div class="export-grid">
+                  <div class="export-option">
+                    <div class="export-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg></div>
+                    <h4>{{ 'Portfolio PDF' | translate }}</h4>
+                    <p>{{ 'Download your complete FD portfolio as a PDF document with all account details.' | translate }}</p>
+                    <button class="btn btn-primary" (click)="exportToPDF()">{{ 'Download PDF' | translate }}</button>
+                  </div>
+                  
+                  <div class="export-option">
+                    <div class="export-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/></svg></div>
+                    <h4>{{ 'Portfolio CSV' | translate }}</h4>
+                    <p>{{ 'Export your FD data in CSV format for spreadsheet analysis and record-keeping.' | translate }}</p>
+                    <button class="btn btn-primary" (click)="exportToCSV()">{{ 'Download CSV' | translate }}</button>
+                  </div>
+                  
+                  <div class="export-option">
+                    <div class="export-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6"/><path d="M18.09 10.37A6 6 0 1 1 10.34 18"/><path d="M7 6h1v4"/></svg></div>
+                    <h4>{{ 'Earnings Report (Excel)' | translate }}</h4>
+                    <p>{{ 'Comprehensive earnings report with interest calculations, maturity amounts, and tax information.' | translate }}</p>
+                    <button class="btn btn-primary" (click)="exportEarningsReport()">{{ 'Download Excel' | translate }}</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="export-info card">
+                <h3>{{ 'Export Information' | translate }}</h3>
+                <ul class="info-list">
+                  <li><strong>{{ 'PDF Format:' | translate }}</strong> {{ 'Best for printing and official documentation' | translate }}</li>
+                  <li><strong>{{ 'CSV Format:' | translate }}</strong> {{ 'Ideal for data analysis and importing into other systems' | translate }}</li>
+                  <li><strong>{{ 'Excel Format:' | translate }}</strong> {{ 'Comprehensive report with detailed calculations and charts' | translate }}</li>
+                  <li><strong>{{ 'Data Included:' | translate }}</strong> {{ 'Account details, principal amounts, interest rates, maturity dates, and earnings' | translate }}</li>
+                  <li><strong>{{ 'Privacy:' | translate }}</strong> {{ 'Your data is encrypted during download' | translate }}</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- Settings Tab -->
+        @if (activeTab() === 'settings') {
+          <div class="tab-content">
+            <div class="settings-section card">
+              <h2 class="text-gradient">{{ 'Account Settings' | translate }}</h2>
+              <p class="section-description">{{ 'Manage your default details for FD applications. These details will be auto-filled for future applications.' | translate }}</p>
+              
+              <form class="settings-form" (ngSubmit)="saveSettings()">
+                <div class="form-grid">
+                  <div class="form-group">
+                    <label for="defaultCurrency">{{ 'Default Currency' | translate }}</label>
+                    <select id="defaultCurrency" [(ngModel)]="settingsData.defaultCurrency" name="defaultCurrency">
+                      @for (currency of supportedCurrencies; track currency.code) {
+                        <option [value]="currency.code">{{ currency.name }} ({{ currency.code }})</option>
+                      }
+                    </select>
+                  </div>
+
+                  <div class="form-group full-width">
+                    <label>{{ 'Live Exchange Rates (Base: INR)' | translate }}</label>
+                    <div class="conversion-rates-display">
+                      @if (currencyService.getApiError()) {
+                        <div class="rate-warning">
+                          <span class="warning-icon">⚠️</span>
+                          {{ currencyService.getApiError() }}
+                        </div>
+                      }
+                      <div class="rates-grid">
+                        @for (currency of supportedCurrencies; track currency.code) {
+                          @if (currency.code !== 'INR') {
+                            <div class="rate-item">
+                              <span class="currency-code">{{ currency.code }}</span>
+                              <span class="currency-name">{{ currency.name }}</span>
+                              <span class="exchange-rate">{{ currencyService.getConversionRates()[currency.code]?.toFixed(4) || 'N/A' }}</span>
+                            </div>
+                          }
+                        }
+                      </div>
+                      <div class="rates-footer">
+                        <span class="last-updated">
+                          @if (currencyService.getLastUpdated()) {
+                            {{ 'Last updated:' | translate }} {{ currencyService.getLastUpdated() | date:'medium' }}
+                          } @else {
+                            {{ 'Loading rates...' | translate }}
+                          }
+                        </span>
+                        <button type="button" class="btn btn-sm btn-secondary" (click)="refreshCurrencyRates()">{{ 'Refresh' | translate }}</button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="firstName">{{ 'First Name' | translate }}</label>
+                    <input type="text" id="firstName" [(ngModel)]="settingsData.firstName" name="firstName" [attr.placeholder]="'Enter your first name' | translate" />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="middleName">{{ 'Middle Name' | translate }}</label>
+                    <input type="text" id="middleName" [(ngModel)]="settingsData.middleName" name="middleName" [attr.placeholder]="'Enter your middle name (optional)' | translate" />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="lastName">{{ 'Last Name' | translate }}</label>
+                    <input type="text" id="lastName" [(ngModel)]="settingsData.lastName" name="lastName" [attr.placeholder]="'Enter your last name' | translate" />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="email">{{ 'Email Address' | translate }}</label>
+                    <input 
+                      type="email" 
+                      id="email" 
+                      [(ngModel)]="settingsData.email" 
+                      name="email"
+                      [attr.placeholder]="'Enter your email' | translate"
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="phone">{{ 'Phone Number' | translate }}</label>
+                    <input 
+                      type="tel" 
+                      id="phone" 
+                      [(ngModel)]="settingsData.phone" 
+                      name="phone"
+                      [attr.placeholder]="'Enter your phone number' | translate"
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="panNumber">{{ 'PAN Number' | translate }}</label>
+                    <input 
+                      type="text" 
+                      id="panNumber" 
+                      [(ngModel)]="settingsData.panNumber" 
+                      name="panNumber"
+                      [attr.placeholder]="'Enter your PAN number' | translate"
+                      maxlength="10"
+                      style="text-transform: uppercase"
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="age">{{ 'Age' | translate }}</label>
+                    <input 
+                      type="number" 
+                      id="age" 
+                      [(ngModel)]="settingsData.age" 
+                      name="age"
+                      [attr.placeholder]="'Enter your age' | translate"
+                      min="18"
+                      max="120"
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="gender">{{ 'Gender' | translate }}</label>
+                    <select id="gender" [(ngModel)]="settingsData.gender" name="gender">
+                      <option value="">{{ '-- Select Gender --' | translate }}</option>
+                      <option value="Male">{{ 'Male' | translate }}</option>
+                      <option value="Female">{{ 'Female' | translate }}</option>
+                      <option value="Other">{{ 'Other' | translate }}</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="occupation">{{ 'Occupation' | translate }}</label>
+                    <input 
+                      type="text" 
+                      id="occupation" 
+                      [(ngModel)]="settingsData.occupation" 
+                      name="occupation"
+                      [attr.placeholder]="'Enter your occupation' | translate"
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="annualIncome">{{ 'Annual Income (₹)' | translate }}</label>
+                    <input 
+                      type="number" 
+                      id="annualIncome" 
+                      [(ngModel)]="settingsData.annualIncome" 
+                      name="annualIncome"
+                      [attr.placeholder]="'Enter your annual income' | translate"
+                      min="0"
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="maritalStatus">{{ 'Marital Status' | translate }}</label>
+                    <select id="maritalStatus" [(ngModel)]="settingsData.maritalStatus" name="maritalStatus">
+                      <option value="">{{ '-- Select --' | translate }}</option>
+                      <option value="Single">{{ 'Single' | translate }}</option>
+                      <option value="Married">{{ 'Married' | translate }}</option>
+                      <option value="Divorced">{{ 'Divorced' | translate }}</option>
+                      <option value="Widowed">{{ 'Widowed' | translate }}</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="nationality">{{ 'Nationality' | translate }}</label>
+                    <input 
+                      type="text" 
+                      id="nationality" 
+                      [(ngModel)]="settingsData.nationality" 
+                      name="nationality"
+                      [attr.placeholder]="'Enter your nationality' | translate"
+                    />
+                  </div>
+
+                  <div class="form-group full-width">
+                    <label for="address">{{ 'Address' | translate }}</label>
+                    <textarea 
+                      id="address" 
+                      [(ngModel)]="settingsData.address" 
+                      name="address"
+                      [attr.placeholder]="'Enter your complete address' | translate"
+                      rows="3"
+                    ></textarea>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="city">{{ 'City' | translate }}</label>
+                    <input 
+                      type="text" 
+                      id="city" 
+                      [(ngModel)]="settingsData.city" 
+                      name="city"
+                      [attr.placeholder]="'Enter your city' | translate"
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="state">{{ 'State' | translate }}</label>
+                    <input 
+                      type="text" 
+                      id="state" 
+                      [(ngModel)]="settingsData.state" 
+                      name="state"
+                      [attr.placeholder]="'Enter your state' | translate"
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="pincode">{{ 'Pincode' | translate }}</label>
+                    <input 
+                      type="text" 
+                      id="pincode" 
+                      [(ngModel)]="settingsData.pincode" 
+                      name="pincode"
+                      [attr.placeholder]="'Enter 6-digit pincode' | translate"
+                      maxlength="6"
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="accountNumber">{{ 'Bank Account Number' | translate }}</label>
+                    <input 
+                      type="text" 
+                      id="accountNumber" 
+                      [(ngModel)]="settingsData.accountNumber" 
+                      name="accountNumber"
+                      [attr.placeholder]="'Enter bank account number' | translate"
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="ifscCode">{{ 'IFSC Code' | translate }}</label>
+                    <input 
+                      type="text" 
+                      id="ifscCode" 
+                      [(ngModel)]="settingsData.ifscCode" 
+                      name="ifscCode"
+                      [attr.placeholder]="'Enter IFSC code' | translate"
+                      style="text-transform: uppercase"
+                    />
+                  </div>
+
+                  <!-- Profile Picture Section -->
+                  <div class="form-group full-width profile-picture-section">
+                    <label>{{ 'Profile Picture' | translate }}</label>
+                    <div class="profile-picture-upload">
+                      @if (settingsData.profilePicture) {
+                        <div class="profile-picture-preview">
+                          <img [src]="settingsData.profilePicture" alt="Profile Picture" />
+                          <button type="button" class="btn btn-sm btn-error" (click)="removeProfilePicture()">{{ 'Remove' | translate }}</button>
+                        </div>
+                      } @else {
+                        <div class="profile-picture-placeholder">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                          <span>{{ 'No profile picture' | translate }}</span>
+                        </div>
+                      }
+                      <input type="file" id="profilePicture" (change)="onProfilePictureUpload($event)" accept="image/*" style="display: none" />
+                      <button type="button" class="btn btn-secondary" (click)="triggerProfilePictureUpload()">{{ 'Upload Picture' | translate }}</button>
+                    </div>
+                  </div>
+
+                  <!-- Multiple Nominees Section -->
+                  <div class="form-group full-width nominees-section">
+                    <label>{{ 'Nominees' | translate }}</label>
+                    <div class="nominees-list">
+                      @for (nominee of settingsData.nominees; track $index) {
+                        <div class="nominee-item">
+                          <div class="nominee-fields">
+                            <div class="form-group">
+                              <input 
+                                type="text" 
+                                [(ngModel)]="nominee.name" 
+                                name="nomineeName_{{$index}}"
+                                [attr.placeholder]="'Nominee Name' | translate"
+                              />
+                            </div>
+                            <div class="form-group">
+                              <input 
+                                type="text" 
+                                [(ngModel)]="nominee.relation" 
+                                name="nomineeRelation_{{$index}}"
+                                [attr.placeholder]="'Relation' | translate"
+                              />
+                            </div>
+                            <button type="button" class="btn btn-sm btn-error" (click)="removeNominee($index)" [disabled]="settingsData.nominees.length === 0">
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                            </button>
+                          </div>
+                        </div>
+                      }
+                      <button type="button" class="btn btn-secondary" (click)="addNominee()">{{ 'Add Nominee' | translate }}</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="form-actions">
+                  <button type="submit" class="btn btn-primary">{{ 'Save Settings' | translate }}</button>
+                  <button type="button" class="btn btn-secondary" (click)="loadSettings()">{{ 'Reset to Saved' | translate }}</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        }
+
+        <!-- Help Tab -->
+        @if (activeTab() === 'help') {
+          <div class="tab-content">
+            <div class="help-section">
+              <div class="help-bot-section">
+                <app-help-bot></app-help-bot>
+              </div>
+
+              <div class="help-card card">
+                <h2 class="text-gradient">{{ 'Terms & Conditions' | translate }}</h2>
+                <ul class="help-list">
+                  @for (term of helpContent.terms; track term) {
+                    <li>{{ term }}</li>
+                  }
+                </ul>
+              </div>
+
+              <div class="help-card card">
+                <h2 class="text-gradient">{{ 'Eligibility Criteria' | translate }}</h2>
+                <ul class="help-list">
+                  @for (item of helpContent.eligibility; track item) {
+                    <li>{{ item }}</li>
+                  }
+                </ul>
+              </div>
+
+              <div class="help-card card">
+                <h2 class="text-gradient">{{ 'Required Documents' | translate }}</h2>
+                <ul class="help-list">
+                  @for (req of helpContent.requirements; track req) {
+                    <li>{{ req }}</li>
+                  }
+                </ul>
+              </div>
+
+              <div class="help-card card contact-card">
+                <h2 class="text-gradient">{{ 'Contact Us' | translate }}</h2>
+                <div class="contact-details">
+                  <div class="contact-item">
+                    <span class="contact-label">{{ 'Phone:' | translate }}</span>
+                    <span class="contact-value">{{ helpContent.contact.phone }}</span>
+                  </div>
+                  <div class="contact-item">
+                    <span class="contact-label">{{ 'Email:' | translate }}</span>
+                    <span class="contact-value">{{ helpContent.contact.email }}</span>
+                  </div>
+                  <div class="contact-item">
+                    <span class="contact-label">{{ 'Address:' | translate }}</span>
+                    <span class="contact-value">{{ helpContent.contact.address }}</span>
+                  </div>
+                  <div class="contact-item">
+                    <span class="contact-label">{{ 'Working Hours:' | translate }}</span>
+                    <span class="contact-value">{{ helpContent.contact.workingHours }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </div>
+</div>

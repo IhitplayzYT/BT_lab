@@ -1,0 +1,60 @@
+<section class="pricing section" id="pricing">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="text-gradient">{{ 'FD Products' | translate }}</h2>
+      <p>{{ 'Choose the Fixed Deposit product that suits your needs' | translate }}</p>
+    </div>
+
+    @if (error()) {
+      <div class="alert alert-error">{{ error() }}</div>
+    }
+
+    @if (isLoading()) {
+      <div class="loading">{{ 'Loading products...' | translate }}</div>
+    }
+
+    <div class="pricing-grid">
+      @for (product of products(); track product.productCode) {
+        <div class="pricing-card card">
+          <h3>{{ product.productName }}</h3>
+          <div class="product-code">{{ product.productCode }}</div>
+          
+          <div class="price">
+            <span class="price-amount">{{ getRateRange(product) }}</span>
+            <span class="price-period">{{ 'Interest Rate' | translate }}</span>
+          </div>
+          
+          <ul class="features-list">
+            <li>
+              <span class="check">✓</span>
+              {{ 'Term: {0}' | translate:[getTermRange(product)] }}</li>
+            <li>
+              <span class="check">✓</span>
+              {{ 'Min Deposit: {0}' | translate:[formatCurrency(product.minDeposit)] }}</li>
+            <li>
+              <span class="check">✓</span>
+              {{ 'Max Deposit: {0}' | translate:[formatCurrency(product.maxDeposit)] }}</li>
+            <li>
+              <span class="check">✓</span>
+              {{ 'Interest Type: {0}' | translate:[product.interestType] }}</li>
+            @if (product.charges?.interestCreditFrequency) {
+              <li>
+                <span class="check">✓</span>
+                {{ 'Compounding: {0}' | translate:[product.charges.interestCreditFrequency] }}</li>
+            }
+          </ul>
+          
+          <button class="btn btn-primary" (click)="selectProduct(product.productCode)">
+            {{ 'Apply Now' | translate }}
+          </button>
+        </div>
+      }
+    </div>
+
+    @if (products().length === 0 && !isLoading()) {
+      <div class="empty-state">
+        <p>{{ 'No FD products available at the moment' | translate }}</p>
+      </div>
+    }
+  </div>
+</section>

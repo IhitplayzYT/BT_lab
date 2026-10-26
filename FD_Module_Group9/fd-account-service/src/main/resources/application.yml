@@ -70,3 +70,5 @@ services:
     base-url: ${CALCULATOR_SERVICE_URL:http://fd-calculator:8084}
     connect-timeout-ms: ${CALCULATOR_CONNECT_TIMEOUT:3000}
     read-timeout-ms: ${CALCULATOR_READ_TIMEOUT:5000}
+  auth:
+    base-url: ${AUTH_SERVICE_URL:http://fd-auth-service:8090}

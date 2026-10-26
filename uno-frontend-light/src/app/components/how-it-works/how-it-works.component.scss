@@ -1,0 +1,53 @@
+:host { display: block; }
+
+.steps-container { position: relative; display: grid; gap: clamp(2.5rem, 6vw, 5rem); padding-block: 1rem; }
+
+/* The trail connecting the steps is drawn as you scroll */
+.trail { position: absolute; left: 50%; top: 0; width: 60px; height: 100%; translate: -50% 0; overflow: visible; pointer-events: none; }
+.trail path { fill: none; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.trail-base { stroke: var(--line-2); stroke-width: 2; stroke-dasharray: 3 9; }
+.trail-glow { stroke: var(--gold); stroke-width: 3;}
+
+.step-card { position: relative; width: calc(50% - 4.5rem); display: grid; gap: 0.6rem; }
+.step-card:nth-of-type(odd) { margin-right: auto; }
+.step-card:nth-of-type(even) { margin-left: auto; }
+
+.step-number {
+  position: absolute;
+  top: 1.6rem;
+  display: grid;
+  place-items: center;
+  width: 4rem;
+  height: 4rem;
+  border-radius: 50%;
+  font-family: var(--font-display);
+  font-size: 1.7rem;
+  font-weight: 700;
+  font-style: italic;
+  color: var(--on-gold);
+  background: linear-gradient(135deg, var(--gold-hi), var(--gold));
+  box-shadow: 0 0 0 8px var(--bg), 0 0 0 9px var(--line-2), 0 16px 34px -8px var(--gold);
+  z-index: 3;
+}
+.step-card:nth-of-type(odd) .step-number { right: calc(-4.5rem - 2rem); }
+.step-card:nth-of-type(even) .step-number { left: calc(-4.5rem - 2rem); }
+.step-number::after { content: ''; position: absolute; inset: 0; border-radius: 50%; border: 2px solid var(--gold);}
+
+.step-art {
+  position: absolute;
+  top: 1.4rem;
+  right: 1.6rem;
+  font-size: 3rem;
+  color: var(--gold);
+  opacity: 0.14;
+  transition: opacity 0.25s, transform 0.25s var(--ease-out);
+}
+.step-card:hover .step-art { opacity: 0.5; transform: rotate(-8deg) scale(1.12); }
+.step-content h3 { margin-bottom: 0.6rem; padding-right: 4rem; }
+.step-content p { padding-right: 1.5rem; }
+
+@media (max-width: 860px) {
+  .trail { left: 2rem; }
+  .step-card, .step-card:nth-of-type(n) { width: auto; margin: 0 0 0 4.5rem; }
+  .step-card:nth-of-type(n) .step-number { left: -4.5rem; right: auto; width: 3.4rem; height: 3.4rem; top: 1.4rem; translate: 0 0; }
+}

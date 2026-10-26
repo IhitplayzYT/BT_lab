@@ -8,10 +8,19 @@ WORKDIR /app
 ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=70 -XX:+ExitOnOutOfMemoryError"
 USER app
 
-FROM base AS fd-account-service
+# Java + Python base with pre-installed dependencies (cached image)
+# Build base image with: docker build --target java-python-base -t fd-python-base -f FD_Module_Group9/Dockerfile .
+FROM base AS java-python-base
 USER root
-RUN apt-get update && apt-get install -y --no-install-recommends python3 && rm -rf /var/lib/apt/lists/* \
-    && mkdir -p /app/extracts && chown app:app /app/extracts
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 \
+    python3-pip \
+    && rm -rf /var/lib/apt/lists/*
+COPY --chown=app:app reports/python/requirements.txt /tmp/requirements.txt
+RUN pip3 install --break-system-packages --no-cache-dir -r /tmp/requirements.txt && rm /tmp/requirements.txt
+USER app
+
+FROM java-python-base AS fd-account-service
 USER app
 ENV APP_PYTHON_EXECUTABLE=python3
 COPY --chown=app:app reports /app/reports

@@ -10,6 +10,7 @@ public interface ProductService {
     ProductResponseDTO createProduct(ProductRequestDTO dto);
     ProductResponseDTO updateProduct(String productCode, ProductRequestDTO dto);
     ProductResponseDTO retireProduct(String productCode);
+    void permanentlyDeleteProduct(String productCode);
     List<ProductResponseDTO> searchProducts(String productType, LocalDate startDate, LocalDate endDate);
     List<ProductResponseDTO> searchProducts(String productType, LocalDate startDate, LocalDate endDate, String status, int page, int size, String sortBy);
     ProductResponseDTO getProductByCode(String productCode);

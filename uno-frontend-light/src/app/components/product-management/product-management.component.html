@@ -1,0 +1,251 @@
+<div class="product-management-container">
+  <div class="header">
+    <h2>{{ 'Product Management' | translate }}</h2>
+    @if (canCreateProduct()) {
+      <button class="btn btn-primary" (click)="showCreate()">
+        <span class="icon">+</span> {{ 'Create Product' | translate }}
+      </button>
+    }
+  </div>
+
+  @if (error()) {
+    <div class="alert alert-error">
+      {{ error() }}
+      <button class="close-btn" (click)="error.set(null)">×</button>
+    </div>
+  }
+
+  @if (isLoading()) {
+    <div class="loading">{{ 'Loading products...' | translate }}</div>
+  }
+
+  @if (showCreateForm() || showEditForm()) {
+    <div data-lenis-prevent class="form-overlay" (click)="hideForms()">
+      <div class="form-container" (click)="$event.stopPropagation()">
+        <div class="form-header">
+          <h3>{{ showCreateForm() ? 'Create New Product' : 'Edit Product' }}</h3>
+          <button class="close-icon-btn" (click)="hideForms()" [attr.title]="'Close' | translate">✕</button>
+        </div>
+
+        @if (error()) {
+          <div class="alert alert-error">{{ error() }}</div>
+        }
+
+        <form (ngSubmit)="showCreateForm() ? createProduct() : updateProduct()" (ngModelChange)="saveFormData()">
+          <div class="form-row">
+            <div class="form-group">
+              <label>{{ 'Product Code' | translate }}</label>
+              <input type="text" [(ngModel)]="productForm.productCode" name="productCode" [disabled]="showEditForm()" [required]="!showEditForm()" (blur)="validateProductForm()">
+              @if (formErrors['productCode']) {
+                <div class="validation-error">{{ formErrors['productCode'] }}</div>
+              }
+            </div>
+            <div class="form-group">
+              <label>{{ 'Product Name' | translate }}</label>
+              <input type="text" [(ngModel)]="productForm.productName" name="productName" required (blur)="validateProductForm()">
+              @if (formErrors['productName']) {
+                <div class="validation-error">{{ formErrors['productName'] }}</div>
+              }
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>{{ 'Product Type' | translate }}</label>
+              <select [(ngModel)]="productForm.productType" name="productType">
+                <option value="FD">{{ 'Fixed Deposit' | translate }}</option>
+                <option value="SAVINGS">{{ 'Savings' | translate }}</option>
+                <option value="LOAN">{{ 'Loan' | translate }}</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>{{ 'Currency' | translate }}</label>
+              <select [(ngModel)]="productForm.currency" name="currency">
+                <option value="INR">{{ 'INR' | translate }}</option>
+                <option value="USD">{{ 'USD' | translate }}</option>
+                <option value="EUR">{{ 'EUR' | translate }}</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>{{ 'Effective Date' | translate }}</label>
+              <input type="date" [(ngModel)]="productForm.effectiveDate" name="effectiveDate" (blur)="validateProductForm()">
+            </div>
+            <div class="form-group">
+              <label>{{ 'End Date' | translate }}</label>
+              <input type="date" [(ngModel)]="productForm.endDate" name="endDate" (blur)="validateProductForm()">
+              @if (formErrors['endDate']) {
+                <div class="validation-error">{{ formErrors['endDate'] }}</div>
+              }
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>{{ 'Min Term (months)' | translate }}</label>
+              <input type="number" [(ngModel)]="productForm.minTerm" name="minTerm" min="1" required (blur)="validateProductForm()">
+              @if (formErrors['minTerm']) {
+                <div class="validation-error">{{ formErrors['minTerm'] }}</div>
+              }
+            </div>
+            <div class="form-group">
+              <label>{{ 'Max Term (months)' | translate }}</label>
+              <input type="number" [(ngModel)]="productForm.maxTerm" name="maxTerm" min="1" required (blur)="validateProductForm()">
+              @if (formErrors['maxTerm']) {
+                <div class="validation-error">{{ formErrors['maxTerm'] }}</div>
+              }
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>{{ 'Min Rate (%)' | translate }}</label>
+              <input type="number" [(ngModel)]="productForm.minRate" name="minRate" step="0.1" required (blur)="validateProductForm()">
+              @if (formErrors['minRate']) {
+                <div class="validation-error">{{ formErrors['minRate'] }}</div>
+              }
+            </div>
+            <div class="form-group">
+              <label>{{ 'Max Rate (%)' | translate }}</label>
+              <input type="number" [(ngModel)]="productForm.maxRate" name="maxRate" step="0.1" required (blur)="validateProductForm()">
+              @if (formErrors['maxRate']) {
+                <div class="validation-error">{{ formErrors['maxRate'] }}</div>
+              }
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>{{ 'Min Deposit' | translate }}</label>
+              <input type="number" [(ngModel)]="productForm.minDeposit" name="minDeposit" min="0" required (blur)="validateProductForm()">
+              @if (formErrors['minDeposit']) {
+                <div class="validation-error">{{ formErrors['minDeposit'] }}</div>
+              }
+            </div>
+            <div class="form-group">
+              <label>{{ 'Max Deposit' | translate }}</label>
+              <input type="number" [(ngModel)]="productForm.maxDeposit" name="maxDeposit" min="0" required (blur)="validateProductForm()">
+              @if (formErrors['maxDeposit']) {
+                <div class="validation-error">{{ formErrors['maxDeposit'] }}</div>
+              }
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>{{ 'Min Age' | translate }}</label>
+              <input type="number" [(ngModel)]="productForm.minAge" name="minAge" min="18" required (blur)="validateProductForm()">
+              @if (formErrors['minAge']) {
+                <div class="validation-error">{{ formErrors['minAge'] }}</div>
+              }
+            </div>
+            <div class="form-group">
+              <label>{{ 'Interest Type' | translate }}</label>
+              <select [(ngModel)]="productForm.interestType" name="interestType">
+                <option value="SIMPLE">{{ 'Simple' | translate }}</option>
+                <option value="COMPOUND">{{ 'Compound' | translate }}</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>{{ 'Compounding Frequency' | translate }}</label>
+              <select [(ngModel)]="productForm.compoundingFrequency" name="compoundingFrequency">
+                <option value="MONTHLY">{{ 'Monthly' | translate }}</option>
+                <option value="QUARTERLY">{{ 'Quarterly' | translate }}</option>
+                <option value="HALF_YEARLY">{{ 'Half-Yearly' | translate }}</option>
+                <option value="YEARLY">{{ 'Yearly' | translate }}</option>
+                <option value="ON_MATURITY">{{ 'On Maturity' | translate }}</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>{{ 'Status' | translate }}</label>
+              <select [(ngModel)]="productForm.status" name="status">
+                <option value="DRAFT">{{ 'Draft' | translate }}</option>
+                <option value="ACTIVE">{{ 'Active' | translate }}</option>
+                <option value="SUSPENDED">{{ 'Suspended' | translate }}</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="btn btn-secondary" (click)="hideForms()">{{ 'Cancel' | translate }}</button>
+            @if (showCreateForm()) {
+              <button type="button" class="btn btn-danger" (click)="clearForm()">{{ 'Clear All Fields' | translate }}</button>
+            }
+            <button type="submit" class="btn btn-primary" [disabled]="isLoading()">
+              {{ isLoading() ? 'Saving...' : (showCreateForm() ? 'Create' : 'Update') }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  <div class="products-grid">
+    @for (product of products(); track product.productCode) {
+      <div class="product-card">
+        <div class="product-header">
+          <h3>{{ product.productName }}</h3>
+          <span class="badge {{ getStatusClass(product.status) }}">{{ product.status }}</span>
+        </div>
+        <div class="product-details">
+          <div class="detail-row">
+            <span class="label">{{ 'Code:' | translate }}</span>
+            <span class="value">{{ product.productCode }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">{{ 'Type:' | translate }}</span>
+            <span class="value">{{ product.productType }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">{{ 'Currency:' | translate }}</span>
+            <span class="value">{{ product.currency }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">{{ 'Term Range:' | translate }}</span>
+            <span class="value">{{ '{0} - {1} months' | translate:[product.termLimit?.min, product.termLimit?.max] }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">{{ 'Rate Range:' | translate }}</span>
+            <span class="value">{{ product.rateLimit?.min }}% - {{ product.rateLimit?.max }}%</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">{{ 'Deposit Range:' | translate }}</span>
+            <span class="value">{{ formatCurrency(product.minDeposit) }} - {{ formatCurrency(product.maxDeposit) }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">{{ 'Effective Date:' | translate }}</span>
+            <span class="value">{{ product.effectiveDate || 'N/A' }}</span>
+          </div>
+        </div>
+        <div class="product-actions">
+          @if (canManageProducts()) {
+            <button class="btn btn-sm btn-secondary" (click)="showEdit(product)">{{ 'Edit' | translate }}</button>
+            @if (product.status === 'ACTIVE' || product.status === 'DRAFT') {
+              <button class="btn btn-sm btn-danger" (click)="retireProduct(product.productCode)">{{ 'Retire' | translate }}</button>
+            }
+            @if (product.status === 'RETIRED') {
+              <button class="btn btn-sm btn-success" (click)="reintroduceProduct(product.productCode)">{{ 'Reintroduce' | translate }}</button>
+            }
+          }
+          @if (canDeleteProduct()) {
+            <button class="btn btn-sm btn-danger" (click)="permanentlyDeleteProduct(product.productCode)">{{ 'Delete Permanently' | translate }}</button>
+          }
+        </div>
+      </div>
+    }
+  </div>
+
+  @if (products().length === 0 && !isLoading()) {
+    <div class="empty-state">
+      <p>{{ 'No products found' | translate }}</p>
+      @if (canCreateProduct()) {
+        <button class="btn btn-primary" (click)="showCreate()">{{ 'Create First Product' | translate }}</button>
+      }
+    </div>
+  }
+</div>

@@ -9,7 +9,7 @@ public record FDAccountResponse(
         String productCode,
         BigDecimal principalAmount,
         BigDecimal interestRate,
-        Integer termMonths,
+        Integer tenureMonths,
         LocalDate maturityDate,
         String status,
         String createdBy

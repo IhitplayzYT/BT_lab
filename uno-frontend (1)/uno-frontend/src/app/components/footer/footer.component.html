@@ -1,0 +1,64 @@
+<footer class="footer">
+  <div class="footer-mark script" aria-hidden="true" data-parallax="0.05">Uno Bank</div>
+
+  <div class="container">
+    <div class="footer-content">
+      <div class="footer-brand">
+        <div class="logo">
+          <span class="logo-text">{{ 'UNO' | translate }}</span>
+          <span class="logo-subtitle">{{ 'Bank' | translate }}</span>
+        </div>
+        <p>{{ 'Premium digital banking for the modern investor. Secure, simple, and smart.' | translate }}</p>
+      </div>
+
+      <div class="footer-links">
+        <div class="link-group">
+          <h4>{{ 'Quick Links' | translate }}</h4>
+          <ul>
+            @for (link of quickLinks; track link.label) {
+              @if (link.isAnchor) {
+                <li><a [href]="link.href">{{ link.label }}</a></li>
+              } @else {
+                <li><a (click)="navigateTo(link.href)">{{ link.label }}</a></li>
+              }
+            }
+          </ul>
+        </div>
+
+        <div class="link-group">
+          <h4>{{ 'Support' | translate }}</h4>
+          <ul>
+            @for (link of supportLinks; track link.label) {
+              @if (link.isAnchor) {
+                <li><a [href]="link.href">{{ link.label }}</a></li>
+              } @else {
+                <li><a (click)="navigateTo(link.href)">{{ link.label }}</a></li>
+              }
+            }
+          </ul>
+        </div>
+
+        <div class="link-group">
+          <h4>{{ 'Legal' | translate }}</h4>
+          <ul>
+            <li><a (click)="navigateTo('/terms')">{{ 'Terms & Conditions' | translate }}</a></li>
+            <li><a (click)="navigateTo('/privacy')">{{ 'Privacy Policy' | translate }}</a></li>
+          </ul>
+        </div>
+
+        <div class="link-group">
+          <h4>{{ 'Connect' | translate }}</h4>
+          <div class="social-links">
+            @for (link of socialLinks; track link.icon) {
+              <a [href]="link.href" class="social-link" [attr.aria-label]="link.label"><app-icon [name]="link.icon" /></a>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <p>{{ '© {0} UNO Bank. All rights reserved.' | translate:[currentYear] }}</p>
+    </div>
+  </div>
+</footer>

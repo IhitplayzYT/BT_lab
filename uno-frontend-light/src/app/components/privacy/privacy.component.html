@@ -1,0 +1,39 @@
+<app-navbar></app-navbar>
+<section class="privacy-section section">
+  <div class="container">
+    <div class="privacy-header">
+      <h1 class="text-gradient">{{ 'Privacy Policy' | translate }}</h1>
+      <p>{{ 'Last Updated: January 2025' | translate }}</p>
+    </div>
+
+    <div class="privacy-intro card">
+      <p>
+        {{ 'At UNO Bank, we are committed to protecting your privacy and ensuring the security of your personal information. This Privacy Policy explains how we collect, use, and safeguard your data when you use our banking services.' | translate }}
+      </p>
+    </div>
+
+    <div class="privacy-content">
+      @for (section of sections; track section.title) {
+        <div class="privacy-section card">
+          <h3>{{ section.title }}</h3>
+          <div class="privacy-text">
+            {{ section.content }}
+          </div>
+        </div>
+      }
+    </div>
+
+    <div class="privacy-footer card">
+      <h3>{{ 'Contact Our Privacy Officer' | translate }}</h3>
+      <p>
+        {{ 'If you have any questions, concerns, or requests regarding your privacy, please reach out to us:' | translate }}
+      </p>
+      <div class="contact-info">
+        <p><strong>{{ 'Email:' | translate }}</strong> {{ 'privacy@unobank.com' | translate }}</p>
+        <p><strong>{{ 'Phone:' | translate }}</strong> {{ '1800-XXX-XXXX (Toll Free)' | translate }}</p>
+        <p><strong>{{ 'Address:' | translate }}</strong> {{ 'UNO Bank Privacy Officer, Mumbai, Maharashtra, India' | translate }}</p>
+      </div>
+    </div>
+  </div>
+</section>
+<app-footer></app-footer>

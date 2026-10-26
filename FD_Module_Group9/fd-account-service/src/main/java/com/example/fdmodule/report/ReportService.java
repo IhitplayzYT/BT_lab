@@ -1,5 +1,6 @@
 package com.example.fdmodule.report;
 
+import com.example.fdmodule.client.AuthServiceClient;
 import com.example.fdmodule.clock.BusinessClock;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -24,6 +25,14 @@ public class ReportService {
             "principal_amount", "interest_rate", "maturity_date", "days_to_maturity");
     static final List<String> HISTORY_COLUMNS = List.of("accrual_date", "interest_amount", "cumulative_interest",
             "capitalized", "settlement_status");
+    static final List<String> INTEREST_REPORT_COLUMNS = List.of("txn_id", "fd_account_no", "amount", "currency",
+            "txn_timestamp", "remarks");
+    static final List<String> TRANSACTION_REPORT_COLUMNS = List.of("txn_id", "fd_account_no", "txn_type", "amount",
+            "currency", "status", "txn_timestamp", "remarks");
+    static final List<String> CUSTOMER_ACTIVITY_COLUMNS = List.of("txn_timestamp", "fd_account_no", "product_code",
+            "txn_type", "amount", "currency", "status", "debit_gl_account", "credit_gl_account", "remarks");
+    static final List<String> CUSTOMER_ACCRUAL_COLUMNS = List.of("accrual_date", "fd_account_no", "product_code", "currency",
+            "interest_amount", "cumulative_interest", "capitalized_flag", "settlement_status");
     static final List<String> EXTRACT_COLUMNS = List.of("fd_account_no", "customer_id", "product_code", "currency",
             "principal_amount", "interest_rate", "tenure_months", "status", "maturity_date", "accrued_interest");
     static final int MAX_MATURITY_DAYS = 3650;
@@ -33,10 +42,12 @@ public class ReportService {
 
     private final JdbcTemplate jdbc;
     private final BusinessClock clock;
+    private final AuthServiceClient authServiceClient;
 
-    public ReportService(JdbcTemplate jdbc, BusinessClock clock) {
+    public ReportService(JdbcTemplate jdbc, BusinessClock clock, AuthServiceClient authServiceClient) {
         this.jdbc = jdbc;
         this.clock = clock;
+        this.authServiceClient = authServiceClient;
     }
 
     public ReportData fdSummary(String status) {
@@ -52,11 +63,44 @@ public class ReportService {
 
     /** Customer path: the customer is found from the logged-in username, never from a request parameter. */
     public ReportData portfolioForUsername(String username) {
+        // Get user_id from auth-service - NO FALLBACK, userId must be synchronized
+        Long userId = authServiceClient.getUserIdByUsername(username);
+        if (userId == null) {
+            System.err.println("CRITICAL: User ID not found in auth-service for username: " + username + ". User session is invalid.");
+            throw new IllegalStateException("User session invalid. Please log out and log in again. User ID synchronization failed.");
+        }
+
         List<Map<String, Object>> rows = jdbc.queryForList(PORTFOLIO_SELECT
-                + "JOIN customer_profile c ON c.customer_id=a.customer_id JOIN users u ON u.id=c.user_id "
-                + "WHERE u.username=? AND (a.approval_status='APPROVED' OR a.approval_status IS NULL) "
-                + "ORDER BY a.created_at, a.fd_account_no", username);
+                + "JOIN customer_profile c ON c.customer_id=a.customer_id "
+                + "WHERE c.user_id=? AND (a.approval_status='APPROVED' OR a.approval_status IS NULL) "
+                + "ORDER BY a.created_at, a.fd_account_no", userId);
         return new ReportData("Customer portfolio", PORTFOLIO_COLUMNS, rows);
+    }
+
+    /** Append-only posted ledger activity for the authenticated customer's own FDs. */
+    public ReportData customerActivityForUsername(String username) {
+        Long userId = authServiceClient.getUserIdByUsername(username);
+        if (userId == null) throw new IllegalStateException("User session invalid. Please log out and log in again.");
+        List<Map<String, Object>> rows = jdbc.queryForList(
+                "SELECT t.txn_timestamp,t.fd_account_no,a.product_code,t.txn_type,t.amount,t.currency,t.status,"
+                        + "t.debit_gl_account,t.credit_gl_account,t.remarks FROM fd_transactions t "
+                        + "JOIN fd_accounts a ON a.fd_account_no=t.fd_account_no "
+                        + "JOIN customer_profile c ON c.customer_id=a.customer_id WHERE c.user_id=? "
+                        + "ORDER BY t.txn_timestamp,t.txn_id", userId);
+        return new ReportData("Customer FD activity", CUSTOMER_ACTIVITY_COLUMNS, rows);
+    }
+
+    /** Daily accrual rows, including historical catch-up days and settlement state, for the authenticated customer. */
+    public ReportData customerAccrualHistoryForUsername(String username) {
+        Long userId = authServiceClient.getUserIdByUsername(username);
+        if (userId == null) throw new IllegalStateException("User session invalid. Please log out and log in again.");
+        List<Map<String, Object>> rows = jdbc.queryForList(
+                "SELECT i.accrual_date,i.fd_account_no,a.product_code,a.currency,i.interest_amount,i.cumulative_interest,"
+                        + "i.capitalized_flag,i.settlement_status FROM fd_interest_transactions i "
+                        + "JOIN fd_accounts a ON a.fd_account_no=i.fd_account_no "
+                        + "JOIN customer_profile c ON c.customer_id=a.customer_id WHERE c.user_id=? "
+                        + "ORDER BY i.accrual_date,i.fd_account_no", userId);
+        return new ReportData("Customer daily interest accruals", CUSTOMER_ACCRUAL_COLUMNS, rows);
     }
 
     public ReportData portfolioForCustomer(String customerId) {
@@ -85,6 +129,20 @@ public class ReportService {
                 "SELECT accrual_date, interest_amount, cumulative_interest, capitalized_flag AS capitalized, settlement_status "
                         + "FROM fd_interest_transactions WHERE fd_account_no=? ORDER BY accrual_date", fdAccountNo);
         return new ReportData("Interest history " + fdAccountNo, HISTORY_COLUMNS, rows);
+    }
+
+    public ReportData interestReport() {
+        List<Map<String, Object>> rows = jdbc.queryForList(
+                "SELECT txn_id, fd_account_no, amount, currency, txn_timestamp, remarks FROM fd_transactions "
+                        + "WHERE txn_type='INTEREST' ORDER BY txn_timestamp, txn_id");
+        return new ReportData("Posted interest transactions", INTEREST_REPORT_COLUMNS, rows);
+    }
+
+    public ReportData transactionReport() {
+        List<Map<String, Object>> rows = jdbc.queryForList(
+                "SELECT txn_id, fd_account_no, txn_type, amount, currency, status, txn_timestamp, remarks "
+                        + "FROM fd_transactions ORDER BY txn_timestamp, txn_id");
+        return new ReportData("FD transaction ledger", TRANSACTION_REPORT_COLUMNS, rows);
     }
 
     /** Account-level dump used by the nightly extract and the Python report. */

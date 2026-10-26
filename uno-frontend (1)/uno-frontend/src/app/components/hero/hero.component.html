@@ -1,0 +1,83 @@
+<section class="hero" id="hero">
+  <div class="hero-canvas" #canvasHost aria-hidden="true">
+    <!-- shown only when WebGL is unavailable -->
+    <div class="hero-fallback"><i></i><i></i><i></i></div>
+  </div>
+  <div class="hero-vignette" aria-hidden="true"></div>
+
+  <div class="container hero-inner">
+    <div class="hero-content">
+      <h1 class="hero-headline" [attr.aria-label]="('Grow Your Wealth' | translate) + ' ' + ('With Confidence' | translate)">
+        <span class="hl-serif" aria-hidden="true">
+          @if (translation.currentLangSignal() === 'en') {
+          @for (w of words; track $index) {
+            <span class="word">@for (l of w.chars; track l.i) {<span class="ch" [style.--i]="l.i">{{ l.c }}</span>}</span>{{ ' ' }}
+          }
+          } @else {
+            {{ 'Grow Your Wealth' | translate }}
+          }
+        </span>
+        <span class="hl-script-wrap" aria-hidden="true">
+          <span class="hl-script">{{ 'With Confidence' | translate }}</span>
+          <svg class="flourish" viewBox="0 0 560 44" preserveAspectRatio="none">
+            <path pathLength="1" d="M6 30C96 6 214 4 346 15S506 32 554 8" />
+            <path pathLength="1" d="M60 40C170 24 300 24 420 34" />
+          </svg>
+        </span>
+      </h1>
+
+      <p class="hero-subheadline">
+        {{ 'Premium fixed deposit solutions with guaranteed returns. Secure your future with UNO Bank\'s competitive rates and flexible tenures.' | translate }}
+      </p>
+
+      <div class="hero-cta">
+        <button class="btn btn-primary magnetic-btn" (click)="startInvesting()">{{ 'Start Investing' | translate }}</button>
+        <button class="btn btn-secondary magnetic-btn" (click)="openCalculator()">{{ 'Calculate Returns' | translate }}</button>
+      </div>
+
+      <div class="hero-stats">
+        <div class="stat-item">
+          <span class="stat-value" data-count>8.5%</span>
+          <span class="stat-label">{{ 'Avg Interest Rate' | translate }}</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value" data-count>{{ '₹1 Cr' | translate }}</span>
+          <span class="stat-label">{{ 'Max Deposit' | translate }}</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value" data-count>120</span>
+          <span class="stat-label">{{ 'Months Tenure' | translate }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Compounding curve: draws itself on load -->
+  <svg class="hero-curve" viewBox="0 0 1440 300" preserveAspectRatio="none" aria-hidden="true">
+    <defs>
+      <linearGradient id="hc-stroke" x1="0" x2="1" y1="0" y2="0">
+        <stop offset="0" stop-color="#2be0cc" />
+        <stop offset="0.55" stop-color="#f6b945" />
+        <stop offset="1" stop-color="#ff5c9a" />
+      </linearGradient>
+      <linearGradient id="hc-fill" x1="0" x2="0" y1="0" y2="1">
+        <stop offset="0" stop-color="#f6b945" stop-opacity="0.22" />
+        <stop offset="1" stop-color="#f6b945" stop-opacity="0" />
+      </linearGradient>
+    </defs>
+    <path class="area" d="M0 285C300 282 560 268 800 226S1160 96 1440 14V300H0Z" fill="url(#hc-fill)" />
+    <path class="line" pathLength="1" d="M0 285C300 282 560 268 800 226S1160 96 1440 14" />
+  </svg>
+
+  <div class="hero-marquee" aria-hidden="true">
+    <div class="track">
+      @for (n of [0, 1]; track n) {
+        @for (t of ticker; track t) {
+          <span class="tick">{{ t }}</span>
+        }
+      }
+    </div>
+  </div>
+
+  <div class="scroll-cue" aria-hidden="true"><span></span></div>
+</section>

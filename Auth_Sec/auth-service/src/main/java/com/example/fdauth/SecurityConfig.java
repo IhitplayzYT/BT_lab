@@ -40,20 +40,22 @@ public class SecurityConfig {
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
-        
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
 
     @Bean
-    SecurityFilterChain chain(HttpSecurity http) throws Exception {
+    SecurityFilterChain chain(HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter) throws Exception {
         return http
                 .csrf(c -> c.disable()) // no cookies or sessions are used,
                 .cors(c -> c.configurationSource(corsConfigurationSource()))
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .addFilterBefore(jwtAuthenticationFilter, org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(a -> a
-                        .requestMatchers("/api/auth/login", "/api/auth/signup", "/api/auth/refresh", "/api/auth/logout", "/health", "/actuator/health", "/error").permitAll()
+                        .requestMatchers("/api/auth/login", "/api/auth/signup", "/api/auth/refresh", "/api/auth/logout", "/api/auth/init-signup", "/api/auth/verify-otp", "/api/auth/resend-otp", "/health", "/actuator/health", "/error").permitAll()
+                        .requestMatchers("/api/auth/admin/**").hasRole("ADMIN")
                         .anyRequest().denyAll())
                 .exceptionHandling(e -> e.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
                 .build();

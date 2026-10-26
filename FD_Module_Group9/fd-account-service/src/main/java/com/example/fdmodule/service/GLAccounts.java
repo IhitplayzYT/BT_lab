@@ -28,10 +28,12 @@ public final class GLAccounts {
     public static final String LIABILITY_FD_DEPOSITS = "LIABILITY_FD_DEPOSITS";
 
     /**
-     * Interest expense. Debited when interest is capitalized or paid out; daily accruals are a
-     * sub-ledger only and do not post to the GL.
+     * Interest expense, recognized when interest accrues.
      */
     public static final String EXPENSE_INTEREST = "EXPENSE_INTEREST";
+
+    /** Liability for interest earned by customers but not yet capitalized or paid. */
+    public static final String LIABILITY_INTEREST_PAYABLE = "LIABILITY_INTEREST_PAYABLE";
 
     /**
      * Clearing account for money paid out to the customer (interest payouts, maturity payouts).

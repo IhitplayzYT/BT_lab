@@ -31,12 +31,12 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Insert default users (these can be removed after signup is implemented)
--- Password for all is 'password123' (BCrypt hash)
+-- Password for all is 'password' (BCrypt hash)
 INSERT INTO users (username, password_hash, email, roles, enabled) VALUES
-('admin1', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', 'admin1@example.com', 'ADMIN', TRUE),
-('officer1', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', 'officer1@example.com', 'BANK_OFFICER', TRUE),
-('customer1', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', 'customer1@example.com', 'CUSTOMER', TRUE),
+('admin1', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin1@example.com', 'ADMIN', TRUE),
+('officer1', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'officer1@example.com', 'BANK_OFFICER', TRUE),
+('customer1', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'customer1@example.com', 'CUSTOMER', TRUE),
 ('admin', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin@test.com', 'ADMIN', TRUE),
 ('officer', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'officer@test.com', 'BANK_OFFICER', TRUE),
 ('customer', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'customer@test.com', 'CUSTOMER', TRUE)
-ON DUPLICATE KEY UPDATE username=username;
+ON DUPLICATE KEY UPDATE password_hash=VALUES(password_hash);

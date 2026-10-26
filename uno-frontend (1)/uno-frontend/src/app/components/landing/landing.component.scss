@@ -1,0 +1,15 @@
+:host { display: block; }
+
+.main-content {
+  position: relative;
+  min-height: 200vh;
+}
+
+.main-content app-star-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: -1;
+}

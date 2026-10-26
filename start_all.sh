@@ -17,7 +17,17 @@ NC='\033[0m' # No Color
 
 # Configuration
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-FRONTEND_DIR="$PROJECT_ROOT/uno-frontend"
+
+# FRONTEND_TYPE: Choose which frontend to use
+# Options: "full" for uno-frontend (1)/uno-frontend, "light" for uno-frontend-light
+FRONTEND_TYPE="light"
+
+if [ "$FRONTEND_TYPE" = "light" ]; then
+    FRONTEND_DIR="$PROJECT_ROOT/uno-frontend-light"
+else
+    FRONTEND_DIR="$PROJECT_ROOT/uno-frontend (1)/uno-frontend"
+fi
+
 FRONTEND_PORT=4200
 
 # Function to print colored messages
@@ -99,6 +109,25 @@ start_backend() {
     fi
 }
 
+# Check/build fd-python-base image
+check_python_base_image() {
+    log_info "Checking fd-python-base Docker image..."
+    
+    if docker images fd-python-base:latest --format '{{.Repository}}:{{.Tag}}' | grep -q 'fd-python-base:latest'; then
+        log_success "fd-python-base image already exists, skipping build"
+    else
+        log_info "Building fd-python-base image (this may take a few minutes on first run)..."
+        cd "$PROJECT_ROOT/FD_Module_Group9"
+        if docker build --target java-python-base -t fd-python-base -f Dockerfile .; then
+            log_success "fd-python-base image built successfully"
+        else
+            log_error "Failed to build fd-python-base image"
+            exit 1
+        fi
+        cd "$PROJECT_ROOT"
+    fi
+}
+
 # Check if frontend dependencies are installed
 check_frontend_deps() {
     log_info "Checking frontend dependencies..."
@@ -165,6 +194,8 @@ print_urls() {
     echo -e "  ${GREEN}Product Service:${NC}    http://localhost:8080"
     echo -e "  ${GREEN}Calculator Service:${NC} http://localhost:8084"
     echo -e "  ${GREEN}Account Service:${NC}    http://localhost:8086"
+    echo -e "  ${GREEN}Notification Service:${NC} http://localhost:8083"
+    echo -e "  ${GREEN}Mailpit Web UI:${NC}     http://localhost:8025"
     echo ""
     log_info "To stop all services:"
     echo -e "  ${GREEN}cd $PROJECT_ROOT && docker compose -f docker-compose.yml down${NC}"
@@ -182,6 +213,10 @@ main() {
     check_prerequisites
     
     log_info "Starting complete initialization..."
+    echo ""
+    
+    # Check/build fd-python-base image
+    check_python_base_image
     echo ""
     
     # Start backend services

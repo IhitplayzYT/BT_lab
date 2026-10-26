@@ -27,7 +27,7 @@ class MessageTemplatesTest {
 
     @Test
     void unknownEventTypeHasNoMessage() {
-        assertThat(MessageTemplates.forEvent("InterestAccrued", Map.of())).isNull();
+        assertThat(MessageTemplates.forEvent("UnknownEvent", Map.of())).isNull();
     }
 
     @Test

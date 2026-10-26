@@ -1,22 +1,28 @@
-# Postman Collection - Banking Technology Lab API
+# Postman and curl Guide - Banking Technology Lab API
 
 ## Overview
 
-This document contains all API endpoints for the Banking Technology Lab microservices system, organized by service. Each endpoint includes its purpose, HTTP method, URL, request body (if applicable), and example curl command.
+This is a Markdown request guide, not an importable Postman JSON collection. Example response values depend on seed data and business date; common error bodies are illustrative and vary by service. Use returned IDs in later requests.
+
+This document contains example API requests for the Banking Technology Lab microservices system, organized by service. Each endpoint includes its purpose, HTTP method, URL, request body (if applicable), and example curl command.
 
 ## System Architecture
 
-The system consists of 5 microservices:
+The root Docker stack starts six backend services; statement-service is a separate module:
 
 1. **Auth Service** (Port 8090) - JWT authentication and user management
 2. **Product & Pricing Service** (Port 8080) - Product catalog and rate management
 3. **FD Calculator Service** (Port 8084) - FD maturity calculations
 4. **FD Account Service** (Port 8086) - FD account lifecycle management
-5. **Frontend** (Port 4200) - Angular web application
+5. **Notification Service** (Port 8083) - Email/WhatsApp
+6. **Interest Batch Service** (Port 8081) - Interest commands
+7. **Statement Service** (Port 8082, started separately) - Statements
+
+The Angular frontend runs on port 4200.
 
 ## Authentication
 
-All endpoints except Auth Service login/signup require JWT authentication. Include the token in the Authorization header:
+Protected endpoints require JWT authentication. Health, public auth routes, the active-product feed are public; the embedded Product-service legacy calculator requires authentication. Include the token in the Authorization header:
 
 ```
 Authorization: Bearer <your_jwt_token>
@@ -283,7 +289,7 @@ curl http://localhost:8080/api/v1/products/active?type=FD \
 
 **Method:** GET  
 **URL:** `http://localhost:8080/api/v1/products/{productCode}`  
-**Auth:** Required (BANK_OFFICER or ADMIN)
+**Auth:** Required (CUSTOMER, BANK_OFFICER or ADMIN)
 
 **Curl:**
 ```bash
@@ -318,7 +324,7 @@ curl http://localhost:8080/api/v1/products/FD001 \
 
 **Method:** GET  
 **URL:** `http://localhost:8080/api/v1/products/{productCode}/validate`  
-**Auth:** Required (BANK_OFFICER or ADMIN)
+**Auth:** Required (CUSTOMER, BANK_OFFICER or ADMIN)
 
 **Query Params:**
 - `termMonths` (optional) - Term in months
@@ -336,7 +342,7 @@ curl "http://localhost:8080/api/v1/products/FD001/validate?termMonths=12&amount=
 {
   "valid": true,
   "productCode": "FD001",
-  "messages": []
+  "message": "Product configuration and criteria validated successfully for account creation"
 }
 ```
 
@@ -348,7 +354,7 @@ curl "http://localhost:8080/api/v1/products/FD001/validate?termMonths=12&amount=
 
 **Method:** POST  
 **URL:** `http://localhost:8080/api/v1/products/{productCode}/rate`  
-**Auth:** Required (BANK_OFFICER or ADMIN)
+**Auth:** Required (CUSTOMER, BANK_OFFICER or ADMIN)
 
 **Request Body:**
 ```json
@@ -374,7 +380,7 @@ curl -X POST http://localhost:8080/api/v1/products/FD001/rate \
 {
   "productCode": "FD001",
   "baseRate": 7.5,
-  "categoryAdjustment": 0.5,
+  "rateModifier": 0.5,
   "finalRate": 8.0
 }
 ```
@@ -387,7 +393,7 @@ curl -X POST http://localhost:8080/api/v1/products/FD001/rate \
 
 **Method:** GET  
 **URL:** `http://localhost:8080/api/v1/products/{productCode}/defaults`  
-**Auth:** Required (BANK_OFFICER or ADMIN)
+**Auth:** Required (CUSTOMER, BANK_OFFICER or ADMIN)
 
 **Curl:**
 ```bash
@@ -412,7 +418,7 @@ curl http://localhost:8080/api/v1/products/FD001/defaults \
 
 **Method:** GET  
 **URL:** `http://localhost:8080/api/v1/products/search`  
-**Auth:** Required (BANK_OFFICER or ADMIN)
+**Auth:** Required (CUSTOMER, BANK_OFFICER or ADMIN)
 
 **Query Params:**
 - `productType` (optional)
@@ -444,7 +450,7 @@ curl "http://localhost:8080/api/v1/products/search?productType=FD&status=ACTIVE&
 
 ---
 
-### 8. Create Product (Admin Only)
+### 8. Create Product (Officer/Admin)
 
 **Purpose:** Create a new product
 
@@ -534,13 +540,13 @@ curl -X PUT http://localhost:8080/api/v1/products/FD001 \
 
 ---
 
-### 10. Retire Product (Admin Only)
+### 10. Retire Product (Officer/Admin)
 
 **Purpose:** Retire (deactivate) a product
 
 **Method:** DELETE  
 **URL:** `http://localhost:8080/api/v1/products/{productCode}`  
-**Auth:** Required (ADMIN)
+**Auth:** Required (BANK_OFFICER or ADMIN)
 
 **Curl:**
 ```bash
@@ -561,411 +567,51 @@ curl -X DELETE http://localhost:8080/api/v1/products/FD001 \
 
 ## FD Calculator Service (Port 8084)
 
-### 1. Health Check
+Health: `GET /actuator/health` (public). All `/api/v1/fd/**` APIs accept CUSTOMER, BANK_OFFICER or ADMIN. Stored lookup/export is still restricted to the authenticated username. Use returned IDs, and allow the asynchronous audit write to complete before exporting.
 
-**Purpose:** Check if Calculator Service is running
+### Calculate maturity
 
-**Method:** GET  
-**URL:** `http://localhost:8084/actuator/health`  
-**Auth:** None
-
-**Curl:**
-```bash
-curl http://localhost:8084/actuator/health
-```
-
-**Response:**
-```json
-{
-  "status": "UP"
-}
-```
-
----
-
-### 2. Calculate FD Maturity
-
-**Purpose:** Calculate FD maturity amount
-
-**Method:** POST  
-**URL:** `http://localhost:8084/api/v1/fd/calculations`  
-**Auth:** Required (CUSTOMER role)
-
-**Request Body:**
-```json
-{
-  "productCode": "FD001",
-  "principal": 100000,
-  "termMonths": 12,
-  "interestType": "COMPOUND"
-}
-```
-
-**Curl:**
 ```bash
 curl -X POST http://localhost:8084/api/v1/fd/calculations \
-  -H "Authorization: Bearer <your-jwt-token>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "productCode": "FD001",
-    "principal": 100000,
-    "termMonths": 12,
-    "interestType": "COMPOUND"
-  }'
+  -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"productCode":"FD001","principal":100000,"term":{"value":12,"unit":"MONTHS"},"payoutMode":"CUMULATIVE"}'
 ```
 
-**Response (200 OK):**
-```json
-{
-  "calculationId": "CALC-20260911-0001",
-  "uuid": "550e8400-e29b-41d4-a716-446655440000",
-  "productCode": "FD001",
-  "principal": 100000,
-  "termMonths": 12,
-  "interestRate": 8.0,
-  "interestType": "COMPOUND",
-  "maturityAmount": 108328.71,
-  "interestEarned": 8328.71,
-  "maturityDate": "2025-09-11",
-  "calculatedAt": "2024-09-11T10:30:00Z"
-}
-```
+The request uses `term.value` and `term.unit`, not `termMonths`. Units are MONTHS or YEARS. Product rates/categories come from dependent services. The response includes `calculationId`, `uuid`, `term`, `effectiveRate`, `interestEarned`, `maturityAmount`, `estimatedMaturityDate` and other calculation details; see [endpoint field shapes](endpoints.md#fd-calculator-service-mod-4).
 
----
+### Compare products
 
-### 3. Compare Multiple FD Options
-
-**Purpose:** Compare multiple FD products
-
-**Method:** POST  
-**URL:** `http://localhost:8084/api/v1/fd/calculations/compare`  
-**Auth:** Required (CUSTOMER role)
-
-**Request Body:**
-```json
-{
-  "principal": 100000,
-  "options": [
-    {
-      "productCode": "FD001",
-      "termMonths": 12
-    },
-    {
-      "productCode": "FD002",
-      "termMonths": 24
-    }
-  ]
-}
-```
-
-**Curl:**
 ```bash
 curl -X POST http://localhost:8084/api/v1/fd/calculations/compare \
-  -H "Authorization: Bearer <your-jwt-token>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "principal": 100000,
-    "options": [
-      {
-        "productCode": "FD001",
-        "termMonths": 12
-      },
-      {
-        "productCode": "FD002",
-        "termMonths": 24
-      }
-    ]
-  }'
+  -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"principal":100000,"options":[{"productCode":"FD001","term":{"value":12,"unit":"MONTHS"}},{"productCode":"FD002","term":{"value":24,"unit":"MONTHS"}}]}'
 ```
 
-**Response (200 OK):**
-```json
-{
-  "principal": 100000,
-  "comparisons": [
-    {
-      "productCode": "FD001",
-      "termMonths": 12,
-      "maturityAmount": 108328.71,
-      "interestEarned": 8328.71
-    },
-    {
-      "productCode": "FD002",
-      "termMonths": 24,
-      "maturityAmount": 117169.59,
-      "interestEarned": 17169.59
-    }
-  ]
-}
-```
+Supply two or three options. Response: `{"results": [...]}` with full calculation responses ordered by maturity amount descending. Comparison results are not persisted like single calculations.
 
----
+### Custom simulation
 
-### 4. Get Saved Calculation
-
-**Purpose:** Retrieve a saved calculation by ID
-
-**Method:** GET  
-**URL:** `http://localhost:8084/api/v1/fd/calculations/{calculationId}`  
-**Auth:** Required (CUSTOMER role)
-
-**Curl:**
-```bash
-curl http://localhost:8084/api/v1/fd/calculations/CALC-20260911-0001 \
-  -H "Authorization: Bearer <your-jwt-token>"
-```
-
-**Response (200 OK):**
-```json
-{
-  "calculationId": "CALC-20260911-0001",
-  "productCode": "FD001",
-  "principal": 100000,
-  "maturityAmount": 108328.71
-}
-```
-
----
-
-### 5. Get Calculation by UUID
-
-**Purpose:** Retrieve a saved calculation by UUID
-
-**Method:** GET  
-**URL:** `http://localhost:8084/api/v1/fd/calculations/uuid/{uuid}`  
-**Auth:** Required (CUSTOMER role)
-
-**Curl:**
-```bash
-curl http://localhost:8084/api/v1/fd/calculations/uuid/550e8400-e29b-41d4-a716-446655440000 \
-  -H "Authorization: Bearer <your-jwt-token>"
-```
-
-**Response (200 OK):**
-```json
-{
-  "calculationId": "CALC-20260911-0001",
-  "uuid": "550e8400-e29b-41d4-a716-446655440000",
-  "maturityAmount": 108328.71
-}
-```
-
----
-
-### 6. Export Calculation as CSV
-
-**Purpose:** Export calculation result as CSV file
-
-**Method:** GET  
-**URL:** `http://localhost:8084/api/v1/fd/calculations/{calculationId}/export`  
-**Auth:** Required (CUSTOMER role)
-
-**Query Params:**
-- `format` (default: "csv")
-
-**Curl:**
-```bash
-curl http://localhost:8084/api/v1/fd/calculations/CALC-20260911-0001/export?format=csv \
-  -H "Authorization: Bearer <your-jwt-token>" \
-  -o calculation.csv
-```
-
-**Response:** CSV file download
-
----
-
-### 7. Explain Calculation
-
-**Purpose:** Get plain text explanation of calculation
-
-**Method:** POST  
-**URL:** `http://localhost:8084/api/v1/fd/calculations/{calculationId}/explain`  
-**Auth:** Required (CUSTOMER role)
-
-**Curl:**
-```bash
-curl -X POST http://localhost:8084/api/v1/fd/calculations/CALC-20260911-0001/explain \
-  -H "Authorization: Bearer <your-jwt-token>"
-```
-
-**Response (200 OK):**
-```text
-For a principal of 100000 at 8.0% annual interest compounded monthly for 12 months:
-- Monthly interest rate: 0.667%
-- Total maturity amount: 108328.71
-- Interest earned: 8328.71
-```
-
----
-
-### 8. Preview Product Constraints
-
-**Purpose:** Get calculator-safe product constraints
-
-**Method:** GET  
-**URL:** `http://localhost:8084/api/v1/fd/products/{productCode}/preview`  
-**Auth:** Required (CUSTOMER role)
-
-**Curl:**
-```bash
-curl http://localhost:8084/api/v1/fd/products/FD001/preview \
-  -H "Authorization: Bearer <your-jwt-token>"
-```
-
-**Response (200 OK):**
-```json
-{
-  "productCode": "FD001",
-  "minPrincipal": 10000,
-  "maxPrincipal": 10000000,
-  "minTermMonths": 6,
-  "maxTermMonths": 120,
-  "baseRate": 7.5,
-  "interestType": "COMPOUND"
-}
-```
-
----
-
-### 9. Batch Calculations
-
-**Purpose:** Calculate multiple FDs in one request
-
-**Method:** POST  
-**URL:** `http://localhost:8084/api/v1/fd/batch/calculations`  
-**Auth:** Required (CUSTOMER role)
-
-**Request Body:**
-```json
-{
-  "calculations": [
-    {
-      "productCode": "FD001",
-      "principal": 100000,
-      "termMonths": 12,
-      "interestType": "COMPOUND"
-    },
-    {
-      "productCode": "FD002",
-      "principal": 50000,
-      "termMonths": 24,
-      "interestType": "SIMPLE"
-    }
-  ]
-}
-```
-
-**Curl:**
-```bash
-curl -X POST http://localhost:8084/api/v1/fd/batch/calculations \
-  -H "Authorization: Bearer <your-jwt-token>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "calculations": [
-      {
-        "productCode": "FD001",
-        "principal": 100000,
-        "termMonths": 12,
-        "interestType": "COMPOUND"
-      },
-      {
-        "productCode": "FD002",
-        "principal": 50000,
-        "termMonths": 24,
-        "interestType": "SIMPLE"
-      }
-    ]
-  }'
-```
-
-**Response (200 OK):**
-```json
-{
-  "results": [
-    {
-      "calculationId": "CALC-20260911-0001",
-      "maturityAmount": 108328.71
-    },
-    {
-      "calculationId": "CALC-20260911-0002",
-      "maturityAmount": 58000.00
-    }
-  ]
-}
-```
-
----
-
-### 10. Custom Calculation
-
-**Purpose:** Calculate with custom parameters (no product lookup)
-
-**Method:** POST  
-**URL:** `http://localhost:8084/api/v1/fd/calculations/custom`  
-**Auth:** Required (CUSTOMER role)
-
-**Request Body:**
-```json
-{
-  "principal": 100000,
-  "termMonths": 12,
-  "interestRate": 8.5,
-  "interestType": "COMPOUND",
-  "compoundingFrequency": "MONTHLY"
-}
-```
-
-**Curl:**
 ```bash
 curl -X POST http://localhost:8084/api/v1/fd/calculations/custom \
-  -H "Authorization: Bearer <your-jwt-token>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "principal": 100000,
-    "termMonths": 12,
-    "interestRate": 8.5,
-    "interestType": "COMPOUND",
-    "compoundingFrequency": "MONTHLY"
-  }'
+  -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"principal":100000,"term":{"value":12,"unit":"MONTHS"},"interestRate":8.5,"interestType":"COMPOUND","compoundingFrequency":"MONTHLY"}'
 ```
 
-**Response (200 OK):**
-```json
-{
-  "calculationId": "CALC-20260911-0003",
-  "principal": 100000,
-  "termMonths": 12,
-  "interestRate": 8.5,
-  "maturityAmount": 108856.42,
-  "interestEarned": 8856.42
-}
-```
+Custom simulation bypasses Product lookup. Supported frequencies are MONTHLY, QUARTERLY, HALF_YEARLY and YEARLY.
 
----
+### Other calculator operations
 
-### 11. Evict Rate Cache
+| Method | Path | Result |
+| --- | --- | --- |
+| GET | `/api/v1/fd/calculations/{id}` | Saved calculation for the caller |
+| GET | `/api/v1/fd/calculations/uuid/{uuid}` | Saved calculation by UUID |
+| GET | `/api/v1/fd/calculations/{id}/export?format=csv` | CSV attachment |
+| POST | `/api/v1/fd/calculations/{id}/explain` | Plain text deterministic explanation |
+| GET | `/api/v1/fd/products/{code}/preview` | Product limits/configuration |
+| POST | `/api/v1/fd/cache/rates/evict` | HTTP 200 with empty body |
+| POST | `/api/v1/fd/batch/calculations` | Batch response |
 
-**Purpose:** Clear the rate cache (force fresh rate lookup)
-
-**Method:** POST  
-**URL:** `http://localhost:8084/api/v1/fd/cache/rates/evict`  
-**Auth:** Required (CUSTOMER role)
-
-**Curl:**
-```bash
-curl -X POST http://localhost:8084/api/v1/fd/cache/rates/evict \
-  -H "Authorization: Bearer <your-jwt-token>"
-```
-
-**Response (200 OK):**
-```json
-{
-  "status": "success",
-  "message": "Rate cache evicted"
-}
-```
-
----
+A batch request is `{"calculations":[<CalculationRequest>, ...],"correlationId":"optional"}`. The response has `correlationId`, `totalCalculations`, `successfulCalculations`, `failedCalculations`, `results`, `status`, and `message`. Results are calculation DTOs, not per-item success/error wrappers. Kafka publication of these results is a placeholder, not implemented delivery.
 
 ## FD Account Service (Port 8086)
 
@@ -1349,7 +995,7 @@ curl http://localhost:8086/api/fd/account/FD2024091100001/transactions \
   "principal": 100000,
   "annualRate": 8.0,
   "months": 12,
-  "mode": "COMPOUND"
+  "mode": "MONTHLY_COMPOUND"
 }
 ```
 
@@ -1362,7 +1008,7 @@ curl -X POST http://localhost:8086/api/fd/interest/quote \
     "principal": 100000,
     "annualRate": 8.0,
     "months": 12,
-    "mode": "COMPOUND"
+    "mode": "MONTHLY_COMPOUND"
   }'
 ```
 
@@ -1371,7 +1017,7 @@ curl -X POST http://localhost:8086/api/fd/interest/quote \
 {
   "maturityAmount": 108328.71,
   "interest": 8328.71,
-  "mode": "COMPOUND",
+  "mode": "MONTHLY_COMPOUND",
   "basis": "Monthly quotation; actual daily accrual may differ"
 }
 ```
@@ -1397,7 +1043,7 @@ curl http://localhost:8086/api/fd/interest/accounts \
 [
   {
     "fdAccountNo": "FD2024091100001",
-    "interestMode": "COMPOUND",
+    "interestMode": "MONTHLY_COMPOUND",
     "lastInterestCredit": "2024-10-11"
   }
 ]
@@ -1416,7 +1062,7 @@ curl http://localhost:8086/api/fd/interest/accounts \
 **Request Body:**
 ```json
 {
-  "mode": "COMPOUND"
+  "mode": "MONTHLY_COMPOUND"
 }
 ```
 
@@ -1426,7 +1072,7 @@ curl -X PUT http://localhost:8086/api/fd/interest/FD2024091100001/settings \
   -H "Authorization: Bearer <your-jwt-token>" \
   -H "Content-Type: application/json" \
   -d '{
-    "mode": "COMPOUND"
+    "mode": "MONTHLY_COMPOUND"
   }'
 ```
 
@@ -1434,19 +1080,19 @@ curl -X PUT http://localhost:8086/api/fd/interest/FD2024091100001/settings \
 ```json
 {
   "fdAccountNo": "FD2024091100001",
-  "mode": "COMPOUND"
+  "mode": "MONTHLY_COMPOUND"
 }
 ```
 
 ---
 
-### 13. Clock Status (Admin Only - Testing)
+### 13. Clock Status (All Roles - Testing)
 
 **Purpose:** Get current clock status (for time travel testing)
 
 **Method:** GET  
 **URL:** `http://localhost:8086/api/fd/clock`  
-**Auth:** Required (ADMIN)
+**Auth:** Required (CUSTOMER, BANK_OFFICER or ADMIN)
 
 **Curl:**
 ```bash
@@ -1466,13 +1112,13 @@ curl http://localhost:8086/api/fd/clock \
 
 ---
 
-### 14. Advance Clock (Admin Only - Testing)
+### 14. Advance Clock (All Roles - Testing)
 
 **Purpose:** Advance the business clock by N days
 
 **Method:** POST  
 **URL:** `http://localhost:8086/api/fd/clock/advance`  
-**Auth:** Required (ADMIN)
+**Auth:** Required (CUSTOMER, BANK_OFFICER or ADMIN)
 
 **Request Body:**
 ```json
@@ -1503,13 +1149,13 @@ curl -X POST http://localhost:8086/api/fd/clock/advance \
 
 ---
 
-### 15. Reset Clock (Admin Only - Testing)
+### 15. Reset Clock (All Roles - Testing)
 
 **Purpose:** Reset the business clock to real time
 
 **Method:** POST  
 **URL:** `http://localhost:8086/api/fd/clock/reset`  
-**Auth:** Required (ADMIN)
+**Auth:** Required (CUSTOMER, BANK_OFFICER or ADMIN)
 
 **Curl:**
 ```bash
@@ -1546,13 +1192,12 @@ curl http://localhost:8086/api/fd/account/FD2024091100001/withdrawal-inquiry \
 **Response (200 OK):**
 ```json
 {
-  "fdAccountNo": "FD2024091100001",
-  "principalAmount": 100000,
-  "currentBalance": 105000,
-  "interestEarned": 5000,
-  "penaltyAmount": 2500,
-  "netAmount": 102500,
-  "canWithdraw": true
+  "accountNumber": "FD2024091100001",
+  "originalPrincipal": 100000,
+  "interestAccruedToDate": 5000,
+  "penaltyAmount": 50,
+  "finalPayoutAmount": 104950,
+  "inquiryDate": "2024-10-15"
 }
 ```
 
@@ -1586,10 +1231,12 @@ curl -X POST http://localhost:8086/api/fd/account/FD2024091100001/withdrawal \
 **Response (200 OK):**
 ```json
 {
-  "fdAccountNo": "FD2024091100001",
-  "status": "PREMATURELY_CLOSED",
-  "currentBalance": 102500,
-  "closedAt": "2024-10-15"
+  "accountNumber": "FD2024091100001",
+  "originalPrincipal": 100000,
+  "interestAccruedToDate": 5000,
+  "penaltyAmount": 50,
+  "finalPayoutAmount": 104950,
+  "inquiryDate": "2024-10-15"
 }
 ```
 
@@ -1624,9 +1271,9 @@ curl -X POST http://localhost:8086/api/fd/maturity/run \
 ```json
 {
   "businessDate": "2024-10-15",
-  "processedCount": 5,
-  "maturedCount": 3,
-  "errors": []
+  "matured": 3,
+  "skipped": 2,
+  "failed": 0
 }
 ```
 
@@ -1764,13 +1411,13 @@ curl "http://localhost:8086/api/report/interest-history/FD2024091100001?format=j
 
 ---
 
-### 5. Run Extract (Admin)
+### 5. Run Extract (Officer/Admin)
 
 **Purpose:** Run data extract for a business date
 
 **Method:** POST  
 **URL:** `http://localhost:8086/api/report/extract/run`  
-**Auth:** Required (ADMIN)
+**Auth:** Required (BANK_OFFICER or ADMIN)
 
 **Query Params:**
 - `date` (optional) - Business date in yyyy-MM-dd format
@@ -1793,13 +1440,13 @@ curl -X POST "http://localhost:8086/api/report/extract/run?date=2024-10-15" \
 
 ---
 
-### 6. Generate Python Report (Admin)
+### 6. Generate Python Report (Officer/Admin)
 
 **Purpose:** Generate Python-based report from extract
 
 **Method:** POST  
 **URL:** `http://localhost:8086/api/report/python`  
-**Auth:** Required (ADMIN)
+**Auth:** Required (BANK_OFFICER or ADMIN)
 
 **Query Params:**
 - `date` (optional) - Business date in yyyy-MM-dd format
@@ -1823,6 +1470,8 @@ curl -X POST "http://localhost:8086/api/report/python?date=2024-10-15" \
 
 ## Chart Data Endpoints (Port 8086)
 
+Chart responses wrap report rows in `title`, `columns`, `data` and `rowCount`. Actual column labels are snake_case from ReportService. Empty arrays below illustrate the envelope; use the returned columns/rows instead of assuming the sample labels.
+
 ### 1. Portfolio Summary Chart
 
 **Purpose:** Get portfolio summary chart data
@@ -1844,9 +1493,9 @@ curl "http://localhost:8086/api/charts/portfolio-summary?customerId=CUST001" \
 ```json
 {
   "title": "Portfolio Summary",
-  "columns": ["fdAccountNo", "principalAmount", "currentBalance"],
-  "data": [...],
-  "rowCount": 5
+  "columns": ["fd_account_no", "product_code", "currency", "principal_amount", "interest_rate", "tenure_months", "maturity_date", "accrued_interest", "status", "created_at"],
+  "data": [],
+  "rowCount": 0
 }
 ```
 
@@ -1870,9 +1519,9 @@ curl http://localhost:8086/api/charts/fd-summary/ACTIVE \
 ```json
 {
   "title": "Active FD Summary",
-  "columns": ["productCode", "count", "totalPrincipal"],
-  "data": [...],
-  "rowCount": 10
+  "columns": ["product_code", "currency", "total_accounts", "total_principal", "total_interest_accrued", "total_interest_posted"],
+  "data": [],
+  "rowCount": 0
 }
 ```
 
@@ -1899,9 +1548,9 @@ curl "http://localhost:8086/api/charts/maturity-timeline?days=30" \
 ```json
 {
   "title": "Maturity Timeline",
-  "columns": ["maturityDate", "count", "totalAmount"],
-  "data": [...],
-  "rowCount": 30
+  "columns": ["fd_account_no", "customer_id", "product_code", "currency", "principal_amount", "interest_rate", "maturity_date", "days_to_maturity"],
+  "data": [],
+  "rowCount": 0
 }
 ```
 
@@ -1925,9 +1574,9 @@ curl http://localhost:8086/api/charts/interest-history/FD2024091100001 \
 ```json
 {
   "title": "Interest History",
-  "columns": ["creditDate", "amount", "balanceAfter"],
-  "data": [...],
-  "rowCount": 12
+  "columns": ["accrual_date", "interest_amount", "cumulative_interest", "capitalized", "settlement_status"],
+  "data": [],
+  "rowCount": 0
 }
 ```
 
@@ -2214,7 +1863,7 @@ curl http://localhost:8080/api/v1/products/active \
 curl -X POST http://localhost:8084/api/v1/fd/calculations \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"productCode":"FD001","principal":100000,"termMonths":12,"interestType":"COMPOUND"}'
+  -d '{"productCode":"FD001","principal":100000,"term":{"value":12,"unit":"MONTHS"}}'
 
 # Create FD account (requires BANK_OFFICER role)
 curl -X POST http://localhost:8086/api/fd/account/create \

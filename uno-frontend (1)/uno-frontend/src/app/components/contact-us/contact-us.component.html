@@ -1,0 +1,132 @@
+<app-navbar></app-navbar>
+<section class="contact-section section">
+  <div class="container">
+    <div class="section-header">
+      <h1 class="text-gradient">{{ 'Contact Us' | translate }}</h1>
+      <p>{{ 'Get in touch with our support team' | translate }}</p>
+    </div>
+
+    <div class="contact-content">
+      <div class="contact-info card">
+        <h3>{{ 'Contact Information' | translate }}</h3>
+        
+        <div class="info-item">
+          <span class="info-icon"><app-icon name="pin" /></span>
+          <div>
+            <h4>{{ 'Address' | translate }}</h4>
+            <p>{{ 'UNO Bank Headquarters' | translate }}<br>{{ 'Mumbai, Maharashtra, India' | translate }}</p>
+          </div>
+        </div>
+
+        <div class="info-item">
+          <span class="info-icon"><app-icon name="call" /></span>
+          <div>
+            <h4>{{ 'Phone' | translate }}</h4>
+            <p>{{ '1800-XXX-XXXX (Toll Free)' | translate }}</p>
+            <p>{{ '+91-22-XXXX-XXXX' | translate }}</p>
+          </div>
+        </div>
+
+        <div class="info-item">
+          <span class="info-icon"><app-icon name="mail" /></span>
+          <div>
+            <h4>{{ 'Email' | translate }}</h4>
+            <p>{{ 'support@unobank.com' | translate }}</p>
+            <p>{{ 'help@unobank.com' | translate }}</p>
+          </div>
+        </div>
+
+        <div class="info-item">
+          <span class="info-icon"><app-icon name="clock" /></span>
+          <div>
+            <h4>{{ 'Working Hours' | translate }}</h4>
+            <p>{{ 'Monday - Friday: 9:00 AM - 6:00 PM' | translate }}</p>
+            <p>{{ 'Saturday: 9:00 AM - 1:00 PM' | translate }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="contact-form card">
+        <h3>{{ 'Send us a message' | translate }}</h3>
+        
+        @if (submitSuccess) {
+          <div class="success-message">
+            <p>{{ 'Thank you for contacting us! We\'ll get back to you within 24 hours.' | translate }}</p>
+          </div>
+        } @else {
+          <form (ngSubmit)="submitForm()">
+            <div class="form-group">
+              <label for="name">{{ 'Name *' | translate }}</label>
+              <input 
+                type="text" 
+                id="name" 
+                [(ngModel)]="formData.name" 
+                name="name"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="email">{{ 'Email *' | translate }}</label>
+              <input 
+                type="email" 
+                id="email" 
+                [(ngModel)]="formData.email" 
+                name="email"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="phone">{{ 'Phone' | translate }}</label>
+              <input 
+                type="tel" 
+                id="phone" 
+                [(ngModel)]="formData.phone" 
+                name="phone"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="subject">{{ 'Subject' | translate }}</label>
+              <input 
+                type="text" 
+                id="subject" 
+                [(ngModel)]="formData.subject" 
+                name="subject"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="message">{{ 'Message *' | translate }}</label>
+              <textarea 
+                id="message" 
+                [(ngModel)]="formData.message" 
+                name="message"
+                rows="5"
+                required
+              ></textarea>
+            </div>
+
+            @if (submitError) {
+              <div class="error-message">{{ submitError }}</div>
+            }
+
+            <button 
+              type="submit" 
+              class="btn btn-primary" 
+              [disabled]="isSubmitting"
+            >
+              @if (isSubmitting) {
+                {{ 'Sending...' | translate }}
+              } @else {
+                {{ 'Send Message' | translate }}
+              }
+            </button>
+          </form>
+        }
+      </div>
+    </div>
+  </div>
+</section>
+<app-footer></app-footer>

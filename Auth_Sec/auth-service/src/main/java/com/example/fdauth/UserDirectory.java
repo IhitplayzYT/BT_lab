@@ -57,12 +57,73 @@ public class UserDirectory {
         return Optional.of(new Account(saved.getUsername(), saved.getPasswordHash(), roles));
     }
 
+    /** Create a user from a previously encoded password held in a signup challenge. */
+    @Transactional
+    public Optional<Account> createUserWithPasswordHash(String username, String passwordHash, String email, List<String> roles) {
+        if (userRepository.existsByUsername(username) || userRepository.existsByEmail(email)) {
+            return Optional.empty();
+        }
+        User user = new User(username, passwordHash, email, String.join(",", roles));
+        user.setEnabled(true);
+        User saved = userRepository.save(user);
+        return Optional.of(new Account(saved.getUsername(), saved.getPasswordHash(), roles));
+    }
+
     /** Find user by username without password verification */
     @Transactional
     public Optional<Account> findByUsername(String username) {
         return userRepository.findByUsername(username)
                 .filter(user -> user.getEnabled() != null && user.getEnabled())
                 .map(user -> new Account(user.getUsername(), user.getPasswordHash(), parseRoles(user.getRoles())));
+    }
+
+    /** Get all users (admin only) */
+    @Transactional
+    public List<com.example.fdauth.entity.User> getAllUsers() {
+        return userRepository.findAllByOrderByCreatedAtDesc();
+    }
+
+    /** Update user roles (admin only) */
+    @Transactional
+    public Optional<com.example.fdauth.entity.User> updateUserRoles(String username, List<String> roles) {
+        return userRepository.findByUsername(username).map(user -> {
+            user.setRoles(String.join(",", roles));
+            return userRepository.save(user);
+        });
+    }
+
+    /** Ban/Unban user (admin only) */
+    @Transactional
+    public Optional<com.example.fdauth.entity.User> setUserEnabled(String username, boolean enabled) {
+        return userRepository.findByUsername(username).map(user -> {
+            user.setEnabled(enabled);
+            return userRepository.save(user);
+        });
+    }
+
+    /** Create user with specific role (admin only) */
+    @Transactional
+    public Optional<Account> createUserWithRole(String username, String password, String email, List<String> roles) {
+        if (userRepository.existsByUsername(username)) {
+            return Optional.empty();
+        }
+        if (userRepository.existsByEmail(email)) {
+            return Optional.empty();
+        }
+        User user = new User(username, encoder.encode(password), email, String.join(",", roles));
+        user.setEnabled(true);
+        User saved = userRepository.save(user);
+        return Optional.of(new Account(saved.getUsername(), saved.getPasswordHash(), roles));
+    }
+
+    /** Delete user (admin only) */
+    @Transactional
+    public boolean deleteUser(String username) {
+        if (!userRepository.existsByUsername(username)) {
+            return false;
+        }
+        userRepository.deleteByUsername(username);
+        return true;
     }
 
     private List<String> parseRoles(String rolesString) {

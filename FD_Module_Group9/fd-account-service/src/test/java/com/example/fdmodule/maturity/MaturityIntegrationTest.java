@@ -29,7 +29,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -278,10 +278,10 @@ class MaturityIntegrationTest {
         fd("BR001MAT", today.minusDays(30), today.minusDays(1));
         String body = "{\"businessDate\":\"" + today + "\"}";
 
-        mvc.perform(post("/api/fd/maturity/run").with(httpBasic("officer1", "officer123"))
+        mvc.perform(post("/api/fd/maturity/run").with(user("officer1").roles("BANK_OFFICER"))
                         .contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isForbidden());
-        mvc.perform(post("/api/fd/maturity/run").with(httpBasic("admin1", "admin123"))
+        mvc.perform(post("/api/fd/maturity/run").with(user("admin1").roles("ADMIN"))
                         .contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.matured").value(1));

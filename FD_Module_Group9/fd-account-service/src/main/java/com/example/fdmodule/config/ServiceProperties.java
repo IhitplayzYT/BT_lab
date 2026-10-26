@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 public class ServiceProperties {
     private ProductService product;
     private CalculatorService calculator;
+    private AuthService auth;
 
     public ProductService getProduct() {
         return product;
@@ -23,6 +24,14 @@ public class ServiceProperties {
 
     public void setCalculator(CalculatorService calculator) {
         this.calculator = calculator;
+    }
+
+    public AuthService getAuth() {
+        return auth;
+    }
+
+    public void setAuth(AuthService auth) {
+        this.auth = auth;
     }
 
     public static class ProductService {
@@ -82,6 +91,18 @@ public class ServiceProperties {
 
         public void setReadTimeoutMs(int readTimeoutMs) {
             this.readTimeoutMs = readTimeoutMs;
+        }
+    }
+
+    public static class AuthService {
+        private String baseUrl;
+
+        public String getBaseUrl() {
+            return baseUrl;
+        }
+
+        public void setBaseUrl(String baseUrl) {
+            this.baseUrl = baseUrl;
         }
     }
 }

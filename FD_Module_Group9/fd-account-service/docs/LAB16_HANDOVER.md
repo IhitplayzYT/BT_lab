@@ -1,5 +1,7 @@
 # Lab 16 Handover — FD Transactions & GL Initialisation
 
+> Historical L16 delivery snapshot. The current service uses Java 21 / Spring Boot 3.3.4 on port 8086 with JWT, customer ownership checks, HTTP product integration and deposits on direct creation. The old test counts, Basic-auth examples and “unchanged” claims below refer only to the original delivery. Use [current backend documentation](../backend.md) and [root usage](../../../usage.md) to run the integrated project.
+
 **Owner:** Anirudh Syam Menon (Group 9 work distribution)
 **Baseline:** Vritika Vinod's L12/L13 implementation (`fd-module-l12-l13`), extended in place. No L12/L13 class was modified.
 **Status:** Backend code complete. `mvn clean test`: **21 tests, 0 failures, 0 errors** (run locally on JDK 17.0.19 / Maven 3.9.6). MySQL end-to-end check pending local DB credentials (see section 21).

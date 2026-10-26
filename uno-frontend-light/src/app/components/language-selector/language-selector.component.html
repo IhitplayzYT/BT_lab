@@ -1,0 +1,6 @@
+<div class="language-selector">
+  <select class="language-button" aria-label="Language / भाषा / ಭಾಷೆ"
+    [ngModel]="selectedLang()" (ngModelChange)="selectLanguage($event)">
+    <option *ngFor="let lang of languages" [value]="lang.code">{{ lang.name }}</option>
+  </select>
+</div>

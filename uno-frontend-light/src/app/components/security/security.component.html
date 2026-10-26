@@ -1,0 +1,39 @@
+<section class="security section">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="text-gradient">{{ 'Bank-Grade Security' | translate }}</h2>
+      <p>{{ 'Your money is protected with industry-leading security measures' | translate }}</p>
+    </div>
+
+    <div class="security-layout">
+      <div class="shield-art" aria-hidden="true">
+        <span class="halo"></span>
+        <svg viewBox="0 0 300 340">
+          <defs>
+            <linearGradient id="sh-grad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#ffe3a3" />
+              <stop offset="0.5" stop-color="#f6b945" />
+              <stop offset="1" stop-color="#ff5c9a" />
+            </linearGradient>
+            <clipPath id="sh-clip"><path d="M150 24 255 62v88c0 76-46 128-105 160C91 278 45 226 45 150V62Z" /></clipPath>
+          </defs>
+          <g class="orbit o1"><circle cx="150" cy="170" r="140" /><circle class="dot" cx="290" cy="170" r="5" /></g>
+          <g class="orbit o2"><circle cx="150" cy="170" r="118" /><circle class="dot teal" cx="150" cy="52" r="4" /></g>
+          <path class="body" d="M150 24 255 62v88c0 76-46 128-105 160C91 278 45 226 45 150V62Z" />
+          <g clip-path="url(#sh-clip)"><rect class="scan" x="40" y="0" width="220" height="40" /></g>
+          <path class="check" pathLength="1" d="M104 168l32 32 62-70" />
+        </svg>
+      </div>
+
+      <div class="security-grid">
+        @for (feature of features; track feature.title) {
+          <div class="security-card card">
+            <div class="security-icon"><app-icon [name]="feature.icon" /></div>
+            <h3>{{ feature.title }}</h3>
+            <p>{{ feature.description }}</p>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+</section>

@@ -6,11 +6,11 @@ Transport: Apache Kafka; String keys/JSON values, acks=all, idempotent producer,
 | --- | --- | --- |
 | command.interest.accrual | InterestBatchRequested | fd-interest-posting-v1 |
 | command.interest.payout | InterestPayoutRequested | fd-interest-posting-v1 |
-| event.interest.accrued | InterestAccrued | fd-statements-v1 |
-| event.interest.paid | InterestPaid | fd-statements-v1 |
+| event.interest.accrued | InterestAccrued | fd-statements-v1, fd-notifications-v1 |
 | event.batch.completed | InterestBatchCompleted / InterestPayoutCompleted | fd-batch-results-v1 |
 | event.batch.failed | InterestRequestFailed | fd-batch-results-v1 |
 | event.fd.created | FdCreated | fd-notifications-v1 |
+| event.fd.status-changed | FdApplied / FdStatusChanged | fd-notifications-v1 |
 | event.interest.paid | InterestPaid (also read by notifications) | fd-statements-v1, fd-notifications-v1 |
 | event.fd.matured | FdMatured | fd-notifications-v1 |
 | event.fd.prematurely-closed | FdPrematurelyClosed | fd-notifications-v1 |
@@ -26,20 +26,20 @@ Example InterestAccrued data:
 
 Commands: requestId, businessDate, actor; payout adds fdAccountNo. Completion includes requestId/status, accrual adds accounts/accrualDays/businessDate, payout adds amount. Failure includes requestId/status/error. EventInterest snapshot fields are shown above.
 
-Relay marks published_at only after the Kafka send future succeeds. Failure/timeout leaves it pending. A crash after acknowledgment can cause replay; producer idempotence alone does not eliminate that application-level replay. Requests and consumed_events IDs provide business deduplication. Delivery is at least once, without an exactly-once transport claim. Data commits precede listener acknowledgment; redelivery after a crash is safe.
+Relay marks published_at only after the Kafka send future succeeds. Failure/timeout leaves it pending. A crash after acknowledgment can cause replay; producer idempotence alone does not eliminate that application-level replay. Requests and consumed_events IDs provide business deduplication. Delivery is at least once, without an exactly-once transport claim. Data commits precede listener acknowledgment. Database deduplication handles replay, but external notification sends can duplicate and in-memory accrual batches can be lost on restart.
 
-One initial consumer attempt plus four retries with a one-second backoff precedes DLT publication. Invalid contracts are sent directly to DLT. DLT publication must succeed before the failed record is recovered. Consumers have separate groups and replay history from earliest when starting a new group. The 03:00 scheduler and local DB guard prevent duplicate daily requests across scheduler replicas.
+One initial consumer attempt plus four retries with a one-second backoff precedes DLT publication. Exceptions classified as InvalidEventException skip retry; other validation failures can use the normal retry path. DLT publication must succeed before the failed record is recovered. Consumers have separate groups and replay history from earliest when starting a new group. The 03:00 scheduler and local DB guard prevent duplicate daily requests across scheduler replicas.
 
 Ordering exists only within a topic partition. Late snapshots cannot overwrite newer statement snapshots; a payout and an accrual can arrive in either order. Independent future reporting/notification services must use their own consumer groups. Do not mix monetary currencies in totals.
 
-Transport verification uses a real embedded KRaft Kafka broker in the automated tests. The end-to-end script (scripts/lifecycle-test.ps1) runs all five services against real MySQL and Kafka, both from jars and as containers.
+Transport verification uses a real embedded KRaft Kafka broker in the automated tests. The historical end-to-end script targets the older standalone layout and must be adapted before using it as evidence for the current integrated stack.
 
 FdMatured data (L18/L19): fdAccountNo, customerId, currency, maturityDate, businessDate, depositPaid (principal plus capitalized interest), interestPaid, totalPaid, actor. Maturity also emits a normal InterestPaid snapshot (closingBalance 0, outstandingInterest 0) dated on the maturity date, so statements need no change.
 
-FdCreated data (L18, topic event.fd.created, emitted in the same transaction as the account and its DEPOSIT row): fdAccountNo, customerId, customerName, email, phone, principal, currency, annualRate, termMonths, maturityDate, businessDate, actor. email/phone come from users and customer_profile; they let the notification service send alerts without calling back into the FD service (trade-off: contact data travels in the event). A missing contact is sent as null and the notification is logged as FAILED ("No e-mail address on file"), never dropped silently.
+FdCreated data (L18, topic event.fd.created, emitted in the same transaction as the account and its DEPOSIT row): fdAccountNo, customerId, customerName, email, phone, principal, currency, annualRate, termMonths, maturityDate, businessDate, actor. email/phone prefer FD applicant fields, with users/customer_profile fallback; they let the notification service send alerts without calling back into the FD service (trade-off: contact data travels in the event). A missing contact is sent as null and the notification is logged as FAILED ("No e-mail address on file"), never dropped silently.
 
 FdPrematurelyClosed data (premature withdrawal): fdAccountNo, customerId, currency, maturityDate, businessDate, interest, penalty, totalPaid, reason, actor. Like maturity, it also emits a final InterestPaid snapshot (closingBalance 0); the notification service deliberately does not mail that snapshot because FdMatured / FdPrematurelyClosed already cover it.
 
-Notification service (L18, consumer group fd-notifications-v1, own database fd_notifications; channels EMAIL and WHATSAPP): listens to event.fd.created, event.interest.paid, event.fd.matured and event.fd.prematurely-closed. It is idempotent twice over: consumed_events records every processed eventId, and notifications_log has UNIQUE(event_id, channel). Recipients are stored masked (k***@gmail.com).
+Notification service (L18, consumer group fd-notifications-v1, own database fd_notifications; channels EMAIL and WHATSAPP): listens to event.fd.created, event.fd.status-changed, event.interest.accrued, event.interest.paid, event.fd.matured and event.fd.prematurely-closed. Database replay protection uses two guards: consumed_events records every processed eventId, and notifications_log has UNIQUE(event_id, channel). Recipients are stored masked (k***@gmail.com).
 
-Business date: when time travel is on (APP_TIME_TRAVEL_ENABLED=true) businessDate in these events is the advanced business date, not the real date.
+Business date: lifecycle events use the relevant business date; catch-up accrual events retain each accrual day and maturity snapshots use maturity date. The batch scheduler still uses yesterday in real IST time. Accrual notification filtering uses the JVM real local date, not the advanced business clock.

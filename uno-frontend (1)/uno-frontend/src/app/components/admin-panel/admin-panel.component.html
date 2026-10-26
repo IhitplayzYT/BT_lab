@@ -1,0 +1,955 @@
+<section class="admin-panel section">
+  <div class="container">
+    <div class="panel-header">
+      <div class="header-content">
+        <div>
+          <h1 class="text-gradient">{{ 'Admin Dashboard' | translate }}</h1>
+          <p>{{ 'Complete system overview and analytics' | translate }}</p>
+        </div>
+        <div class="header-actions">
+          <app-language-selector></app-language-selector>
+          <button class="btn btn-accent" (click)="advanceTimeByMonth()" [disabled]="isAdvancingTime()">
+            @if (isAdvancingTime()) {
+              <span>{{ 'Advancing...' | translate }}</span>
+            } @else {
+              <span>{{ '+1 Month' | translate }}</span>
+            }
+          </button>
+          <button class="btn btn-secondary" (click)="toggleTheme()">
+            @if (isDarkMode) {
+              <span>{{ 'Light' | translate }}</span>
+            } @else {
+              <span>{{ 'Dark' | translate }}</span>
+            }
+          </button>
+          <button class="btn btn-secondary" (click)="logout()">{{ 'Logout' | translate }}</button>
+        </div>
+      </div>
+      <div class="tab-navigation">
+        <button class="tab-btn" [class.active]="activeTab === 'analytics'" (click)="activeTab = 'analytics'">{{ 'Analytics' | translate }}</button>
+        <button class="tab-btn" [class.active]="activeTab === 'users'" (click)="activeTab = 'users'">{{ 'User Management' | translate }}</button>
+        <button class="tab-btn" [class.active]="activeTab === 'officers'" (click)="activeTab = 'officers'">{{ 'Officer Management' | translate }}</button>
+        <button class="tab-btn" [class.active]="activeTab === 'products'" (click)="activeTab = 'products'">{{ 'Product Management' | translate }}</button>
+        <button class="tab-btn" [class.active]="activeTab === 'visualizations'" (click)="activeTab = 'visualizations'">{{ 'Visualizations' | translate }}</button>
+        <button class="tab-btn" [class.active]="activeTab === 'reports'" (click)="activeTab = 'reports'">{{ 'Reports' | translate }}</button>
+        <button class="tab-btn" [class.active]="activeTab === 'relation-nets'" (click)="activeTab = 'relation-nets'">{{ 'Relation Nets' | translate }}</button>
+        <button class="tab-btn" [class.active]="activeTab === 'logs'" (click)="activeTab = 'logs'">{{ 'Logs' | translate }}</button>
+      </div>
+    </div>
+
+    @if (activeTab === 'products') {
+      <app-product-management></app-product-management>
+    } @else if (activeTab === 'users') {
+      <div class="user-management-section">
+        <h2 class="text-gradient">{{ 'User Management' | translate }}</h2>
+
+        <!-- Create User Button -->
+        <div class="section-actions">
+          <button class="btn btn-accent" (click)="showCreateUser()">{{ '+ Create New User' | translate }}</button>
+        </div>
+
+        <!-- Create User Modal -->
+        @if (showCreateUserModal) {
+          <div data-lenis-prevent class="modal-overlay">
+            <div class="modal card">
+              <h3>{{ 'Create New User' | translate }}</h3>
+              <div class="form-group">
+                <label>{{ 'Username' | translate }}</label>
+                <input type="text" [(ngModel)]="newUserForm.username" [attr.placeholder]="'Enter username' | translate">
+              </div>
+              <div class="form-group">
+                <label>{{ 'Password' | translate }}</label>
+                <input type="password" [(ngModel)]="newUserForm.password" [attr.placeholder]="'Enter password (min 8 chars)' | translate">
+              </div>
+              <div class="form-group">
+                <label>{{ 'Email' | translate }}</label>
+                <input type="email" [(ngModel)]="newUserForm.email" [attr.placeholder]="'Enter email' | translate">
+              </div>
+              <div class="form-group">
+                <label>{{ 'Role' | translate }}</label>
+                <select [(ngModel)]="selectedRole">
+                  <option value="CUSTOMER">{{ 'Customer' | translate }}</option>
+                  <option value="BANK_OFFICER">{{ 'Bank Officer' | translate }}</option>
+                  <option value="ADMIN">{{ 'Admin' | translate }}</option>
+                </select>
+              </div>
+              <div class="modal-actions">
+                <button class="btn btn-secondary" (click)="hideCreateUser()">{{ 'Cancel' | translate }}</button>
+                <button class="btn btn-accent" (click)="createUser()">{{ 'Create User' | translate }}</button>
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- Search and Filter Controls -->
+        <div class="filter-controls card">
+          <div class="filter-row">
+            <div class="filter-group">
+              <label>{{ 'Search' | translate }}</label>
+              <input type="text" [(ngModel)]="userSearchQuery" [attr.placeholder]="'Search by username or email...' | translate">
+            </div>
+            <div class="filter-group">
+              <label>{{ 'Status' | translate }}</label>
+              <select [(ngModel)]="userFilterStatus">
+                <option value="">{{ 'All Status' | translate }}</option>
+                <option value="true">{{ 'Active' | translate }}</option>
+                <option value="false">{{ 'Banned/Inactive' | translate }}</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label>{{ 'Sort By' | translate }}</label>
+              <select [(ngModel)]="userSortField">
+                <option value="username">{{ 'Username' | translate }}</option>
+                <option value="email">{{ 'Email' | translate }}</option>
+                <option value="enabled">{{ 'Status' | translate }}</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label>{{ 'Order' | translate }}</label>
+              <select [(ngModel)]="userSortOrder">
+                <option value="asc">{{ 'Ascending' | translate }}</option>
+                <option value="desc">{{ 'Descending' | translate }}</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label>&nbsp;</label>
+              <button class="btn btn-secondary" (click)="resetUserFilters()">{{ 'Reset' | translate }}</button>
+            </div>
+          </div>
+          <div class="filter-info">
+            <span>{{ 'Showing {0} of {1} users' | translate:[filteredUsers.length, users.length] }}</span>
+          </div>
+        </div>
+
+        <div class="users-table card">
+          <table>
+            <thead>
+              <tr>
+                <th>{{ 'User ID' | translate }}</th>
+                <th>{{ 'Username' | translate }}</th>
+                <th>{{ 'Email' | translate }}</th>
+                <th>{{ 'Roles' | translate }}</th>
+                <th>{{ 'Status' | translate }}</th>
+                <th>{{ 'Created At' | translate }}</th>
+                <th>{{ 'Actions' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (user of filteredUsers; track user.id) {
+                <tr>
+                  <td>{{ user.id }}</td>
+                  <td>{{ user.username }}</td>
+                  <td>{{ user.email }}</td>
+                  <td>
+                    @for (role of user.roles; track role) {
+                      <span class="role-badge">{{ role }}</span>
+                    }
+                  </td>
+                  <td>
+                    <span class="status-badge" [class]="user.enabled ? 'active' : 'banned'">
+                      {{ user.enabled ? 'Active' : 'Banned' }}
+                    </span>
+                  </td>
+                  <td>{{ user.createdAt ? (user.createdAt | date:'short') : 'N/A' }}</td>
+                  <td>
+                    <div class="action-buttons">
+                      <select class="role-select" #roleSelect (change)="updateUserRole(user.username, roleSelect.value)" [disabled]="!user.enabled">
+                        <option value="">{{ 'Change Role' | translate }}</option>
+                        <option value="CUSTOMER">{{ 'Customer' | translate }}</option>
+                        <option value="BANK_OFFICER">{{ 'Officer' | translate }}</option>
+                        <option value="ADMIN">{{ 'Admin' | translate }}</option>
+                      </select>
+                      @if (user.enabled) {
+                        <button class="btn-action danger" (click)="banUser(user.username)" [attr.title]="'Ban User' | translate">{{ 'Ban' | translate }}</button>
+                      } @else {
+                        <button class="btn-action success" (click)="unbanUser(user.username)" [attr.title]="'Unban User' | translate">{{ 'Unban' | translate }}</button>
+                      }
+                      <button class="btn-action danger" (click)="deleteUser(user.username)" [attr.title]="'Delete User' | translate">{{ 'Delete' | translate }}</button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    } @else if (activeTab === 'officers') {
+      <div class="officer-management-section">
+        <h2 class="text-gradient">{{ 'Officer Management' | translate }}</h2>
+
+        <!-- Search and Filter Controls -->
+        <div class="filter-controls card">
+          <div class="filter-row">
+            <div class="filter-group">
+              <label>{{ 'Search' | translate }}</label>
+              <input type="text" [(ngModel)]="officerSearchQuery" [attr.placeholder]="'Search by username or email...' | translate">
+            </div>
+            <div class="filter-group">
+              <label>{{ 'Status' | translate }}</label>
+              <select [(ngModel)]="officerFilterStatus">
+                <option value="">{{ 'All Status' | translate }}</option>
+                <option value="ACTIVE">{{ 'Active' | translate }}</option>
+                <option value="INACTIVE">{{ 'Inactive' | translate }}</option>
+                <option value="DEBARRED">{{ 'Debarred' | translate }}</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label>{{ 'Sort By' | translate }}</label>
+              <select [(ngModel)]="officerSortField">
+                <option value="username">{{ 'Username' | translate }}</option>
+                <option value="email">{{ 'Email' | translate }}</option>
+                <option value="status">{{ 'Status' | translate }}</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label>{{ 'Order' | translate }}</label>
+              <select [(ngModel)]="officerSortOrder">
+                <option value="asc">{{ 'Ascending' | translate }}</option>
+                <option value="desc">{{ 'Descending' | translate }}</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label>&nbsp;</label>
+              <button class="btn btn-secondary" (click)="resetOfficerFilters()">{{ 'Reset' | translate }}</button>
+            </div>
+          </div>
+          <div class="filter-info">
+            <span>{{ 'Showing {0} of {1} officers' | translate:[filteredOfficers.length, officers.length] }}</span>
+          </div>
+        </div>
+
+        <div class="officers-table card">
+          <table>
+            <thead>
+              <tr>
+                <th>{{ 'Officer ID' | translate }}</th>
+                <th>{{ 'Username' | translate }}</th>
+                <th>{{ 'Email' | translate }}</th>
+                <th>{{ 'Status' | translate }}</th>
+                <th>{{ 'Actions' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (officer of filteredOfficers; track officer.id) {
+                <tr>
+                  <td>{{ officer.id }}</td>
+                  <td>{{ officer.username }}</td>
+                  <td>{{ officer.email }}</td>
+                  <td>
+                    <span class="status-badge" [class]="officer.status.toLowerCase()">{{ officer.status }}</span>
+                  </td>
+                  <td>
+                    @if (officer.enabled) {
+                      <button class="btn-action danger" (click)="debarOfficer(officer.username)">{{ 'Debar' | translate }}</button>
+                      <button class="btn-action warning" (click)="deactivateUser(officer.username)">{{ 'Deactivate' | translate }}</button>
+                    } @else {
+                      <button class="btn-action success" (click)="reactivateOfficer(officer.username)">{{ 'Reactivate' | translate }}</button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    } @else if (activeTab === 'visualizations') {
+      <div class="visualizations-section">
+        <h2 class="text-gradient">{{ 'Data Visualizations' | translate }}</h2>
+        
+        <!-- Advanced Charts Section -->
+        <app-advanced-charts [accounts]="visualizationAccounts"></app-advanced-charts>
+        
+        <!-- Legacy Simple Charts (kept for reference) -->
+        <div class="charts-grid" style="margin-top: 40px;">
+          <!-- FD Status Distribution Chart -->
+          <div class="chart-card card">
+            <h3>{{ 'FD Status Distribution' | translate }}</h3>
+            <div class="chart-container">
+              <div class="simple-bar-chart">
+                @for (status of ['Active', 'Matured', 'Rejected', 'Pending']; track status) {
+                  <div class="bar-item">
+                    <span class="bar-label">{{ status }}</span>
+                    <div class="bar-track">
+                      <div class="bar-fill" [style.width.%]="getPercentageForStatus(status)"></div>
+                    </div>
+                    <span class="bar-value">{{ getCountForStatus(status) }}</span>
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+
+          <!-- Monthly FD Applications Chart -->
+          <div class="chart-card card">
+            <h3>{{ 'Monthly FD Applications' | translate }}</h3>
+            <div class="chart-container">
+              <div class="simple-bar-chart">
+                @for (month of visualizationMonthly; track month.label) {
+                  <div class="bar-item">
+                    <span class="bar-label">{{ month.label }}</span>
+                    <div class="bar-track">
+                      <div class="bar-fill accent" [style.width.%]="getBarPercentage(month.count, visualizationMonthly)"></div>
+                    </div>
+                    <span class="bar-value">{{ month.count }}</span>
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+
+          <!-- Deposit Amount Distribution -->
+          <div class="chart-card card">
+            <h3>{{ 'Deposit Amount Ranges' | translate }}</h3>
+            <div class="chart-container">
+              <div class="simple-bar-chart">
+                @for (range of visualizationAmounts; track range.label) {
+                  <div class="bar-item">
+                    <span class="bar-label">{{ range.label }}</span>
+                    <div class="bar-track">
+                      <div class="bar-fill success" [style.width.%]="getBarPercentage(range.count, visualizationAmounts)"></div>
+                    </div>
+                    <span class="bar-value">{{ range.count }}</span>
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+
+          <!-- Tenure Distribution -->
+          <div class="chart-card card">
+            <h3>{{ 'Tenure Distribution' | translate }}</h3>
+            <div class="chart-container">
+              <div class="simple-bar-chart">
+                @for (tenure of visualizationTenures; track tenure.label) {
+                  <div class="bar-item">
+                    <span class="bar-label">{{ tenure.label }}</span>
+                    <div class="bar-track">
+                      <div class="bar-fill warning" [style.width.%]="getBarPercentage(tenure.count, visualizationTenures)"></div>
+                    </div>
+                    <span class="bar-value">{{ tenure.count }}</span>
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+
+          <!-- Product-wise Distribution -->
+          <div class="chart-card card full-width">
+            <h3>{{ 'Product-wise FD Distribution' | translate }}</h3>
+            <div class="chart-container">
+              @if (productWiseDistribution && productWiseDistribution.length > 0) {
+                <div class="simple-bar-chart">
+                  @for (product of productWiseDistribution; track product.product) {
+                    <div class="bar-item">
+                      <span class="bar-label">{{ product.product || 'Unknown' }}</span>
+                      <div class="bar-track">
+                        <div class="bar-fill" [style.width.%]="product.percentage || 0"></div>
+                      </div>
+                      <span class="bar-value">{{ product.count || 0 }} ({{ product.percentage || 0 }}%)</span>
+                    </div>
+                  }
+                </div>
+              } @else {
+                <p class="no-data">{{ 'No product data available - Check browser console for details' | translate }}</p>
+              }
+            </div>
+          </div>
+
+          <!-- Key Metrics Summary -->
+          <div class="chart-card card full-width">
+            <h3>{{ 'Key Metrics Summary' | translate }}</h3>
+            <div class="metrics-summary">
+              <div class="metric-item">
+                <span class="metric-label">{{ 'Total Deposits' | translate }}</span>
+                <span class="metric-value">{{ formatCurrency(analytics.totalDeposits) }}</span>
+              </div>
+              <div class="metric-item">
+                <span class="metric-label">{{ 'Total Interest Earned' | translate }}</span>
+                <span class="metric-value">{{ formatCurrency(analytics.totalInterestEarned) }}</span>
+              </div>
+              <div class="metric-item">
+                <span class="metric-label">{{ 'Average Deposit' | translate }}</span>
+                <span class="metric-value">{{ formatCurrency(analytics.avgDepositAmount) }}</span>
+              </div>
+              <div class="metric-item">
+                <span class="metric-label">{{ 'Approval Rate' | translate }}</span>
+                <span class="metric-value">{{ analytics.approvalRate }}%</span>
+              </div>
+              <div class="metric-item">
+                <span class="metric-label">{{ 'Total Customers' | translate }}</span>
+                <span class="metric-value">{{ formatNumber(analytics.totalCustomers) }}</span>
+              </div>
+              <div class="metric-item">
+                <span class="metric-label">{{ 'Average Tenure' | translate }}</span>
+                <span class="metric-value">{{ '{0} months' | translate:[analytics.averageTenure] }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    } @else if (activeTab === 'reports') {
+      <div class="reports-section">
+        <h2 class="text-gradient">{{ 'Reports & Downloads' | translate }}</h2>
+        
+        <div class="reports-category">
+          <h3>{{ 'FD Summary Reports' | translate }}</h3>
+          <div class="reports-grid">
+            <div class="report-card card" (click)="downloadFdSummaryPdf()">
+              <div class="card-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                  <line x1="16" y1="13" x2="8" y2="13"></line>
+                  <line x1="16" y1="17" x2="8" y2="17"></line>
+                  <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+              </div>
+              <div class="card-content">
+                <span class="card-label">{{ 'Active FDs' | translate }}</span>
+                <span class="card-value">{{ 'PDF' | translate }}</span>
+              </div>
+            </div>
+            <div class="report-card card" (click)="downloadFdSummaryExcel()">
+              <div class="card-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                  <line x1="12" y1="18" x2="12" y2="12"></line>
+                  <line x1="9" y1="15" x2="15" y2="15"></line>
+                </svg>
+              </div>
+              <div class="card-content">
+                <span class="card-label">{{ 'Active FDs' | translate }}</span>
+                <span class="card-value">{{ 'Excel' | translate }}</span>
+              </div>
+            </div>
+            <div class="report-card card" (click)="downloadFdSummaryByStatus('MATURED', 'pdf')">
+              <div class="card-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+              </div>
+              <div class="card-content">
+                <span class="card-label">{{ 'Matured FDs' | translate }}</span>
+                <span class="card-value">{{ 'PDF' | translate }}</span>
+              </div>
+            </div>
+            <div class="report-card card" (click)="downloadFdSummaryByStatus('REJECTED', 'pdf')">
+              <div class="card-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="15" y1="9" x2="9" y2="15"></line>
+                  <line x1="9" y1="9" x2="15" y2="15"></line>
+                </svg>
+              </div>
+              <div class="card-content">
+                <span class="card-label">{{ 'Rejected FDs' | translate }}</span>
+                <span class="card-value">{{ 'PDF' | translate }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="reports-category">
+          <h3>{{ 'Maturity Reports' | translate }}</h3>
+          <div class="reports-grid">
+            <div class="report-card card" (click)="downloadMaturityReportPdf()">
+              <div class="card-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+              </div>
+              <div class="card-content">
+                <span class="card-label">{{ 'Maturity (30 days)' | translate }}</span>
+                <span class="card-value">{{ 'PDF' | translate }}</span>
+              </div>
+            </div>
+            <div class="report-card card" (click)="downloadMaturityReport(60, 'pdf')">
+              <div class="card-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+              </div>
+              <div class="card-content">
+                <span class="card-label">{{ 'Maturity (60 days)' | translate }}</span>
+                <span class="card-value">{{ 'PDF' | translate }}</span>
+              </div>
+            </div>
+            <div class="report-card card" (click)="downloadMaturityReport(90, 'pdf')">
+              <div class="card-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+              </div>
+              <div class="card-content">
+                <span class="card-label">{{ 'Maturity (90 days)' | translate }}</span>
+                <span class="card-value">{{ 'PDF' | translate }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="reports-category">
+          <h3>{{ 'Portfolio Reports' | translate }}</h3>
+          <div class="reports-grid">
+            <div class="report-card card" (click)="downloadCustomerPortfolioPdf()">
+              <div class="card-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                  <line x1="16" y1="13" x2="8" y2="13"></line>
+                  <line x1="16" y1="17" x2="8" y2="17"></line>
+                </svg>
+              </div>
+              <div class="card-content">
+                <span class="card-label">{{ 'All Portfolios' | translate }}</span>
+                <span class="card-value">{{ 'PDF' | translate }}</span>
+              </div>
+            </div>
+            <div class="report-card card" (click)="downloadCustomerPortfolioExcel()">
+              <div class="card-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                  <line x1="12" y1="18" x2="12" y2="12"></line>
+                  <line x1="9" y1="15" x2="15" y2="15"></line>
+                </svg>
+              </div>
+              <div class="card-content">
+                <span class="card-label">{{ 'All Portfolios' | translate }}</span>
+                <span class="card-value">{{ 'Excel' | translate }}</span>
+              </div>
+            </div>
+            <div class="report-card card" (click)="downloadCustomerPortfolioCsv()">
+              <div class="card-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                  <line x1="16" y1="13" x2="8" y2="13"></line>
+                  <line x1="16" y1="17" x2="8" y2="17"></line>
+                </svg>
+              </div>
+              <div class="card-content">
+                <span class="card-label">{{ 'All Portfolios' | translate }}</span>
+                <span class="card-value">{{ 'CSV' | translate }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="reports-category">
+          <h3>{{ 'Advanced Reports' | translate }}</h3>
+          <div class="reports-grid">
+            <div class="report-card card" (click)="generatePythonReport()">
+              <div class="card-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="16 18 22 12 16 6"></polyline>
+                  <polyline points="8 6 2 12 8 18"></polyline>
+                </svg>
+              </div>
+              <div class="card-content">
+                <span class="card-label">{{ 'Python Analysis' | translate }}</span>
+                <span class="card-value">{{ 'Generate' | translate }}</span>
+              </div>
+            </div>
+            <div class="report-card card" (click)="downloadInterestReport()">
+              <div class="card-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="12" y1="1" x2="12" y2="23"></line>
+                  <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                </svg>
+              </div>
+              <div class="card-content">
+                <span class="card-label">{{ 'Interest Report' | translate }}</span>
+                <span class="card-value">{{ 'PDF' | translate }}</span>
+              </div>
+            </div>
+            <div class="report-card card" (click)="downloadTransactionReport()">
+              <div class="card-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                  <polyline points="17 6 23 6 23 12"></polyline>
+                </svg>
+              </div>
+              <div class="card-content">
+                <span class="card-label">{{ 'Transaction Report' | translate }}</span>
+                <span class="card-value">{{ 'Excel' | translate }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    } @else if (activeTab === 'logs') {
+      <div class="audit-log-section">
+        <div class="section-header">
+          <div>
+            <h2 class="text-gradient">{{ 'Operation Logs' | translate }}</h2>
+            <p>{{ 'Review administrative and account operations with actor, target, and timestamp.' | translate }}</p>
+          </div>
+          <button class="btn btn-secondary" (click)="loadOperationLogs()" [disabled]="operationLogsLoading">{{ 'Refresh' | translate }}</button>
+        </div>
+
+        <div class="filter-controls card audit-log-filters">
+          <div class="filter-row">
+            <div class="filter-group">
+              <label>{{ 'Operation Type' | translate }}</label>
+              <select [(ngModel)]="operationLogFilters.operationType">
+                <option value="">{{ 'All Operations' | translate }}</option>
+                @for (type of operationLogTypes; track type) {
+                  <option [value]="type">{{ type.replaceAll('_', ' ') }}</option>
+                }
+              </select>
+            </div>
+            <div class="filter-group">
+              <label>{{ 'Actor' | translate }}</label>
+              <input type="search" [(ngModel)]="operationLogFilters.actor" [attr.placeholder]="'Filter by username' | translate">
+            </div>
+            <div class="filter-group">
+              <label>{{ 'Target' | translate }}</label>
+              <input type="search" [(ngModel)]="operationLogFilters.target" [attr.placeholder]="'Filter by target or ID' | translate">
+            </div>
+            <div class="filter-group">
+              <label>{{ 'From' | translate }}</label>
+              <input type="datetime-local" [(ngModel)]="operationLogFilters.from">
+            </div>
+            <div class="filter-group">
+              <label>{{ 'To' | translate }}</label>
+              <input type="datetime-local" [(ngModel)]="operationLogFilters.to">
+            </div>
+            <div class="filter-group">
+              <label>{{ 'Sort By' | translate }}</label>
+              <select [(ngModel)]="operationLogFilters.sortBy">
+                <option value="time">{{ 'Time' | translate }}</option>
+                <option value="operationType">{{ 'Operation Type' | translate }}</option>
+                <option value="actor">{{ 'Actor' | translate }}</option>
+                <option value="target">{{ 'Target' | translate }}</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label>{{ 'Sort Order' | translate }}</label>
+              <select [(ngModel)]="operationLogFilters.sort">
+                <option value="DESC">{{ 'Newest first' | translate }}</option>
+                <option value="ASC">{{ 'Oldest first' | translate }}</option>
+              </select>
+            </div>
+            <div class="filter-group audit-filter-actions">
+              <label>&nbsp;</label>
+              <button class="btn btn-primary" (click)="applyOperationLogFilters()">{{ 'Apply Filters' | translate }}</button>
+              <button class="btn btn-secondary" (click)="clearOperationLogFilters()">{{ 'Clear' | translate }}</button>
+            </div>
+          </div>
+        </div>
+
+        @if (operationLogsError) {
+          <div class="error-message">{{ operationLogsError | translate }}</div>
+        } @else if (operationLogsLoading) {
+          <div class="empty-state card"><p>{{ 'Loading operation logs...' | translate }}</p></div>
+        } @else if (operationLogs.length === 0) {
+          <div class="empty-state card"><p>{{ 'No operations match these filters.' | translate }}</p></div>
+        } @else {
+          <div class="users-table card audit-log-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>{{ 'Time' | translate }}</th>
+                  <th>{{ 'Operation' | translate }}</th>
+                  <th>{{ 'Actor' | translate }}</th>
+                  <th>{{ 'Target' | translate }}</th>
+                  <th>{{ 'Details' | translate }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (log of operationLogs; track log.logId) {
+                  <tr>
+                    <td>{{ log.occurredAt | date:'medium' }}</td>
+                    <td><span class="status-badge">{{ log.operationType.replaceAll('_', ' ') }}</span></td>
+                    <td>{{ log.actor }}</td>
+                    <td>{{ log.targetType }}{{ log.targetId ? ': ' + log.targetId : '' }}</td>
+                    <td>{{ log.summary }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+
+        <div class="section-actions audit-log-pagination">
+          <span>{{ 'Showing {0}-{1} of {2}' | translate:[operationLogsTotal === 0 ? 0 : operationLogsPage * operationLogsPageSize + 1, (operationLogsPage + 1) * operationLogsPageSize < operationLogsTotal ? (operationLogsPage + 1) * operationLogsPageSize : operationLogsTotal, operationLogsTotal] }}</span>
+          <button class="btn btn-secondary" (click)="changeOperationLogsPage(-1)" [disabled]="operationLogsPage === 0">{{ 'Previous' | translate }}</button>
+          <button class="btn btn-secondary" (click)="changeOperationLogsPage(1)" [disabled]="(operationLogsPage + 1) * operationLogsPageSize >= operationLogsTotal">{{ 'Next' | translate }}</button>
+        </div>
+      </div>
+    } @else if (activeTab === 'analytics') {
+
+    <!-- Key Metrics -->
+    <div class="analytics-grid">
+      <div class="analytics-card card">
+        <div class="card-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="20" x2="18" y2="10"></line>
+            <line x1="12" y1="20" x2="12" y2="4"></line>
+            <line x1="6" y1="20" x2="6" y2="14"></line>
+          </svg>
+        </div>
+        <div class="card-content">
+          <span class="card-label">{{ 'Total FDs' | translate }}</span>
+          <span class="card-value">{{ formatNumber(analytics.totalFDs) }}</span>
+        </div>
+      </div>
+
+      <div class="analytics-card card">
+        <div class="card-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="1" x2="12" y2="23"></line>
+            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+          </svg>
+        </div>
+        <div class="card-content">
+          <span class="card-label">{{ 'Total Deposits' | translate }}</span>
+          <span class="card-value">{{ formatCurrency(analytics.totalDeposits) }}</span>
+        </div>
+      </div>
+
+      <div class="analytics-card card">
+        <div class="card-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+        </div>
+        <div class="card-content">
+          <span class="card-label">{{ 'Pending Approvals' | translate }}</span>
+          <span class="card-value accent">{{ formatNumber(analytics.pendingApprovals) }}</span>
+        </div>
+      </div>
+
+      <div class="analytics-card card">
+        <div class="card-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+          </svg>
+        </div>
+        <div class="card-content">
+          <span class="card-label">{{ 'Active FDs' | translate }}</span>
+          <span class="card-value">{{ formatNumber(analytics.activeFDs) }}</span>
+        </div>
+      </div>
+
+      <div class="analytics-card card">
+        <div class="card-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="2" y1="12" x2="22" y2="12"></line>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+          </svg>
+        </div>
+        <div class="card-content">
+          <span class="card-label">{{ 'Matured FDs' | translate }}</span>
+          <span class="card-value">{{ formatNumber(analytics.maturedFDs) }}</span>
+        </div>
+      </div>
+
+      <div class="analytics-card card">
+        <div class="card-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="15" y1="9" x2="9" y2="15"></line>
+            <line x1="9" y1="9" x2="15" y2="15"></line>
+          </svg>
+        </div>
+        <div class="card-content">
+          <span class="card-label">{{ 'Rejected FDs' | translate }}</span>
+          <span class="card-value">{{ formatNumber(analytics.rejectedFDs) }}</span>
+        </div>
+      </div>
+
+      <div class="analytics-card card">
+        <div class="card-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+          </svg>
+        </div>
+        <div class="card-content">
+          <span class="card-label">{{ 'Avg Tenure' | translate }}</span>
+          <span class="card-value">{{ '{0} months' | translate:[analytics.averageTenure] }}</span>
+        </div>
+      </div>
+
+      <div class="analytics-card card">
+        <div class="card-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+          </svg>
+        </div>
+        <div class="card-content">
+          <span class="card-label">{{ 'Interest Earned' | translate }}</span>
+          <span class="card-value">{{ formatCurrency(analytics.totalInterestEarned) }}</span>
+        </div>
+      </div>
+
+      <div class="analytics-card card">
+        <div class="card-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+          </svg>
+        </div>
+        <div class="card-content">
+          <span class="card-label">{{ 'Approval Rate' | translate }}</span>
+          <span class="card-value">{{ analytics.approvalRate }}%</span>
+        </div>
+      </div>
+
+      <div class="analytics-card card">
+        <div class="card-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+          </svg>
+        </div>
+        <div class="card-content">
+          <span class="card-label">{{ 'Total Customers' | translate }}</span>
+          <span class="card-value">{{ formatNumber(analytics.totalCustomers) }}</span>
+        </div>
+      </div>
+
+      <div class="analytics-card card">
+        <div class="card-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="1" x2="12" y2="23"></line>
+            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+          </svg>
+        </div>
+        <div class="card-content">
+          <span class="card-label">{{ 'Avg Deposit' | translate }}</span>
+          <span class="card-value">{{ formatCurrency(analytics.avgDepositAmount) }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Product Distribution -->
+    <div class="distribution-section">
+      <h2 class="text-gradient">{{ 'Product-wise Distribution' | translate }}</h2>
+      <div class="distribution-grid">
+        @for (product of productWiseDistribution; track product.product) {
+          <div class="distribution-card card">
+            <div class="distribution-header">
+              <span class="product-name">{{ product.product }}</span>
+              <span class="product-count">{{ formatNumber(product.count) }}</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill" [style.width.%]="product.percentage"></div>
+            </div>
+            <span class="product-percentage">{{ product.percentage }}%</span>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Recent Applications -->
+    <div class="applications-section">
+      <h2 class="text-gradient">{{ 'Recent Applications' | translate }}</h2>
+
+      <!-- Search and Filter Controls -->
+      <div class="filter-controls card">
+        <div class="filter-row">
+          <div class="filter-group">
+            <label>{{ 'Search' | translate }}</label>
+            <input type="text" [(ngModel)]="appSearchQuery" [attr.placeholder]="'Search by customer or ID...' | translate">
+          </div>
+          <div class="filter-group">
+            <label>{{ 'Status' | translate }}</label>
+            <select [(ngModel)]="appFilterStatus">
+              <option value="">{{ 'All Status' | translate }}</option>
+              <option value="PENDING">{{ 'Pending' | translate }}</option>
+              <option value="ACTIVE">{{ 'Active' | translate }}</option>
+              <option value="REJECTED">{{ 'Rejected' | translate }}</option>
+              <option value="MATURED">{{ 'Matured' | translate }}</option>
+            </select>
+          </div>
+        </div>
+        <div class="filter-row">
+          <div class="filter-group">
+            <label>{{ 'Min Amount' | translate }}</label>
+            <input type="number" [(ngModel)]="appFilterMinAmount" [attr.placeholder]="'Min amount' | translate">
+          </div>
+          <div class="filter-group">
+            <label>{{ 'Max Amount' | translate }}</label>
+            <input type="number" [(ngModel)]="appFilterMaxAmount" [attr.placeholder]="'Max amount' | translate">
+          </div>
+          <div class="filter-group">
+            <label>{{ 'Sort By' | translate }}</label>
+            <select [(ngModel)]="appSortField">
+              <option value="date">{{ 'Date' | translate }}</option>
+              <option value="amount">{{ 'Amount' | translate }}</option>
+              <option value="customer">{{ 'Customer Name' | translate }}</option>
+              <option value="status">{{ 'Status' | translate }}</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label>{{ 'Order' | translate }}</label>
+            <select [(ngModel)]="appSortOrder">
+              <option value="desc">{{ 'Descending' | translate }}</option>
+              <option value="asc">{{ 'Ascending' | translate }}</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label>&nbsp;</label>
+            <button class="btn btn-secondary" (click)="resetAppFilters()">{{ 'Reset' | translate }}</button>
+          </div>
+        </div>
+        <div class="filter-info">
+          <span>{{ 'Showing {0} of {1} applications' | translate:[filteredApplications.length, allApplications.length] }}</span>
+        </div>
+      </div>
+
+      <div class="applications-table card">
+        <table>
+          <thead>
+            <tr>
+              <th>{{ 'FD ID' | translate }}</th>
+              <th>{{ 'Customer' | translate }}</th>
+              <th>{{ 'Amount' | translate }}</th>
+              <th>{{ 'Status' | translate }}</th>
+              <th>{{ 'Date' | translate }}</th>
+              <th>{{ 'Actions' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (app of filteredApplications; track app.id) {
+              <tr>
+                <td>{{ app.id }}</td>
+                <td>{{ app.customer }}</td>
+                <td>₹{{ formatNumber(app.amount) }}</td>
+                <td>
+                  <span class="status-badge" [class]="app.status.toLowerCase()">
+                    {{ app.status }}
+                  </span>
+                </td>
+                <td>{{ app.date }}</td>
+                <td>
+                  @if (app.status === 'PENDING') {
+                    <button class="btn-action approve">{{ 'Approve' | translate }}</button>
+                    <button class="btn-action reject">{{ 'Reject' | translate }}</button>
+                  } @else {
+                    <button class="btn-action view">{{ 'View' | translate }}</button>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+    } @else if (activeTab === 'relation-nets') {
+      <app-relation-nets></app-relation-nets>
+    }
+  </div>
+</section>

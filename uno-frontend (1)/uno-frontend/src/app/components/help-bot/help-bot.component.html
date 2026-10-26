@@ -1,0 +1,43 @@
+<div class="help-bot-container card">
+  <div class="help-bot-header">
+    <h2 class="text-gradient">🤖 Help Bot</h2>
+    <p class="subtitle">Select your issue to get personalized help</p>
+  </div>
+
+  @if (isComplete && solution) {
+    <div class="solution-view">
+      <div class="solution-icon">✅</div>
+      <h3>Solution</h3>
+      <p class="solution-text">{{ solution }}</p>
+      <div class="action-buttons">
+        <button class="btn btn-secondary" (click)="startOver()">Start Over</button>
+      </div>
+    </div>
+  } @else if (currentStep) {
+    <div class="question-view">
+      <div class="progress-indicator">
+        <span class="step-number">Step {{ history.length }}</span>
+        @if (history.length > 1) {
+          <button class="btn-link" (click)="goBack()">← Back</button>
+        }
+      </div>
+
+      <div class="question-box">
+        <h3>{{ currentStep.question }}</h3>
+      </div>
+
+      <div class="options-grid">
+        @for (option of currentStep.options; track option.id) {
+          <button class="option-btn" (click)="selectOption(option)">
+            <span class="option-text">{{ option.text }}</span>
+            <span class="option-arrow">→</span>
+          </button>
+        }
+      </div>
+
+      <div class="action-buttons">
+        <button class="btn btn-secondary" (click)="startOver()">Start Over</button>
+      </div>
+    </div>
+  }
+</div>

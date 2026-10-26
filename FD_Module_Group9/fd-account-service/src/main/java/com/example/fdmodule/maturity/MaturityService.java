@@ -28,7 +28,7 @@ import java.util.Map;
  * lock fd_accounts row, re-check ACTIVE and due        (duplicate guard for reruns/parallel runs)
  * InterestPostingService.accrueToMaturity              (catch-up through maturity - 1 day)
  * read fd_interest_state: current_balance + accrued_precise
- * INTEREST         Dr EXPENSE_INTEREST      Cr ASSET_CUSTOMER_SETTLEMENT   unpaid interest
+ * INTEREST         Dr LIABILITY_INTEREST_PAYABLE Cr ASSET_CUSTOMER_SETTLEMENT   unpaid interest
  * MATURITY_PAYOUT  Dr LIABILITY_FD_DEPOSITS Cr ASSET_CUSTOMER_SETTLEMENT   principal + capitalized interest
  * settle interest sub-ledger, zero the balance state, status = MATURED
  * outbox: event.interest.paid (statements), event.fd.matured (notifications)
@@ -95,6 +95,9 @@ public class MaturityService {
                 log.error("Maturity failed for FD {}", account, e);
             }
         }
+        jdbc.update("INSERT INTO admin_operation_logs(actor,operation_type,target_type,target_id,summary) VALUES(?,?,?,?,?)",
+                actor, "MATURITY_BATCH_COMPLETED", "MATURITY_BATCH", businessDate.toString(),
+                "Maturity batch completed: " + matured + " matured, " + skipped + " skipped, " + failed + " failed");
         return new Result(businessDate, matured, skipped, failed);
     }
 
@@ -116,7 +119,7 @@ public class MaturityService {
 
         if (finalInterest.signum() > 0) {
             ledger.save(new FDTransaction(account, FDTransaction.TYPE_INTEREST, finalInterest, currency,
-                    GLAccounts.EXPENSE_INTEREST, GLAccounts.ASSET_CUSTOMER_SETTLEMENT,
+                    GLAccounts.LIABILITY_INTEREST_PAYABLE, GLAccounts.ASSET_CUSTOMER_SETTLEMENT,
                     "Interest paid on maturity " + maturityDate, actor));
         }
         ledger.save(new FDTransaction(account, FDTransaction.TYPE_MATURITY_PAYOUT, depositBalance, currency,
@@ -140,7 +143,8 @@ public class MaturityService {
         paid.put("closingBalance", BigDecimal.ZERO);
         paid.put("outstandingInterest", BigDecimal.ZERO);
         paid.put("actor", actor);
-        outbox.emit("event.interest.paid", "InterestPaid", account, paid);
+        com.example.fdmodule.service.NotificationContacts.enrich(jdbc, account, paid);
+   outbox.emit("event.interest.paid", "InterestPaid", account, paid);
 
         var matured = new LinkedHashMap<String, Object>();
         matured.put("fdAccountNo", account);
@@ -152,7 +156,8 @@ public class MaturityService {
         matured.put("interestPaid", finalInterest);
         matured.put("totalPaid", depositBalance.add(finalInterest));
         matured.put("actor", actor);
-        outbox.emit("event.fd.matured", "FdMatured", account, matured);
+        com.example.fdmodule.service.NotificationContacts.enrich(jdbc, account, matured);
+   outbox.emit("event.fd.matured", "FdMatured", account, matured);
         return true;
     }
 }

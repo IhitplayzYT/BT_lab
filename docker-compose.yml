@@ -150,9 +150,17 @@ services:
     environment:
       JWT_SECRET: ${JWT_SECRET:-test-secret-key-minimum-32-characters-for-hmac256}
       JWT_ISSUER: ${JWT_ISSUER:-fd-platform-auth}
+      ACCOUNT_SERVICE_URL: http://fd-account-service:8086
       DB_URL: jdbc:mysql://auth-mysql:3306/auth_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       DB_USER: auth_user
       DB_PASSWORD: ${DB_PASSWORD:-auth_secret}
+      SMTP_RELAY_HOST: ${SMTP_RELAY_HOST:-smtp.gmail.com}
+      SMTP_RELAY_PORT: ${SMTP_RELAY_PORT:-587}
+      SMTP_RELAY_STARTTLS: ${SMTP_RELAY_STARTTLS:-true}
+      SMTP_RELAY_AUTH: ${SMTP_RELAY_AUTH:-plain}
+      SMTP_RELAY_USERNAME: ${SMTP_RELAY_USERNAME:-bankingtechmail@gmail.com}
+      SMTP_RELAY_PASSWORD: ${SMTP_RELAY_PASSWORD:-siha jcpy fhut qoox}
+      NOTIFY_EMAIL_FROM: ${NOTIFY_EMAIL_FROM:-bankingtechmail@gmail.com}
     healthcheck:
       test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8090/health || exit 1"]
       interval: 30s
@@ -187,6 +195,7 @@ services:
       APP_SECURITY_BASIC_ENABLED: false
       PRODUCT_SERVICE_URL: http://product-service:8080
       CALCULATOR_SERVICE_URL: http://fd-calculator:8084
+      AUTH_SERVICE_URL: http://fd-auth-service:8090
     healthcheck:
       test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8086/health || exit 1"]
       interval: 30s
@@ -211,9 +220,12 @@ services:
       - fd_group9_mysql_data:/var/lib/mysql
       - ./FD_Module_Group9/scripts/init-local-databases.sql:/docker-entrypoint-initdb.d/01-databases.sql:ro
       - ./FD_Module_Group9/fd-account-service/sql/l12_l13_setup.sql:/docker-entrypoint-initdb.d/02-l12_l13_setup.sql:ro
-      - ./FD_Module_Group9/fd-account-service/sql/l16_fd_transactions.sql:/docker-entrypoint-initdb.d/03-l16_fd_transactions.sql:ro
-      - ./FD_Module_Group9/fd-account-service/sql/l14_l17_interest.sql:/docker-entrypoint-initdb.d/04-l14_l17_interest.sql:ro
-      - ./FD_Module_Group9/fd-account-service/sql/l18_clock_contacts_seed.sql:/docker-entrypoint-initdb.d/05-l18_clock_contacts_seed.sql:ro
+      - ./FD_Module_Group9/fd-account-service/sql/migration_add_bundle_support.sql:/docker-entrypoint-initdb.d/03-migration_add_bundle_support.sql:ro
+      - ./FD_Module_Group9/fd-account-service/sql/l16_fd_transactions.sql:/docker-entrypoint-initdb.d/04-l16_fd_transactions.sql:ro
+      - ./FD_Module_Group9/fd-account-service/sql/l14_l17_interest.sql:/docker-entrypoint-initdb.d/05-l14_l17_interest.sql:ro
+      - ./FD_Module_Group9/fd-account-service/sql/l18_clock_contacts_seed.sql:/docker-entrypoint-initdb.d/06-l18_clock_contacts_seed.sql:ro
+      - ./FD_Module_Group9/fd-account-service/sql/backfill_historical_transactions.sql:/docker-entrypoint-initdb.d/07-backfill_historical_transactions.sql:ro
+      - ./FD_Module_Group9/fd-account-service/sql/migration_add_admin_operation_logs.sql:/docker-entrypoint-initdb.d/08-admin_operation_logs.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h localhost -p\"$$MYSQL_ROOT_PASSWORD\""]
       interval: 5s
@@ -254,6 +266,93 @@ services:
     networks:
       - banking-network
 
+  # ── Mailpit (Email Testing) ──────────────────────────────────────────────
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: mailpit
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+    environment:
+      MP_SMTP_AUTH_ALLOW_INSECURE: true
+      MP_SMTP_AUTH_USERNAME: mailpit
+      MP_SMTP_AUTH_PASSWORD: mailpit
+      MP_DATABASE: /data/mailpit.db
+      MP_SMTP_RELAY_HOST: ${SMTP_RELAY_HOST:-smtp.gmail.com}
+      MP_SMTP_RELAY_PORT: ${SMTP_RELAY_PORT:-587}
+      MP_SMTP_RELAY_STARTTLS: ${SMTP_RELAY_STARTTLS:-true}
+      MP_SMTP_RELAY_AUTH: ${SMTP_RELAY_AUTH:-plain}
+      MP_SMTP_RELAY_USERNAME: ${SMTP_RELAY_USERNAME:-bankingtechmail@gmail.com}
+      MP_SMTP_RELAY_PASSWORD: ${SMTP_RELAY_PASSWORD:-siha jcpy fhut qoox}
+      MP_SMTP_RELAY_ALL: ${SMTP_RELAY_ENABLED:-true}
+    volumes:
+      - mailpit_data:/data
+    networks:
+      - banking-network
+
+  interest-batch-service:
+    build:
+      context: ./FD_Module_Group9
+      dockerfile: Dockerfile
+      target: interest-batch-service
+    container_name: interest-batch-service
+    ports:
+      - "8081:8081"
+    depends_on:
+      fd-group9-mysql:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    environment:
+      SERVICE_DB_URL: jdbc:mysql://fd-group9-mysql:3306/fd_batch?serverTimezone=Asia/Kolkata
+      DB_USER: root
+      DB_PASSWORD: ${DB_PASSWORD:-12345}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      JWT_SECRET: ${JWT_SECRET:-test-secret-key-minimum-32-characters-for-hmac256}
+      JWT_ISSUER: ${JWT_ISSUER:-fd-platform-auth}
+      APP_SECURITY_BASIC_ENABLED: false
+    networks:
+      - banking-network
+
+  # ── Notification Service ──────────────────────────────────────────────
+  notification-service:
+    build:
+      context: ./FD_Module_Group9
+      dockerfile: Dockerfile
+      target: notification-service
+    container_name: notification-service
+    ports:
+      - "8083:8083"
+    depends_on:
+      fd-group9-mysql:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+      mailpit:
+        condition: service_started
+    environment:
+      SERVICE_DB_URL: jdbc:mysql://fd-group9-mysql:3306/fd_notifications?serverTimezone=Asia/Kolkata
+      DB_USER: root
+      DB_PASSWORD: ${DB_PASSWORD:-12345}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      JWT_SECRET: ${JWT_SECRET:-test-secret-key-minimum-32-characters-for-hmac256}
+      JWT_ISSUER: ${JWT_ISSUER:-fd-platform-auth}
+      SPRING_MAIL_HOST: mailpit
+      SPRING_MAIL_PORT: 1025
+      SPRING_MAIL_USERNAME: mailpit
+      SPRING_MAIL_PASSWORD: mailpit
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: false
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: false
+      NOTIFY_EMAIL_FROM: ${NOTIFY_EMAIL_FROM:-noreply@fd-bank.local}
+      NOTIFY_EMAIL_MOCK_ONLY: false
+      NOTIFY_WHATSAPP_MOCK_ONLY: ${NOTIFY_WHATSAPP_MOCK_ONLY:-true}
+      TWILIO_SID: ${TWILIO_SID:-}
+      TWILIO_TOKEN: ${TWILIO_TOKEN:-}
+      TWILIO_WHATSAPP_CONTENT_SID: ${TWILIO_WHATSAPP_CONTENT_SID:-}
+      TWILIO_WHATSAPP_FROM: ${TWILIO_WHATSAPP_FROM:-whatsapp:+14155238886}
+    networks:
+      - banking-network
+
 networks:
   banking-network:
     driver: bridge
@@ -264,3 +363,4 @@ volumes:
   fd_group9_mysql_data:
   auth_mysql_data:
   fd_extracts:
+  mailpit_data:

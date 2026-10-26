@@ -1,0 +1,10 @@
+/* UNO Bank · global design system (Aurum Nocturne)
+   tokens → base → motion → ui kit → panels → auth.
+   Fonts are loaded from index.html. */
+
+@use 'styles/tokens';
+@use 'styles/base';
+@use 'styles/motion';
+@use 'styles/ui';
+@use 'styles/panels';
+@use 'styles/auth';

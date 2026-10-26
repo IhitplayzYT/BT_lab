@@ -1,0 +1,29 @@
+<app-navbar></app-navbar>
+<section class="help-center-section section">
+  <div class="container">
+    <div class="section-header">
+      <h1 class="text-gradient">{{ 'Help Center' | translate }}</h1>
+      <p>{{ 'Find answers to frequently asked questions about our services' | translate }}</p>
+    </div>
+
+    <div class="help-bot-section">
+      <app-help-bot></app-help-bot>
+    </div>
+
+    <div class="help-content">
+      @for (faq of faqs; track faq.question) {
+        <div class="faq-item card">
+          <h3>{{ faq.question }}</h3>
+          <p>{{ faq.answer }}</p>
+        </div>
+      }
+    </div>
+
+    <div class="contact-cta card">
+      <h3>{{ 'Still need help?' | translate }}</h3>
+      <p>{{ 'Can\'t find what you\'re looking for? Our support team is here to assist you.' | translate }}</p>
+      <button class="btn btn-primary" (click)="navigateTo('/contact')">{{ 'Contact Support' | translate }}</button>
+    </div>
+  </div>
+</section>
+<app-footer></app-footer>

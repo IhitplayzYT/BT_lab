@@ -49,7 +49,6 @@ public final class JwtSupport {
         return decoder;
     }
 
-    /** Turns the {@code roles} claim (and the lab manual's single {@code role} claim) into ROLE_* authorities. */
     public static JwtAuthenticationConverter authenticationConverter() {
         JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
         converter.setJwtGrantedAuthoritiesConverter(JwtSupport::authorities);

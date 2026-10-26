@@ -32,7 +32,7 @@ public class EventInfrastructure {
  public static final String[] TOPICS = {
   "command.interest.accrual", "command.interest.payout", "event.interest.accrued",
   "event.interest.paid", "event.batch.completed", "event.batch.failed", "event.fd.matured",
-  "event.fd.prematurely-closed", "event.fd.created"
+  "event.fd.prematurely-closed", "event.fd.created", "event.fd.status-changed"
  };
  @Bean @ConditionalOnProperty(name="events.enabled",havingValue="true",matchIfMissing=false)
  Outbox outbox(JdbcTemplate jdbc, ObjectMapper mapper) { return new Outbox(jdbc, mapper); }

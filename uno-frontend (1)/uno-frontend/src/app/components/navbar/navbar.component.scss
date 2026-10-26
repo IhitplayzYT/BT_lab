@@ -1,0 +1,171 @@
+:host { display: block; }
+
+.navbar {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 100;
+  padding: 1rem clamp(0.75rem, 3vw, 2rem);
+  pointer-events: none;
+  transition: padding 0.6s var(--ease-out);
+}
+.navbar.scrolled { padding-top: 0.6rem; }
+
+.nav-shell {
+  pointer-events: auto;
+  max-width: 1240px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 0.65rem 0.8rem 0.65rem 1.3rem;
+  border-radius: var(--r-pill);
+  border: 1px solid transparent;
+  transition: background 0.5s, border-color 0.5s, box-shadow 0.6s var(--ease-out), backdrop-filter 0.5s;
+}
+.navbar.scrolled .nav-shell {
+  background: color-mix(in srgb, var(--card-solid) 72%, transparent);
+  border-color: var(--line-2);
+  backdrop-filter: blur(22px) saturate(160%);
+  box-shadow: var(--shadow-2);
+}
+
+/* ---- Logo: drawn on load -------------------------------------------- */
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: var(--text);
+}
+.mark { width: 2.5rem; height: 2.5rem; overflow: visible; filter: drop-shadow(0 0 10px color-mix(in srgb, var(--gold) 55%, transparent)); }
+.mark * { fill: none; stroke: var(--gold); stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 1; animation: draw 1.5s var(--ease-out) forwards; }
+.mark .ring { stroke-width: 1.4; opacity: 0.55; animation-delay: 0.1s; }
+.mark .u { stroke-width: 3.4; stroke: var(--gold-hi); animation-delay: 0.5s; }
+.mark .swash { stroke-width: 1.6; animation-delay: 1s; }
+.logo:hover .mark { animation: spin 1.2s var(--ease-out); }
+.logo-text {
+  font-family: var(--font-display);
+  font-size: 1.9rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1;
+}
+.logo-subtitle {
+  font-family: var(--font-script);
+  font-size: 1.9rem;
+  line-height: 1;
+  margin-left: -0.15rem;
+  transform: translateY(0.12rem) rotate(-4deg);
+  background: linear-gradient(100deg, var(--gold-hi), var(--gold));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ---- Links ----------------------------------------------------------- */
+.nav-links { display: flex; align-items: center; gap: 1.6rem; flex: 1; justify-content: flex-end; }
+.nav-center { display: flex; align-items: center; gap: 1.2rem; margin-inline: auto; }
+.nav-link {
+  position: relative;
+  padding: 0.65rem 1.1rem;
+  border-radius: var(--r-pill);
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-2);
+  transition: color 0.3s, background 0.4s;
+}
+.nav-link::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 0.25rem;
+  width: 1.1rem;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--gold);
+  box-shadow: 0 0 10px var(--gold);
+  translate: -50% 0;
+  scale: 0 1;
+  transition: scale 0.45s var(--ease-spring);
+}
+.nav-link:hover { color: var(--text); background: color-mix(in srgb, var(--gold) 9%, transparent); }
+.nav-link:hover::after { scale: 1 1; }
+
+.nav-actions { display: flex; align-items: center; gap: 0.6rem; }
+
+.theme-toggle { width: 2.6rem; height: 2.6rem; overflow: hidden; }
+.swap { position: relative; display: block; width: 1.25rem; height: 1.25rem; color: var(--gold); }
+.swap app-icon { position: absolute; inset: 0; width: 100%; height: 100%; transition: transform 0.7s var(--ease-spring), opacity 0.4s; }
+.swap .i-sun { transform: rotate(-90deg) scale(0); opacity: 0; }
+.swap .i-moon { transform: none; opacity: 1; }
+.swap:not(.is-dark) .i-sun { transform: none; opacity: 1; }
+.swap:not(.is-dark) .i-moon { transform: rotate(90deg) scale(0); opacity: 0; }
+/* dark mode shows the sun (tap to go light) */
+.swap.is-dark .i-sun { transform: none; opacity: 1; }
+.swap.is-dark .i-moon { transform: rotate(90deg) scale(0); opacity: 0; }
+
+/* ---- Mobile ---------------------------------------------------------- */
+.mobile-menu-toggle {
+  display: none;
+  position: relative;
+  z-index: 3;
+  width: 2.8rem;
+  height: 2.8rem;
+  border-radius: 50%;
+  border: 1px solid var(--line-2);
+  background: var(--card);
+  backdrop-filter: blur(12px);
+}
+.mobile-menu-toggle span {
+  position: absolute;
+  left: 50%;
+  width: 1.2rem;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--text);
+  translate: -50% 0;
+  transition: transform 0.5s var(--ease-spring), opacity 0.3s, top 0.4s;
+}
+.mobile-menu-toggle span:nth-child(1) { top: 36%; }
+.mobile-menu-toggle span:nth-child(2) { top: 50%; }
+.mobile-menu-toggle span:nth-child(3) { top: 64%; }
+.mobile-menu-toggle.active span:nth-child(1) { top: 50%; transform: rotate(45deg); }
+.mobile-menu-toggle.active span:nth-child(2) { opacity: 0; }
+.mobile-menu-toggle.active span:nth-child(3) { top: 50%; transform: rotate(-45deg); }
+
+@media (max-width: 1020px) {
+  .mobile-menu-toggle { display: block; }
+  .nav-links {
+    position: fixed;
+    inset: 0;
+    z-index: 2;
+    flex-direction: column;
+    justify-content: center;
+    gap: 2.5rem;
+    padding: 5rem 2rem 2rem;
+    background: color-mix(in srgb, var(--bg) 92%, transparent);
+    backdrop-filter: blur(26px);
+    clip-path: circle(0% at calc(100% - 2.6rem) 2.6rem);
+    pointer-events: none;
+    transition: clip-path 0.8s var(--ease-in-out);
+  }
+  .nav-links.mobile-open { clip-path: circle(150% at calc(100% - 2.6rem) 2.6rem); pointer-events: auto; }
+  .nav-center { flex-direction: column; gap: 0.2rem; margin: 0; }
+  .nav-link {
+    font-family: var(--font-display);
+    font-size: 2.3rem;
+    font-weight: 600;
+    color: var(--text);
+    opacity: 0;
+    translate: 0 24px;
+    transition: opacity 0.6s var(--ease-out), translate 0.7s var(--ease-out), color 0.3s;
+  }
+  .mobile-open .nav-link { opacity: 1; translate: 0 0; }
+  .mobile-open .nav-link:nth-child(1) { transition-delay: 0.25s; }
+  .mobile-open .nav-link:nth-child(2) { transition-delay: 0.3s; }
+  .mobile-open .nav-link:nth-child(3) { transition-delay: 0.35s; }
+  .mobile-open .nav-link:nth-child(4) { transition-delay: 0.4s; }
+  .mobile-open .nav-link:nth-child(5) { transition-delay: 0.45s; }
+  .mobile-open .nav-link:nth-child(6) { transition-delay: 0.5s; }
+  .nav-actions { flex-wrap: wrap; justify-content: center; }
+}

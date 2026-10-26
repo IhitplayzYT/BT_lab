@@ -1,0 +1,17 @@
+:host { display: block; }
+.contact-section { padding-top: clamp(8rem, 12vw, 10.5rem); }
+.contact-content { display: grid; grid-template-columns: minmax(280px, 0.8fr) 1.2fr; gap: 1.6rem; align-items: start; }
+.contact-info h3, .contact-form h3 { font-size: 1.48rem; margin-bottom: 1.6rem; }
+.info-item { display: flex; gap: 1.1rem; padding: 1.1rem 0; border-top: 1px solid var(--line); }
+.info-item h4 { margin-bottom: 0.2rem; }
+.info-item p { font-size: 0.93rem; line-height: 1.55; }
+.info-icon {
+  display: grid; place-items: center; flex: none; width: 3rem; height: 3rem; font-size: 1.3rem;
+  border-radius: 16px; color: var(--gold);
+  background: linear-gradient(145deg, color-mix(in srgb, var(--gold) 22%, transparent), color-mix(in srgb, var(--violet) 14%, transparent));
+  border: 1px solid color-mix(in srgb, var(--gold) 38%, transparent);
+  transition: transform 0.25s var(--ease-out);
+}
+.info-item:hover .info-icon { transform: rotate(-10deg) scale(1.12); }
+.contact-form .btn { width: 100%; margin-top: 0.4rem; }
+@media (max-width: 860px) { .contact-content { grid-template-columns: 1fr; } }

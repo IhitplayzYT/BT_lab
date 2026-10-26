@@ -1,0 +1,22 @@
+<section class="faq section" id="faq">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="text-gradient">{{ 'Frequently Asked Questions' | translate }}</h2>
+      <p>{{ 'Got questions? We\'ve got answers' | translate }}</p>
+    </div>
+
+    <div class="faq-list">
+      @for (item of faqs; track item.question) {
+        <div class="faq-item card" [class.open]="expandedIndex() === $index">
+          <button class="faq-question" (click)="toggle($index)" [attr.aria-expanded]="expandedIndex() === $index">
+            <span>{{ item.question }}</span>
+            <span class="icon" [class.expanded]="expandedIndex() === $index" aria-hidden="true"></span>
+          </button>
+          <div class="faq-answer-wrap">
+            <div class="faq-answer"><p>{{ item.answer }}</p></div>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</section>

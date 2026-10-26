@@ -1,0 +1,12 @@
+:host { display: block; }
+.terms-section.section { padding-top: clamp(8rem, 12vw, 10.5rem); }
+.terms-header { text-align: center; margin-bottom: 3rem; }
+.terms-header h1 { margin-bottom: 0.9rem; }
+.terms-header p { display: inline-block; padding: 0.35rem 1rem; border-radius: var(--r-pill); font-size: 0.85rem; font-weight: 700; border: 1px solid var(--line-2); }
+.terms-intro, .terms-content, .terms-footer { max-width: 860px; margin-inline: auto; }
+.terms-intro { margin-bottom: 1.4rem; font-size: 1.1rem; }
+.terms-content { display: grid; gap: 1.1rem; margin-bottom: 1.4rem; }
+.term-section h3 { font-size: 1.6rem; margin-bottom: 0.7rem; color: var(--gold); }
+.term-text { max-width: 70ch; line-height: 1.85; color: var(--text-2); }
+.terms-footer h3 { font-size: 1.33rem; margin-bottom: 0.7rem; }
+.contact-info { margin-top: 1rem; display: grid; gap: 0.3rem; }

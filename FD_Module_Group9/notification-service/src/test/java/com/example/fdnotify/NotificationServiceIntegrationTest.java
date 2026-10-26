@@ -149,7 +149,36 @@ class NotificationServiceIntegrationTest {
 
     @Test
     void unsupportedEventTypeIsRejected() {
-        assertThatThrownBy(() -> service.handle(event("InterestAccrued", created()))).isInstanceOf(InvalidEventException.class);
+        assertThatThrownBy(() -> service.handle(event("UnknownEvent", created()))).isInstanceOf(InvalidEventException.class);
+    }
+
+    @Test
+    void lifecycleEventsUseTheirOwnRecipientsWithoutCreatedEvent() {
+        for (String type : java.util.List.of("FdApplied", "FdStatusChanged", "InterestAccrued", "FdMatured")) {
+            var data = created();
+            data.put("email", "specific@example.org");
+            data.put("status", "REJECTED");
+            data.put("interestAccrued", "17.50");
+            var e = event(type, data);
+            service.handle(e);
+            service.handle(e);
+            assertThat(jdbc.queryForObject("SELECT recipient FROM notifications_log WHERE event_id=? AND channel='EMAIL'",
+                    String.class, e.eventId())).isEqualTo("s***@example.org");
+        }
+        assertThat(count()).isEqualTo(4);
+        assertThat(count("WHATSAPP")).isEqualTo(4);
+    }
+
+    @Test
+    void eventContactOverridesAnotherAccountContactForSameCustomer() {
+        service.handle(event("FdCreated", created()));
+        var data = matured("CUST001");
+        data.put("email", "other@example.org");
+        data.put("phone", "9876543210");
+        var e = event("FdMatured", data);
+        service.handle(e);
+        assertThat(jdbc.queryForObject("SELECT recipient FROM notifications_log WHERE event_id=? AND channel='EMAIL'",
+                String.class, e.eventId())).isEqualTo("o***@example.org");
     }
 
     @Test

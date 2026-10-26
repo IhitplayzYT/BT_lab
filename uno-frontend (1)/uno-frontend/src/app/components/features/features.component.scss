@@ -1,0 +1,50 @@
+:host { display: block; }
+
+/* Asymmetric bento: 7+5, then 4+4+4, then 12 */
+.features-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 1.4rem; }
+.feature-card { grid-column: span 4; min-height: 17rem; display: flex; flex-direction: column; overflow: hidden; }
+.feature-card:nth-child(1) { grid-column: span 7; }
+.feature-card:nth-child(2) { grid-column: span 5; }
+.feature-card:nth-child(6) { grid-column: span 12; min-height: 0; flex-direction: row; align-items: center; gap: 2rem; }
+.feature-card:nth-child(6) h3 { margin: 0; flex: none; }
+.feature-card:nth-child(6) p { max-width: 60ch; }
+
+.feature-card h3 { margin: 1.4rem 0 0.7rem; }
+.feature-card p { max-width: 42ch; }
+
+.feature-icon {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 4rem;
+  height: 4rem;
+  font-size: 1.8rem;
+  border-radius: 22px;
+  color: var(--gold);
+  background: linear-gradient(145deg, color-mix(in srgb, var(--gold) 24%, transparent), color-mix(in srgb, var(--teal) 14%, transparent));
+  border: 1px solid color-mix(in srgb, var(--gold) 40%, transparent);
+  transition: transform 0.7s var(--ease-spring), box-shadow 0.5s;
+}
+.feature-icon::after {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  border-radius: 28px;
+  border: 1px dashed color-mix(in srgb, var(--gold) 45%, transparent);
+  opacity: 0;
+  scale: 0.8;
+  transition: opacity 0.4s, scale 0.6s var(--ease-spring);
+}
+.feature-card:hover .feature-icon { transform: translateY(-6px) rotate(-8deg); box-shadow: 0 20px 40px -12px var(--gold); }
+.feature-card:hover .feature-icon::after { opacity: 1; scale: 1; animation: spin 12s linear infinite; }
+
+@media (max-width: 960px) {
+  .feature-card, .feature-card:nth-child(n) { grid-column: span 6; }
+  .feature-card:nth-child(6) { grid-column: span 12; }
+}
+@media (max-width: 620px) {
+  .feature-card, .feature-card:nth-child(n) { grid-column: span 12; min-height: 0; }
+  .feature-card:nth-child(6) { flex-direction: column; align-items: flex-start; gap: 0; }
+  .feature-card:nth-child(6) h3 { margin: 1.4rem 0 0.7rem; }
+}

@@ -1,0 +1,374 @@
+<app-navbar></app-navbar>
+<section class="compare-section section" id="compare">
+  <app-star-background></app-star-background>
+  <div class="container">
+    <div class="section-header">
+      <h2 class="text-gradient">Compare FD Products</h2>
+      <p>{{ 'Compare two FD products side by side to find the best option for your investment' | translate }}</p>
+      <div class="currency-selector">
+        <label for="currency">Currency:</label>
+        <select id="currency" [(ngModel)]="selectedCurrency" (change)="onCurrencyChange($event)">
+          <option value="INR">INR (₹)</option>
+          <option value="USD">USD ($)</option>
+          <option value="EUR">EUR (€)</option>
+          <option value="GBP">GBP (£)</option>
+          <option value="JPY">JPY (¥)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="compare-container">
+      <!-- Product 1 Configuration -->
+      <div class="product-config card">
+        <h3 class="product-title product-1-title">Product 1</h3>
+        
+        <div class="input-group">
+          <label for="principal1">Principal Amount</label>
+          <input
+            type="number"
+            id="principal1"
+            [(ngModel)]="principal1"
+            (blur)="validatePrincipal1()"
+            [min]="minPrincipal1()"
+            [max]="maxPrincipal1()"
+            step="1000"
+            [class.error]="principalError1"
+          />
+          @if (principalError1) {
+            <div class="validation-error">{{ principalError1 }}</div>
+          }
+          <div class="slider-container">
+            <input
+              type="range"
+              [(ngModel)]="principal1"
+              [min]="minPrincipal1()"
+              [max]="maxPrincipal1()"
+              step="5000"
+              class="slider"
+            />
+          </div>
+          <span class="input-value">{{ formattedPrincipal1() }}</span>
+        </div>
+
+        <div class="input-group">
+          <label for="term1">Tenure (Months)</label>
+          <input
+            type="number"
+            id="term1"
+            [(ngModel)]="termMonths1"
+            (blur)="validateTermMonths1()"
+            [min]="minTerm1()"
+            [max]="maxTerm1()"
+            [class.error]="termMonthsError1"
+          />
+          @if (termMonthsError1) {
+            <div class="validation-error">{{ termMonthsError1 }}</div>
+          }
+          <div class="slider-container">
+            <input
+              type="range"
+              [(ngModel)]="termMonths1"
+              [min]="minTerm1()"
+              [max]="maxTerm1()"
+              step="6"
+              class="slider"
+            />
+          </div>
+          <span class="input-value">{{ '{0} months' | translate:[termMonths1()] }}</span>
+        </div>
+
+        <div class="input-group">
+          <label for="product1">{{ 'Product' | translate }}</label>
+          <select id="product1" [(ngModel)]="productCode1" (change)="onProductChange1()">
+            @for (product of products(); track product.productCode) {
+              <option [value]="product.productCode">{{ product.productName }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="input-group">
+          <label for="interestRate1">{{ 'Interest Rate (%)' | translate }}</label>
+          <input
+            type="number"
+            id="interestRate1"
+            [(ngModel)]="interestRate1"
+            (blur)="validateInterestRate1()"
+            [min]="minInterestRate1()"
+            [max]="maxInterestRate1()"
+            step="0.1"
+            [class.error]="interestRateError1"
+          />
+          @if (interestRateError1) {
+            <div class="validation-error">{{ interestRateError1 }}</div>
+          }
+          <div class="slider-container">
+            <input
+              type="range"
+              [(ngModel)]="interestRate1"
+              [min]="minInterestRate1()"
+              [max]="maxInterestRate1()"
+              step="0.1"
+              class="slider"
+            />
+          </div>
+          <span class="input-value">{{ interestRate1() }}%</span>
+        </div>
+
+        <div class="input-group">
+          <label for="interestType1">{{ 'Interest Type' | translate }}</label>
+          <select id="interestType1" [(ngModel)]="interestType1">
+            <option value="COMPOUND">{{ 'Compound Interest' | translate }}</option>
+            <option value="SIMPLE">{{ 'Simple Interest' | translate }}</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Product 2 Configuration (Right) -->
+      <div class="product-config card product-2-config">
+        <h3 class="product-title product-2-title">Product 2</h3>
+        
+        <div class="input-group">
+          <label for="principal2">Principal Amount</label>
+          <input
+            type="number"
+            id="principal2"
+            [(ngModel)]="principal2"
+            (blur)="validatePrincipal2()"
+            [min]="minPrincipal2()"
+            [max]="maxPrincipal2()"
+            step="1000"
+            [class.error]="principalError2"
+          />
+          @if (principalError2) {
+            <div class="validation-error">{{ principalError2 }}</div>
+          }
+          <div class="slider-container">
+            <input
+              type="range"
+              [(ngModel)]="principal2"
+              [min]="minPrincipal2()"
+              [max]="maxPrincipal2()"
+              step="5000"
+              class="slider"
+            />
+          </div>
+          <span class="input-value">{{ formattedPrincipal2() }}</span>
+        </div>
+
+        <div class="input-group">
+          <label for="term2">Tenure (Months)</label>
+          <input
+            type="number"
+            id="term2"
+            [(ngModel)]="termMonths2"
+            (blur)="validateTermMonths2()"
+            [min]="minTerm2()"
+            [max]="maxTerm2()"
+            [class.error]="termMonthsError2"
+          />
+          @if (termMonthsError2) {
+            <div class="validation-error">{{ termMonthsError2 }}</div>
+          }
+          <div class="slider-container">
+            <input
+              type="range"
+              [(ngModel)]="termMonths2"
+              [min]="minTerm2()"
+              [max]="maxTerm2()"
+              step="6"
+              class="slider"
+            />
+          </div>
+          <span class="input-value">{{ '{0} months' | translate:[termMonths2()] }}</span>
+        </div>
+
+        <div class="input-group">
+          <label for="product2">{{ 'Product' | translate }}</label>
+          <select id="product2" [(ngModel)]="productCode2" (change)="onProductChange2()">
+            @for (product of products(); track product.productCode) {
+              <option [value]="product.productCode">{{ product.productName }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="input-group">
+          <label for="interestRate2">{{ 'Interest Rate (%)' | translate }}</label>
+          <input
+            type="number"
+            id="interestRate2"
+            [(ngModel)]="interestRate2"
+            (blur)="validateInterestRate2()"
+            [min]="minInterestRate2()"
+            [max]="maxInterestRate2()"
+            step="0.1"
+            [class.error]="interestRateError2"
+          />
+          @if (interestRateError2) {
+            <div class="validation-error">{{ interestRateError2 }}</div>
+          }
+          <div class="slider-container">
+            <input
+              type="range"
+              [(ngModel)]="interestRate2"
+              [min]="minInterestRate2()"
+              [max]="maxInterestRate2()"
+              step="0.1"
+              class="slider"
+            />
+          </div>
+          <span class="input-value">{{ interestRate2() }}%</span>
+        </div>
+
+        <div class="input-group">
+          <label for="interestType2">{{ 'Interest Type' | translate }}</label>
+          <select id="interestType2" [(ngModel)]="interestType2">
+            <option value="COMPOUND">{{ 'Compound Interest' | translate }}</option>
+            <option value="SIMPLE">{{ 'Simple Interest' | translate }}</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chart and Results -->
+    @if (calculationResult1() && calculationResult2()) {
+      <div class="results-container">
+        <!-- Growth Chart -->
+        <div class="chart-section card">
+          <h3 class="chart-title">Growth Comparison</h3>
+          <div class="chart-wrapper">
+            <canvas id="growthChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Comparison Metrics -->
+        <div class="metrics-section">
+          <div class="metrics-grid">
+            <!-- Product 1 Metrics -->
+            <div class="metrics-card card product-1-card">
+              <h4 class="metrics-title product-1-title">Product 1 Results</h4>
+              <div class="metrics-list">
+                <div class="metric-item">
+                  <span class="metric-label">{{ 'Principal' | translate }}</span>
+                  <span class="metric-value">₹{{ formattedPrincipal1() }}</span>
+                </div>
+                <div class="metric-item">
+                  <span class="metric-label">{{ 'Maturity Amount' | translate }}</span>
+                  <span class="metric-value text-gradient">₹{{ formattedMaturity1() }}</span>
+                </div>
+                <div class="metric-item">
+                  <span class="metric-label">{{ 'Interest Earned' | translate }}</span>
+                  <span class="metric-value accent">₹{{ formattedInterest1() }}</span>
+                </div>
+                <div class="metric-item">
+                  <span class="metric-label">{{ 'Interest Rate' | translate }}</span>
+                  <span class="metric-value">{{ interestRate1() }}% p.a.</span>
+                </div>
+                <div class="metric-item">
+                  <span class="metric-label">{{ 'Tenure' | translate }}</span>
+                  <span class="metric-value">{{ termMonths1() }} months</span>
+                </div>
+                <div class="metric-item">
+                  <span class="metric-label">{{ 'Interest Type' | translate }}</span>
+                  <span class="metric-value">{{ interestType1() }}</span>
+                </div>
+                <div class="metric-item">
+                  <span class="metric-label">{{ 'Maturity Date' | translate }}</span>
+                  <span class="metric-value">{{ calculationResult1().maturityDate }}</span>
+                </div>
+                <div class="metric-item">
+                  <span class="metric-label">{{ 'ROI %' | translate }}</span>
+                  <span class="metric-value">{{ getFormattedROI1() }}%</span>
+                </div>
+                <div class="metric-item">
+                  <span class="metric-label">{{ 'Annualized Return' | translate }}</span>
+                  <span class="metric-value">{{ getFormattedAnnualizedReturn1() }}%</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Product 2 Metrics -->
+            <div class="metrics-card card product-2-card">
+              <h4 class="metrics-title product-2-title">Product 2 Results</h4>
+              <div class="metrics-list">
+                <div class="metric-item">
+                  <span class="metric-label">{{ 'Principal' | translate }}</span>
+                  <span class="metric-value">₹{{ formattedPrincipal2() }}</span>
+                </div>
+                <div class="metric-item">
+                  <span class="metric-label">{{ 'Maturity Amount' | translate }}</span>
+                  <span class="metric-value text-gradient">₹{{ formattedMaturity2() }}</span>
+                </div>
+                <div class="metric-item">
+                  <span class="metric-label">{{ 'Interest Earned' | translate }}</span>
+                  <span class="metric-value accent">₹{{ formattedInterest2() }}</span>
+                </div>
+                <div class="metric-item">
+                  <span class="metric-label">{{ 'Interest Rate' | translate }}</span>
+                  <span class="metric-value">{{ interestRate2() }}% p.a.</span>
+                </div>
+                <div class="metric-item">
+                  <span class="metric-label">{{ 'Tenure' | translate }}</span>
+                  <span class="metric-value">{{ termMonths2() }} months</span>
+                </div>
+                <div class="metric-item">
+                  <span class="metric-label">{{ 'Interest Type' | translate }}</span>
+                  <span class="metric-value">{{ interestType2() }}</span>
+                </div>
+                <div class="metric-item">
+                  <span class="metric-label">{{ 'Maturity Date' | translate }}</span>
+                  <span class="metric-value">{{ calculationResult2().maturityDate }}</span>
+                </div>
+                <div class="metric-item">
+                  <span class="metric-label">{{ 'ROI %' | translate }}</span>
+                  <span class="metric-value">{{ getFormattedROI2() }}%</span>
+                </div>
+                <div class="metric-item">
+                  <span class="metric-label">{{ 'Annualized Return' | translate }}</span>
+                  <span class="metric-value">{{ getFormattedAnnualizedReturn2() }}%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Comparison Summary -->
+          <div class="comparison-summary card">
+            <h3 class="summary-title">Comparison Summary</h3>
+            <div class="summary-grid">
+              <div class="summary-item">
+                <span class="summary-label">{{ 'Initial Investment Difference' | translate }}</span>
+                <span class="summary-value" [class.positive]="getPrincipalDifference() > 0" [class.negative]="getPrincipalDifference() < 0">
+                  {{ getFormattedPrincipalDifference() }}
+                </span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">{{ 'Difference in Returns' | translate }}</span>
+                <span class="summary-value" [class.positive]="getDifference() > 0" [class.negative]="getDifference() < 0">
+                  {{ getFormattedDifference() }}
+                </span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">{{ 'ROI Difference' | translate }}</span>
+                <span class="summary-value" [class.positive]="getROIDifference() > 0" [class.negative]="getROIDifference() < 0">
+                  {{ getROIDifference().toFixed(2) }}%
+                </span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">{{ 'Better Option (by ROI)' | translate }}</span>
+                <span class="summary-value better-option">{{ getBetterProductByROI() }}</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">{{ 'Total Investment' | translate }}</span>
+                <span class="summary-value">{{ getFormattedTotalInvestment() }}</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">{{ 'Combined Returns' | translate }}</span>
+                <span class="summary-value">{{ getFormattedCombinedReturns() }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+</section>
+<app-footer></app-footer>

@@ -18,7 +18,7 @@ public class NotificationListener {
         this.service = service;
     }
 
-    @KafkaListener(topics = {"event.fd.created", "event.interest.paid", "event.fd.matured", "event.fd.prematurely-closed"},
+    @KafkaListener(topics = {"event.fd.status-changed", "event.interest.accrued", "event.fd.created", "event.interest.paid", "event.fd.matured", "event.fd.prematurely-closed"},
             groupId = "fd-notifications-v1")
     public void receive(String body) throws Exception {
         service.handle(mapper.readValue(body, DomainEvent.class));

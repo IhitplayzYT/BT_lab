@@ -34,7 +34,7 @@ banking-product-backend/
 
 **No, you do NOT send any database server files!**  
 Databases (like MySQL) run locally on the host machine. Everything needed to build the database is already included in this folder:
-1. **`schema.sql`**: Automatically or manually creates the tables (`products`, `productBusinessRules`, `productCharges`, `productRoles`, `product_rate_variations`, `fd_calculations`).
+1. **`schema.sql`**: Automatically or manually creates the tables (`products`, `product_business_rules`, `product_charges`, `product_roles`, `product_rate_variations`, `fd_calculations`).
 2. **`insert_dummy_data.sql`**: Seeds the sample products (`FD001`, `SAV001`, `FD002`, `LN001`) and test rate variations.
 3. **In-Memory Testing**: The automated test suite (`mvn test`) automatically uses an embedded H2 database and requires no database setup.
 
@@ -45,21 +45,22 @@ Databases (like MySQL) run locally on the host machine. Everything needed to bui
 ### Prerequisites
 - Java 21 (JDK 21)
 - Maven 3.8+
-- MySQL 8.0+ (optional for local dev; default uses `banking_product_db`)
+- MySQL 8.0+ (required by the default runtime configuration; tests use H2)
 
-### Step 1: (Optional) MySQL Setup
+### Step 1: MySQL and JWT Setup
 If using MySQL, log in and create the database or run the SQL scripts:
 ```bash
 mysql -u root -p < schema.sql
 mysql -u root -p banking_product_db < insert_dummy_data.sql
 ```
-*(Alternatively, Spring Boot can automatically create tables using `schema.sql` on startup).*
+Set `DB_URL`, `DB_USER`, `DB_PASSWORD`, `JWT_SECRET` and `JWT_ISSUER` before starting. `spring.sql.init.mode=never`, so Spring does not execute `schema.sql` automatically. Root Compose initializes schema and seed data on an empty MySQL volume.
 
 ### Step 2: Build and Test
 ```bash
+mvn -f ../Auth_Sec/pom.xml -pl security-common -am install
 mvn clean test
 ```
-All 45 tests across security, business rules, controllers, and E2E will execute and pass.
+This runs the checked-in tests; historical test counts are not a guarantee for the current worktree.
 
 ### Step 3: Start the Server
 ```bash
@@ -73,11 +74,11 @@ The server will start at: `http://localhost:8080`.
 
 1. **Swagger / OpenAPI Interactive UI**:
    - URL: `http://localhost:8080/swagger-ui.html`
-   - Use the **Authorize** button with a token generated from `POST /api/auth/token`.
+   - Use the **Authorize** button with a token generated from `POST http://localhost:8090/api/auth/login`.
 
 2. **Postman**:
    - Import `postman_collection.json`.
-   - Run the requests under `1. Authentication & Tokens` to automatically set the `adminToken` and `officerToken` variables.
+   - Authenticate with Auth_Sec on port 8090 and set the collection token variables. Older token-helper requests in exported collections may need updating.
 
 3. **Smoke Test Script (Terminal)**:
    ```bash

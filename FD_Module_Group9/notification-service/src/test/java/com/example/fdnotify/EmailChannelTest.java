@@ -3,7 +3,8 @@ package com.example.fdnotify;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.mail.SimpleMailMessage;
+import jakarta.mail.internet.MimeMessage;
+import jakarta.mail.Session;
 import org.springframework.mail.javamail.JavaMailSender;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -18,6 +19,7 @@ class EmailChannelTest {
     private EmailChannel channel(JavaMailSender sender, boolean mockOnly) {
         ObjectProvider<JavaMailSender> provider = Mockito.mock(ObjectProvider.class);
         when(provider.getIfAvailable()).thenReturn(sender);
+        if (sender != null) when(sender.createMimeMessage()).thenReturn(new MimeMessage((Session) null));
         return new EmailChannel(provider, "bank@example.com", mockOnly);
     }
 
@@ -26,7 +28,7 @@ class EmailChannelTest {
         JavaMailSender sender = Mockito.mock(JavaMailSender.class);
         var result = channel(sender, false).send("a@example.com", "Hi", "Body");
         assertThat(result.status()).isEqualTo("SENT");
-        verify(sender).send(any(SimpleMailMessage.class));
+        verify(sender).send(any(MimeMessage.class));
     }
 
     @Test
@@ -34,7 +36,7 @@ class EmailChannelTest {
         JavaMailSender sender = Mockito.mock(JavaMailSender.class);
         var result = channel(sender, true).send("a@example.com", "Hi", "Body");
         assertThat(result.status()).isEqualTo("MOCKED");
-        verify(sender, never()).send(any(SimpleMailMessage.class));
+        verify(sender, never()).send(any(MimeMessage.class));
     }
 
     @Test
@@ -45,7 +47,7 @@ class EmailChannelTest {
     @Test
     void smtpFailureIsRecordedNotThrown() {
         JavaMailSender sender = Mockito.mock(JavaMailSender.class);
-        Mockito.doThrow(new org.springframework.mail.MailSendException("535 bad credentials")).when(sender).send(any(SimpleMailMessage.class));
+        Mockito.doThrow(new org.springframework.mail.MailSendException("535 bad credentials")).when(sender).send(any(MimeMessage.class));
         var result = channel(sender, false).send("a@example.com", "Hi", "Body");
         assertThat(result.status()).isEqualTo("FAILED");
         assertThat(result.error()).contains("535");

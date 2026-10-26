@@ -125,6 +125,18 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Transactional
+    @CacheEvict(value = "products", allEntries = true)
+    public void permanentlyDeleteProduct(String productCode) {
+        log.info("Permanently deleting banking product with code: {}", productCode);
+        Product product = productRepository.findByProductCode(productCode)
+                .orElseThrow(() -> new ProductNotFoundException("Product with code " + productCode + " not found"));
+
+        productRepository.delete(product);
+        log.info("Successfully permanently deleted product: {}", productCode);
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public List<ProductResponseDTO> searchProducts(String productType, LocalDate startDate, LocalDate endDate) {
         return searchProducts(productType, startDate, endDate, null, 0, 50, "productId");
@@ -312,7 +324,7 @@ public class ProductServiceImpl implements ProductService {
         LocalDate today = LocalDate.now();
         return products.stream()
                 .filter(p -> p.getEffectiveDate() == null || !today.isBefore(p.getEffectiveDate()))
-                .filter(p -> p.getEndDate() == null || !today.isAfter(p.getEndDate()))
+                .filter(p -> p.getEndDate() == null || today.isBefore(p.getEndDate()) || today.isEqual(p.getEndDate()))
                 .map(productMapper::toResponseDTO)
                 .collect(Collectors.toList());
     }

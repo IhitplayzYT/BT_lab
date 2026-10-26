@@ -24,6 +24,10 @@ public class BusinessClock {
     public BusinessClock(JdbcTemplate jdbc, @Value("${app.time-travel.enabled:false}") boolean enabled) {
         this.jdbc = jdbc;
         this.enabled = enabled;
+        // MySQL's docker-entrypoint init scripts only run for a new data volume. Ensure
+        // this small runtime state table also exists when upgrading an existing volume.
+        jdbc.execute("CREATE TABLE IF NOT EXISTS business_clock (id INT NOT NULL PRIMARY KEY, day_offset INT NOT NULL DEFAULT 0)");
+        jdbc.update("INSERT IGNORE INTO business_clock(id, day_offset) VALUES(1, 0)");
     }
 
     public boolean isEnabled() { return enabled; }
@@ -38,7 +42,7 @@ public class BusinessClock {
             List<Integer> rows = jdbc.queryForList("SELECT day_offset FROM business_clock WHERE id=1", Integer.class);
             return rows.isEmpty() || rows.get(0) == null ? 0 : rows.get(0);
         } catch (DataAccessException e) {
-            return 0; // table not created yet
+            return 0; // Keep date reads available during a transient database issue.
         }
     }
 

@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS notifications_log(
   channel VARCHAR(20) NOT NULL,
   recipient VARCHAR(255),
   subject VARCHAR(255),
-  body TEXT,
+  body LONGTEXT,
   status VARCHAR(20) NOT NULL,
   error VARCHAR(500),
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,

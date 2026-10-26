@@ -8,6 +8,10 @@ import org.springframework.transaction.annotation.Transactional;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import java.math.BigDecimal;
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -15,18 +19,20 @@ import java.util.Set;
 
 @Service
 public class NotificationService {
-    static final Set<String> SUPPORTED = Set.of("FdCreated", "InterestPaid", "FdMatured", "FdPrematurelyClosed");
+    static final Set<String> SUPPORTED = Set.of("FdApplied", "FdStatusChanged", "InterestAccrued", "FdCreated", "InterestPaid", "FdMatured", "FdPrematurelyClosed");
     private static final String[] FIELDS = {
             "fdAccountNo", "customerId", "customerName", "email", "phone", "currency", "principal", "annualRate",
             "termMonths", "maturityDate", "businessDate", "interestPaid", "closingBalance", "totalPaid", "interest",
-            "penalty", "reason"};
+            "penalty", "reason", "status", "interestAccrued", "outstandingInterest"};
 
     private final JdbcTemplate jdbc;
     private final List<NotificationChannel> channels;
+    private final InterestAccrualBatch accrualBatch;
 
-    public NotificationService(JdbcTemplate jdbc, List<NotificationChannel> channels) {
+    public NotificationService(JdbcTemplate jdbc, List<NotificationChannel> channels, InterestAccrualBatch accrualBatch) {
         this.jdbc = jdbc;
         this.channels = channels;
+        this.accrualBatch = accrualBatch;
     }
 
     /** Idempotent: an eventId is never processed twice (Kafka delivery is at-least-once). */
@@ -57,16 +63,93 @@ public class NotificationService {
         }
 
         if (shouldNotify(e.eventType(), f)) {
-            MessageTemplates.Message msg = MessageTemplates.forEvent(e.eventType(), f);
-            for (NotificationChannel ch : channels) {
-                Object to = contact.get(ch.contactField());
-                String recipient = to == null ? null : to.toString();
-                NotificationChannel.Result r = ch.send(recipient, msg.subject(), msg.body());
-                jdbc.update("INSERT INTO notifications_log(event_id,event_type,customer_id,fd_account_no,channel,recipient,subject,body,status,error) VALUES(?,?,?,?,?,?,?,?,?,?)",
-                        e.eventId(), e.eventType(), customerId, account, ch.name(), mask(recipient), msg.subject(), msg.body(), r.status(), r.error());
+            // Batch InterestAccrued events instead of sending immediately
+            if ("InterestAccrued".equals(e.eventType())) {
+                // Only batch if the event is recent (within last 2 hours) to avoid sending past due accruals
+                String businessDate = f.getOrDefault("businessDate", "-");
+                if (!isRecentAccrual(businessDate)) {
+                    // Skip old accruals - just log as SKIPPED
+                    for (NotificationChannel ch : channels) {
+                        Object to = f.containsKey(ch.contactField()) ? f.get(ch.contactField()) : contact.get(ch.contactField());
+                        String recipient = to == null ? null : to.toString();
+                        jdbc.update("INSERT INTO notifications_log(event_id,event_type,customer_id,fd_account_no,channel,recipient,subject,body,status,error) VALUES(?,?,?,?,?,?,?,?,?,?)",
+                                e.eventId(), e.eventType(), customerId, account, ch.name(), mask(recipient), "Interest Accrued (Skipped - Old)", "Skipped due to old business date", "SKIPPED", null);
+                    }
+                } else {
+                    accrualBatch.add(customerId, new InterestAccrualBatch.AccrualEntry(
+                        e.eventId(),
+                        account,
+                        businessDate,
+                        f.getOrDefault("interestAccrued", "0"),
+                        f.getOrDefault("outstandingInterest", "0"),
+                        f.getOrDefault("currency", "INR")
+                    ));
+                    // Log the batched event
+                    for (NotificationChannel ch : channels) {
+                        Object to = f.containsKey(ch.contactField()) ? f.get(ch.contactField()) : contact.get(ch.contactField());
+                        String recipient = to == null ? null : to.toString();
+                        jdbc.update("INSERT INTO notifications_log(event_id,event_type,customer_id,fd_account_no,channel,recipient,subject,body,status,error) VALUES(?,?,?,?,?,?,?,?,?,?)",
+                                e.eventId(), e.eventType(), customerId, account, ch.name(), mask(recipient), "Interest Accrued (Batched)", "Batched for later sending", "BATCHED", null);
+                    }
+                }
+            } else {
+                // Send other events immediately
+                MessageTemplates.Message msg = MessageTemplates.forEvent(e.eventType(), f);
+                for (NotificationChannel ch : channels) {
+                    Object to = f.containsKey(ch.contactField()) ? f.get(ch.contactField()) : contact.get(ch.contactField());
+                    String recipient = to == null ? null : to.toString();
+                    NotificationChannel.Result r = ch.send(recipient, msg.subject(), msg.body());
+                    jdbc.update("INSERT INTO notifications_log(event_id,event_type,customer_id,fd_account_no,channel,recipient,subject,body,status,error) VALUES(?,?,?,?,?,?,?,?,?,?)",
+                            e.eventId(), e.eventType(), customerId, account, ch.name(), mask(recipient), msg.subject(), msg.body(), r.status(), r.error());
+                }
             }
         }
         jdbc.update("INSERT INTO consumed_events(event_id) VALUES(?)", e.eventId());
+    }
+
+    /**
+     * Flush batched interest accruals for a customer and send a single consolidated email
+     */
+    @Transactional
+    public void flushBatchedAccruals(String customerId) {
+        List<InterestAccrualBatch.AccrualEntry> accruals = accrualBatch.getAccruals(customerId);
+        if (accruals.isEmpty()) return;
+
+        Map<String, Object> contact = jdbc.queryForList(
+                "SELECT full_name,email,phone FROM notification_contacts WHERE customer_id=?", customerId)
+                .stream().findFirst().orElse(Map.of());
+
+        String customerName = contact.get("full_name") != null ? contact.get("full_name").toString() : "Customer";
+        String email = contact.get("email") != null ? contact.get("email").toString() : null;
+
+        if (email != null && !email.isBlank()) {
+            // Generate batched email
+            MessageTemplates.Message msg = MessageTemplates.forBatchedInterestAccrual(customerName, accruals);
+            
+            for (NotificationChannel ch : channels) {
+                if ("email".equalsIgnoreCase(ch.contactField())) {
+                    NotificationChannel.Result r = ch.send(email, msg.subject(), msg.body());
+                    // Update the existing BATCHED entries instead of inserting new ones
+                    for (InterestAccrualBatch.AccrualEntry entry : accruals) {
+                        jdbc.update("UPDATE notifications_log SET event_type=?, subject=?, body=?, status=?, error=? WHERE event_id=? AND channel=?",
+                                "InterestAccruedBatch", msg.subject(), msg.body(), r.status(), r.error(), entry.eventId(), ch.name());
+                    }
+                }
+            }
+        }
+
+        accrualBatch.clear(customerId);
+    }
+
+    /**
+     * Flush all pending batched accruals for all customers
+     */
+    @Transactional
+    public void flushAllBatchedAccruals() {
+        List<String> customers = accrualBatch.getCustomersWithPendingAccruals();
+        for (String customerId : customers) {
+            flushBatchedAccruals(customerId);
+        }
     }
 
     /**
@@ -106,5 +189,28 @@ public class NotificationService {
         int at = s.indexOf('@');
         if (at > 1) return s.charAt(0) + "***" + s.substring(at);
         return s.length() <= 4 ? "****" : "******" + s.substring(s.length() - 4);
+    }
+
+    /**
+     * Check if an accrual event is recent (within last 2 hours of current time)
+     * This prevents sending emails for past due accruals when time is advanced multiple times
+     */
+    private boolean isRecentAccrual(String businessDate) {
+        if (businessDate == null || businessDate.equals("-")) {
+            return true; // If no date, assume it's recent
+        }
+        try {
+            // Parse the business date (format: yyyy-MM-dd)
+            LocalDate accrualDate = LocalDate.parse(businessDate, DateTimeFormatter.ISO_LOCAL_DATE);
+            LocalDate today = LocalDate.now();
+            
+            // If the accrual date is today or yesterday, consider it recent
+            // This handles the case where time is advanced multiple times in a day
+            Duration diff = Duration.between(accrualDate.atStartOfDay(), today.atStartOfDay());
+            return diff.toHours() < 48; // Within last 48 hours
+        } catch (DateTimeParseException e) {
+            // If parsing fails, assume it's recent to avoid missing notifications
+            return true;
+        }
     }
 }

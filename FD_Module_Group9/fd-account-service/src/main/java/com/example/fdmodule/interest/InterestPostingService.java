@@ -27,7 +27,11 @@ import java.math.*;import java.time.*;import java.util.*;
   int days=0; for(String account:accounts)days+=processAccount(account,target,actor);
   jdbc.update("INSERT INTO processed_interest_requests(request_id,processed_at) VALUES(?,CURRENT_TIMESTAMP)",requestId);
   var result=Map.<String,Object>of("requestId",requestId,"accounts",accounts.size(),"accrualDays",days,"businessDate",target.toString(),"status","COMPLETED");
-  outbox.emit("event.batch.completed","InterestBatchCompleted",requestId,result);return result;
+  outbox.emit("event.batch.completed","InterestBatchCompleted",requestId,result);
+  jdbc.update("INSERT INTO admin_operation_logs(actor,operation_type,target_type,target_id,summary) VALUES(?,?,?,?,?)",
+   actor,"INTEREST_BATCH_PROCESSED","INTEREST_BATCH",requestId,
+   "Processed interest for "+accounts.size()+" active FD accounts through "+target+" ("+days+" accrual days)");
+  return result;
  }
  private int processAccount(String account,LocalDate target,String actor){
   var fd=lock(account); if(!"ACTIVE".equals(fd.get("status")))return 0;ensureState(fd);var s=state(account);
@@ -37,22 +41,29 @@ import java.math.*;import java.time.*;import java.util.*;
   if(java.time.temporal.ChronoUnit.DAYS.between(last,end)>366)throw new IllegalArgumentException("Catch-up exceeds 366 days; submit intermediate dates first");
   BigDecimal principal=decimal(fd.get("principal_amount")),rate=decimal(fd.get("interest_rate")), balance=decimal(s.get("current_balance")), accrued=decimal(s.get("accrued_precise"));
   LocalDate next=date(s.get("next_capitalization_date"));int n=0;
+  BigDecimal totalInterestAccrued=BigDecimal.ZERO;
   for(LocalDate day=last.plusDays(1);!day.isAfter(end);day=day.plusDays(1)){
-   BigDecimal opening=balance;
    BigDecimal capitalized=BigDecimal.ZERO;
    // Settle the previous monthly period before accruing the anniversary day.
    if("MONTHLY_COMPOUND".equals(s.get("interest_mode")) && !day.isBefore(next)){
     capitalized=accrued.setScale(2,RoundingMode.DOWN);balance=balance.add(capitalized);accrued=accrued.subtract(capitalized);
-    if(capitalized.signum()>0){ledger.save(new FDTransaction(account,FDTransaction.TYPE_INTEREST,capitalized,Objects.toString(fd.get("currency")),GLAccounts.EXPENSE_INTEREST,GLAccounts.LIABILITY_FD_DEPOSITS,"Monthly capitalization for "+day,actor));
+    if(capitalized.signum()>0){ledger.save(new FDTransaction(account,FDTransaction.TYPE_INTEREST,capitalized,Objects.toString(fd.get("currency")),GLAccounts.LIABILITY_INTEREST_PAYABLE,GLAccounts.LIABILITY_FD_DEPOSITS,"Monthly capitalization for "+day,actor));
      jdbc.update("UPDATE fd_interest_transactions SET capitalized_flag=true,settlement_status='CAPITALIZED' WHERE fd_account_no=? AND accrual_date<=? AND settlement_status='PENDING'",account,day);}
     long elapsed=java.time.temporal.ChronoUnit.MONTHS.between(start.withDayOfMonth(1),next.withDayOfMonth(1));next=start.plusMonths(elapsed+1);
    }
    BigDecimal interest=InterestEngine.daily("SIMPLE".equals(s.get("interest_mode"))?principal:balance,rate);accrued=accrued.add(interest);
+   totalInterestAccrued=totalInterestAccrued.add(interest);
    jdbc.update("INSERT INTO fd_interest_transactions(fd_account_no,accrual_date,interest_amount,cumulative_interest,capitalized_flag) VALUES(?,?,?,?,false)",account,day,interest,accrued);
    saveState(account,balance,accrued,day,next);
-   var data=new LinkedHashMap<String,Object>();data.put("fdAccountNo",account);data.put("customerId",fd.get("customer_id"));data.put("businessDate",day.toString());data.put("currency",fd.get("currency"));data.put("openingBalance",opening);data.put("interestAccrued",interest);data.put("interestCapitalized",capitalized);data.put("interestPaid",BigDecimal.ZERO);data.put("closingBalance",balance);data.put("outstandingInterest",accrued);data.put("actor",actor);
+  }
+  // Emit a single summary event per account at the end of processing, not daily
+  if(totalInterestAccrued.signum()>0){
+   ledger.save(new FDTransaction(account,FDTransaction.TYPE_INTEREST_ACCRUAL,totalInterestAccrued,Objects.toString(fd.get("currency")),GLAccounts.EXPENSE_INTEREST,GLAccounts.LIABILITY_INTEREST_PAYABLE,"Interest accrued through "+end,actor));
+   var data=new LinkedHashMap<String,Object>();data.put("fdAccountNo",account);data.put("customerId",fd.get("customer_id"));data.put("businessDate",end.toString());data.put("currency",fd.get("currency"));data.put("openingBalance",decimal(fd.get("principal_amount")));data.put("interestAccrued",totalInterestAccrued);data.put("interestCapitalized",BigDecimal.ZERO);data.put("interestPaid",BigDecimal.ZERO);data.put("closingBalance",balance);data.put("outstandingInterest",accrued);data.put("actor",actor);
+   com.example.fdmodule.service.NotificationContacts.enrich(jdbc, account, data);
    outbox.emit("event.interest.accrued","InterestAccrued",account,data);n++;
-  }return n;
+  }
+  return n;
  }
  @Transactional public Map<String,Object> payout(String requestId,String account,LocalDate day,String actor){
   if(jdbc.queryForObject("SELECT COUNT(*) FROM processed_interest_requests WHERE request_id=?",Integer.class,requestId)>0)return Map.of("requestId",requestId,"duplicate",true);
@@ -64,11 +75,12 @@ import java.math.*;import java.time.*;import java.util.*;
   if(amount.signum()<=0)throw new IllegalArgumentException("No payable accrued interest");
   BigDecimal balance=decimal(s.get("current_balance")),remaining=accrued.subtract(amount);
   jdbc.update("UPDATE fd_interest_transactions SET settlement_status='PAID' WHERE fd_account_no=? AND accrual_date<=? AND settlement_status='PENDING'",account,day);
-  ledger.save(new FDTransaction(account,FDTransaction.TYPE_INTEREST,amount,Objects.toString(fd.get("currency")),GLAccounts.EXPENSE_INTEREST,GLAccounts.ASSET_CUSTOMER_SETTLEMENT,"Interest payout request "+requestId,actor));
+  ledger.save(new FDTransaction(account,FDTransaction.TYPE_INTEREST,amount,Objects.toString(fd.get("currency")),GLAccounts.LIABILITY_INTEREST_PAYABLE,GLAccounts.ASSET_CUSTOMER_SETTLEMENT,"Interest payout request "+requestId,actor));
   saveState(account,balance,remaining,date(s.get("last_accrual_date")),date(s.get("next_capitalization_date")));
   jdbc.update("INSERT INTO processed_interest_requests(request_id,processed_at) VALUES(?,CURRENT_TIMESTAMP)",requestId);
   var data=new LinkedHashMap<String,Object>();data.put("requestId",requestId);data.put("fdAccountNo",account);data.put("customerId",fd.get("customer_id"));data.put("businessDate",day.toString());data.put("currency",fd.get("currency"));data.put("openingBalance",balance);data.put("interestAccrued",BigDecimal.ZERO);data.put("interestCapitalized",BigDecimal.ZERO);data.put("interestPaid",amount);data.put("closingBalance",balance);data.put("outstandingInterest",remaining);data.put("actor",actor);
-  outbox.emit("event.interest.paid","InterestPaid",account,data);
+  com.example.fdmodule.service.NotificationContacts.enrich(jdbc, account, data);
+   outbox.emit("event.interest.paid","InterestPaid",account,data);
   outbox.emit("event.batch.completed","InterestPayoutCompleted",requestId,Map.of("requestId",requestId,"status","COMPLETED","amount",amount));return data;
  }
  /** L18/L19 hook: accrue through maturity minus one day inside the caller's transaction, in steps of at most 366 days. */

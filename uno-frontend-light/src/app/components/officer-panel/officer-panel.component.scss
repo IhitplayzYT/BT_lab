@@ -1,0 +1,289 @@
+:host { display: block; }
+
+.analytics-card.clickable-card {
+  cursor: pointer;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+
+  &:hover, &:focus-visible {
+    transform: translateY(-3px);
+    border-color: var(--gold);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 3px;
+  }
+}
+
+// Journal Section Styles
+.journal-section {
+  margin-bottom: clamp(2.5rem, 5vw, 4rem);
+
+  .journal-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+
+    .summary-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+      padding: 1.2rem;
+      border-radius: var(--r-md);
+      background: color-mix(in srgb, var(--text) 4%, transparent);
+      border: 1px solid var(--line);
+
+      .summary-label {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--text-3);
+      }
+
+      .summary-value {
+        font-family: var(--font-display);
+        font-size: 1.9rem;
+        font-weight: 700;
+        line-height: 1.1;
+        color: var(--gold);
+      }
+    }
+  }
+
+  .journal-table {
+    overflow-x: auto;
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+
+      th, td {
+        padding: 0.85rem 1rem;
+        text-align: left;
+        border-bottom: 1px solid var(--line);
+      }
+
+      th {
+        background: color-mix(in srgb, var(--text) 4%, transparent);
+        font-weight: 700;
+        font-size: 0.82rem;
+        letter-spacing: 0.05em;
+        color: var(--text-2);
+      }
+
+      .badge {
+        display: inline-block;
+        padding: 0.25rem 0.6rem;
+        border-radius: var(--r-pill);
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+
+        &.badge-deposit {
+          background: color-mix(in srgb, var(--success) 20%, transparent);
+          color: var(--success);
+          border: 1px solid color-mix(in srgb, var(--success) 35%, transparent);
+        }
+
+        &.badge-interest {
+          background: color-mix(in srgb, var(--teal) 20%, transparent);
+          color: var(--teal);
+          border: 1px solid color-mix(in srgb, var(--teal) 35%, transparent);
+        }
+
+        &.badge-maturity_payout {
+          background: color-mix(in srgb, var(--warn) 20%, transparent);
+          color: var(--warn);
+          border: 1px solid color-mix(in srgb, var(--warn) 35%, transparent);
+        }
+
+        &.badge-premature_withdrawal {
+          background: color-mix(in srgb, var(--danger) 20%, transparent);
+          color: var(--danger);
+          border: 1px solid color-mix(in srgb, var(--danger) 35%, transparent);
+        }
+      }
+    }
+  }
+}
+
+// Ledger Section Styles
+.ledger-section {
+  margin-bottom: clamp(2.5rem, 5vw, 4rem);
+
+  .ledger-accounts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+
+    .ledger-account-card {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      cursor: pointer;
+      transition: transform 0.25s var(--ease-out), border-color 0.25s;
+
+      &:hover {
+        transform: translateY(-4px);
+        border-color: var(--gold);
+      }
+
+      .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        padding-bottom: 0.8rem;
+        border-bottom: 1px solid var(--line);
+
+        .account-no {
+          font-weight: 800;
+          letter-spacing: 0.05em;
+          color: var(--gold);
+        }
+
+        .account-status {
+          font-size: 0.74rem;
+          padding: 0.2rem 0.7rem;
+          border-radius: var(--r-pill);
+          font-weight: 700;
+          letter-spacing: 0.06em;
+          text-transform: uppercase;
+          background: color-mix(in srgb, var(--text) 5%, transparent);
+          border: 1px solid var(--line);
+        }
+      }
+
+      .account-details {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+
+        .detail-item {
+          display: flex;
+          flex-direction: column;
+          gap: 0.2rem;
+
+          .detail-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-3);
+          }
+
+          .detail-value {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-2);
+          }
+        }
+      }
+    }
+  }
+
+  .ledger-detail-view {
+    .ledger-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .account-details-card {
+      margin-bottom: 1.5rem;
+
+      h3 {
+        font-size: clamp(1.5rem, 2.5vw, 1.9rem);
+        margin-bottom: 1.1rem;
+      }
+
+      .details-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+
+        .detail-row {
+          display: flex;
+          justify-content: space-between;
+          padding: 0.5rem 0;
+          border-bottom: 1px solid var(--line);
+
+          .detail-label {
+            color: var(--text-3);
+          }
+
+          .detail-value {
+            font-weight: 600;
+
+            &.accent {
+              color: var(--gold);
+              font-weight: 700;
+            }
+          }
+        }
+      }
+    }
+
+    .ledger-transactions {
+      table {
+        width: 100%;
+        border-collapse: collapse;
+
+        th, td {
+          padding: 0.85rem 1rem;
+          text-align: left;
+          border-bottom: 1px solid var(--line);
+        }
+
+        th {
+          background: color-mix(in srgb, var(--text) 4%, transparent);
+          font-weight: 700;
+          font-size: 0.82rem;
+          letter-spacing: 0.05em;
+          color: var(--text-2);
+        }
+
+        .badge {
+          display: inline-block;
+          padding: 0.25rem 0.6rem;
+          border-radius: var(--r-pill);
+          font-size: 0.72rem;
+          font-weight: 700;
+          letter-spacing: 0.06em;
+          text-transform: uppercase;
+
+          &.badge-deposit {
+            background: color-mix(in srgb, var(--success) 20%, transparent);
+            color: var(--success);
+            border: 1px solid color-mix(in srgb, var(--success) 35%, transparent);
+          }
+
+          &.badge-interest {
+            background: color-mix(in srgb, var(--teal) 20%, transparent);
+            color: var(--teal);
+            border: 1px solid color-mix(in srgb, var(--teal) 35%, transparent);
+          }
+
+          &.badge-maturity_payout {
+            background: color-mix(in srgb, var(--warn) 20%, transparent);
+            color: var(--warn);
+            border: 1px solid color-mix(in srgb, var(--warn) 35%, transparent);
+          }
+
+          &.badge-premature_withdrawal {
+            background: color-mix(in srgb, var(--danger) 20%, transparent);
+            color: var(--danger);
+            border: 1px solid color-mix(in srgb, var(--danger) 35%, transparent);
+          }
+        }
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 2rem;
+        color: var(--text-3);
+      }
+    }
+  }
+}

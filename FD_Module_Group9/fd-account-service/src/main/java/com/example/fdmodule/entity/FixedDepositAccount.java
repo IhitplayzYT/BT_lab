@@ -22,7 +22,7 @@ public class FixedDepositAccount {
     @Column(name = "bundle_name", length = 255)
     private String bundleName;
 
-    @Column(name = "product_code", length = 10, nullable = false)
+    @Column(name = "product_code", length = 50, nullable = false)
     private String productCode;
 
     @Column(length = 3)

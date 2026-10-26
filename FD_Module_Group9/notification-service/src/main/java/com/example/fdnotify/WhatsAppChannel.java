@@ -24,6 +24,9 @@ public class WhatsAppChannel implements NotificationChannel {
     private static final Logger log = LoggerFactory.getLogger(WhatsAppChannel.class);
     private static final int MAX_BODY = 1500; // WhatsApp via Twilio allows 1600 characters
 
+    @Value("${notify.whatsapp.twilio.content-sid:}")
+    private String contentSid = "";
+
     private final String sid;
     private final String token;
     private final String from;
@@ -57,9 +60,19 @@ public class WhatsAppChannel implements NotificationChannel {
         }
         if (!sid.matches("[A-Za-z0-9]{10,64}")) return Result.failed("TWILIO_SID is not valid");
         try {
-            String text = subject + "\n" + body;
+            String plain = body.replaceAll("(?is)<(style|script)[^>]*>.*?</\\1>", "")
+                    .replaceAll("(?i)</(?:p|div|h[1-6])>|<br\\s*/?>", "\n")
+                    .replaceAll("<[^>]+>", "").replace("&amp;", "&").replace("&nbsp;", " ")
+                    .replaceAll("[ \t]+", " ").replaceAll("\n\\s*\n", "\n").trim();
+            String text = subject + "\n" + plain;
             if (text.length() > MAX_BODY) text = text.substring(0, MAX_BODY);
             String form = "From=" + enc(from) + "&To=" + enc("whatsapp:" + number) + "&Body=" + enc(text);
+            if (!contentSid.isBlank()) {
+                String variables = new com.fasterxml.jackson.databind.ObjectMapper()
+                        .writeValueAsString(java.util.Map.of("1", subject, "2", plain.replaceAll("\\s+", " ")));
+                form = "From=" + enc(from) + "&To=" + enc("whatsapp:" + number)
+                        + "&ContentSid=" + enc(contentSid) + "&ContentVariables=" + enc(variables);
+            }
             String auth = Base64.getEncoder().encodeToString((sid + ":" + token).getBytes(StandardCharsets.UTF_8));
             HttpRequest request = HttpRequest.newBuilder(URI.create(baseUrl + "/2010-04-01/Accounts/" + sid + "/Messages.json"))
                     .timeout(Duration.ofSeconds(10))

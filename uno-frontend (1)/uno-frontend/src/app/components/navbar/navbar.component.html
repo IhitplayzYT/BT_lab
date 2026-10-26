@@ -1,0 +1,51 @@
+<nav class="navbar" [class.scrolled]="isScrolled()" [class.open]="isMobileMenuOpen()" aria-label="Main">
+  <div class="nav-shell">
+    <a href="/" class="logo" (click)="go($event, '/')" aria-label="UNO Bank, home">
+      <svg class="mark" viewBox="0 0 48 48" aria-hidden="true">
+        <circle class="ring" cx="24" cy="24" r="22" pathLength="1" />
+        <path class="u" pathLength="1" d="M15 11v16a9 9 0 0 0 18 0V11" />
+        <path class="swash" pathLength="1" d="M8 36c9 5 23 5 33-5" />
+      </svg>
+      <span class="logo-text">{{ 'UNO' | translate }}</span>
+      <span class="logo-subtitle">{{ 'Bank' | translate }}</span>
+    </a>
+
+    <div class="nav-links" [class.mobile-open]="isMobileMenuOpen()">
+      <div class="nav-center">
+        <a href="/#about" class="nav-link" (click)="goToSection($event, 'about')">{{ 'About Us' | translate }}</a>
+        <a href="/#features" class="nav-link" (click)="goToSection($event, 'features')">{{ 'Features' | translate }}</a>
+        <a href="/#how-it-works" class="nav-link" (click)="goToSection($event, 'how-it-works')">{{ 'How It Works' | translate }}</a>
+        <a href="/calculator" class="nav-link" (click)="go($event, '/calculator')">{{ 'Calculator' | translate }}</a>
+        <a href="/compare" class="nav-link" (click)="go($event, '/compare')">{{ 'Compare' | translate }}</a>
+        <a href="/terms" class="nav-link" (click)="go($event, '/terms')">{{ 'Terms' | translate }}</a>
+        <a href="/privacy" class="nav-link" (click)="go($event, '/privacy')">{{ 'Privacy' | translate }}</a>
+      </div>
+
+      <div class="nav-actions">
+        <app-language-selector></app-language-selector>
+
+        <button class="theme-toggle" (click)="toggleTheme($event)" [attr.aria-label]="isDarkMode() ? 'Switch to light theme' : 'Switch to dark theme'">
+          <span class="swap" [class.is-dark]="isDarkMode()">
+            <app-icon name="sun" class="i-sun" />
+            <app-icon name="moon" class="i-moon" />
+          </span>
+        </button>
+
+        @if (!isLoggedIn()) {
+          <button class="btn btn-secondary btn-sm" (click)="navigateTo('/login')">Login</button>
+          <button class="btn btn-primary btn-sm" (click)="navigateTo('/signup')">{{ 'Get Started' | translate }}</button>
+        } @else {
+          <button class="btn btn-secondary btn-sm" (click)="navigateTo('/apply-fd')">Apply FD</button>
+          <button class="btn btn-secondary btn-sm" (click)="navigateTo('/dashboard')">Dashboard</button>
+          <button class="btn btn-primary btn-sm" (click)="logout()">{{ 'Logout' | translate }}</button>
+        }
+      </div>
+    </div>
+
+    <button class="mobile-menu-toggle" [class.active]="isMobileMenuOpen()" (click)="toggleMobileMenu()" aria-label="Toggle menu" [attr.aria-expanded]="isMobileMenuOpen()">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+  </div>
+</nav>

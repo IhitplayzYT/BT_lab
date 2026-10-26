@@ -24,6 +24,9 @@ public class FDTransaction {
     /** Interest capitalized or paid out (L14/L17, and the final interest at L18/L19 maturity). */
     public static final String TYPE_INTEREST = "INTEREST";
 
+    /** Periodic interest expense accrued but not yet capitalized or paid. */
+    public static final String TYPE_INTEREST_ACCRUAL = "INTEREST_ACCRUAL";
+
     /** L18/L19 payout of the deposit balance (principal plus capitalized interest) at maturity. */
     public static final String TYPE_MATURITY_PAYOUT = "MATURITY_PAYOUT";
 

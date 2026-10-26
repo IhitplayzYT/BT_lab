@@ -34,6 +34,14 @@ public class FdCreatedPublisher {
 
     /** Must be called inside the account-creation transaction. */
     public void publish(FixedDepositAccount fd, String createdBy) {
+        publish(fd, createdBy, "FdCreated", TOPIC);
+    }
+
+    public void publishStatus(FixedDepositAccount fd, String actor) {
+        publish(fd, actor, "PENDING".equals(fd.getStatus()) ? "FdApplied" : "FdStatusChanged", "event.fd.status-changed");
+    }
+
+    private void publish(FixedDepositAccount fd, String createdBy, String type, String topic) {
         Map<String, Object> contact = Map.of();
         try {
             contact = jdbc.queryForList(
@@ -56,6 +64,11 @@ public class FdCreatedPublisher {
         data.put("maturityDate", String.valueOf(fd.getMaturityDate()));
         data.put("businessDate", clock.today().toString());
         data.put("actor", createdBy);
-        outbox.emit(TOPIC, "FdCreated", fd.getFdAccountNo(), data);
+        data.put("status", fd.getStatus());
+        data.put("reason", fd.getRejectionReason());
+        if (fd.getApplicantEmail() != null && !fd.getApplicantEmail().isBlank()) data.put("email", fd.getApplicantEmail());
+        if (fd.getApplicantPhone() != null && !fd.getApplicantPhone().isBlank()) data.put("phone", fd.getApplicantPhone());
+        if (fd.getApplicantFullName() != null && !fd.getApplicantFullName().isBlank()) data.put("customerName", fd.getApplicantFullName());
+        outbox.emit(topic, type, fd.getFdAccountNo(), data);
     }
 }

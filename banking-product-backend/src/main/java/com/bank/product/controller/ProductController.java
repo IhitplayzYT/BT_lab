@@ -31,8 +31,8 @@ public class ProductController {
     private final ProductService productService;
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Create a new banking product", description = "Requires ADMIN role. Creates a banking product with term, rate, charges, allowed roles and variations.")
+    @PreAuthorize("hasAnyRole('BANK_OFFICER','ADMIN')")
+    @Operation(summary = "Create a new banking product", description = "Requires BANK_OFFICER or ADMIN role. Creates a banking product with term, rate, charges, allowed roles and variations.")
     @ApiResponse(responseCode = "201", description = "Product created successfully",
             content = @Content(schema = @Schema(implementation = ProductResponseDTO.class)))
     @ApiResponse(responseCode = "400", description = "Invalid product request details",
@@ -69,14 +69,25 @@ public class ProductController {
     }
 
     @DeleteMapping("/{productCode}")
-    @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Retire / Soft-delete a product", description = "Requires ADMIN role. Transitions product lifecycle status to RETIRED without hard-deleting.")
+    @PreAuthorize("hasAnyRole('BANK_OFFICER','ADMIN')")
+    @Operation(summary = "Retire / Soft-delete a product", description = "Requires BANK_OFFICER or ADMIN role. Transitions product lifecycle status to RETIRED without hard-deleting.")
     @ApiResponse(responseCode = "200", description = "Product retired successfully")
     @ApiResponse(responseCode = "404", description = "Product not found")
     public ResponseEntity<ProductResponseDTO> retireProduct(
             @Parameter(description = "Unique code of the product to retire") @PathVariable String productCode) {
         ProductResponseDTO response = productService.retireProduct(productCode);
         return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/{productCode}/permanent")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Permanently delete a product", description = "Requires ADMIN role only. Hard-deletes the product from the database. This action cannot be undone.")
+    @ApiResponse(responseCode = "200", description = "Product permanently deleted successfully")
+    @ApiResponse(responseCode = "404", description = "Product not found")
+    public ResponseEntity<Void> permanentlyDeleteProduct(
+            @Parameter(description = "Unique code of the product to permanently delete") @PathVariable String productCode) {
+        productService.permanentlyDeleteProduct(productCode);
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/search")

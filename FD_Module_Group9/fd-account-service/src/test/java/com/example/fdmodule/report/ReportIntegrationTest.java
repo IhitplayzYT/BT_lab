@@ -85,6 +85,8 @@ class ReportIntegrationTest {
         account("BR001R3", "CUST001", "ACTIVE", "USD", 1000, today.plusDays(10), "0");
         account("BR001R4", "CUST001", "MATURED", "INR", 70000, today.minusDays(5), "0");
         account("BR001R5", "CUST002", "ACTIVE", "INR", 25000, today.plusDays(200), "0");
+        account("BR001R6", "CUST001", "REJECTED", "INR", 30000, today.plusDays(365), "0");
+        jdbc.update("UPDATE fd_accounts SET approval_status='REJECTED' WHERE fd_account_no='BR001R6'");
         jdbc.update("INSERT INTO fd_interest_transactions(fd_account_no,accrual_date,interest_amount,cumulative_interest,capitalized_flag,settlement_status) "
                 + "VALUES('BR001R1',?,10.5,10.5,FALSE,'PENDING')", today.minusDays(2));
         jdbc.update("INSERT INTO fd_interest_transactions(fd_account_no,accrual_date,interest_amount,cumulative_interest,capitalized_flag,settlement_status) "
@@ -139,6 +141,23 @@ class ReportIntegrationTest {
                 .andExpect(status().isBadRequest());
         mvc.perform(get("/api/report/customer-portfolio").with(httpBasic("officer1", "officer123")))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void rejectedFdSummaryAndAdvancedExportsReturnTheirOwnData() throws Exception {
+        mvc.perform(get("/api/report/fd-summary").param("status", "REJECTED").param("format", "pdf")
+                        .with(httpBasic("officer1", "officer123")))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Disposition", "attachment; filename=fd-summary-rejected.pdf"));
+
+        jdbc.update("INSERT INTO fd_transactions(fd_account_no,txn_type,amount,currency,debit_gl_account,credit_gl_account,status,remarks,uuid) "
+                        + "VALUES('BR001R1','INTEREST',12.50,'INR','GL1','GL2','POSTED','Interest posted','report-interest-test')");
+        mvc.perform(get("/api/report/interest-report").param("format", "csv").with(httpBasic("officer1", "officer123")))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Disposition", "attachment; filename=interest-report.csv"));
+        mvc.perform(get("/api/report/transaction-report").param("format", "xlsx").with(httpBasic("admin1", "admin123")))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Disposition", "attachment; filename=transaction-report.xlsx"));
     }
 
     @Test

@@ -6,103 +6,47 @@
 
 ---
 
-## Architecture Diagram
+## Architecture and responsibilities
 
-```
- ┌─────────────────────────────────────────────────────────────────┐
- │                        Banking Platform                          │
- │                                                                  │
- │   Angular UI                                                     │
- │      │                                                           │
- │      ▼                                                           │
- │   API Gateway (8080)                                             │
- │   CORS │ JWT forward │ routing │ correlation ID                  │
- │      │                                                           │
- │      ├──────────────────────────────────────┐                   │
- │      │                                       │                   │
- │      ▼                                       │                   │
- │   Auth Service (8081)           FD Calculator Service (8084) ◄──┤
- │   login/JWT issuance               │                             │
- │                           ┌────────┴────────┐                   │
- │                           ▼                 ▼                   │
- │               Customer Service (8082)  Product/Pricing (8083)   │
- │               customer categories     rates, products            │
- │                                                                  │
- │   Report Service (8085) – optional PDF/CSV                       │
- │   Eureka (8761)          – optional service discovery            │
- └─────────────────────────────────────────────────────────────────┘
-```
+The integrated frontend calls services directly. Auth_Sec on **8090** issues tokens; Product & Pricing on **8080** supplies configuration; the account service on **8086** supplies customer categories; this calculator runs on **8084**. No gateway, Eureka or separate report HTTP service is deployed by root Compose.
 
-## Service Responsibilities
-
-| Service | Port | Responsibility |
-|---|---|---|
-| API Gateway | 8080 | Public entry point, CORS, JWT forwarding, routing |
-| Auth/Login | 8081 | Login, JWT issuance, password hashing |
-| Customer | 8082 | Customer profiles, authoritative categories |
-| Product & Pricing | 8080 | FD product catalogue, rate matrix, constraints |
-| **FD Calculator** | **8084** | **This service**: validation, bonus, calculation, audit |
-| Report | 8085 | PDF/CSV generation (optional) |
-| Eureka | 8761 | Service discovery (optional) |
+Root Compose uses the prod profile and real HTTP clients, with customer URL `http://fd-account-service:8086`. Standalone dev settings use MySQL and mock product/customer clients; the dev URL defaults are not integrated service addresses.
 
 ## Public Endpoints
 
 | Method | Path | Auth | Description |
 |---|---|---|---|
 | `GET` | `/actuator/health` | None | Health check |
-| `GET` | `/actuator/metrics` | None | Metrics endpoint |
-| `GET` | `/actuator/prometheus` | None | Prometheus metrics |
+| `GET` | `/actuator/metrics` | Authenticated | Metrics endpoint |
+| `GET` | `/actuator/prometheus` | Authenticated | Prometheus metrics |
 | `GET` | `/swagger-ui/index.html` | None | API documentation |
-| `GET` | `/api/v1/fd/products/{code}/preview` | CUSTOMER | Product constraints |
-| `POST` | `/api/v1/fd/calculations` | CUSTOMER | Calculate maturity |
-| `POST` | `/api/v1/fd/calculations/compare` | CUSTOMER | Compare products |
-| `GET` | `/api/v1/fd/calculations/{id}` | CUSTOMER | Retrieve calculation |
-| `GET` | `/api/v1/fd/calculations/uuid/{uuid}` | CUSTOMER | Retrieve by UUID |
-| `POST` | `/api/v1/fd/cache/rates/evict` | CUSTOMER | Evict cached rates |
-| `GET` | `/api/v1/fd/calculations/{id}/export` | CUSTOMER | Export as CSV |
-| `POST` | `/api/v1/fd/calculations/{id}/explain` | CUSTOMER | Plain-language explanation |
-| `POST` | `/api/v1/fd/batch/calculations` | CUSTOMER | Batch calculations |
+| `GET` | `/api/v1/fd/products/{code}/preview` | CUSTOMER / BANK_OFFICER / ADMIN | Product constraints |
+| `POST` | `/api/v1/fd/calculations` | CUSTOMER / BANK_OFFICER / ADMIN | Calculate maturity |
+| `POST` | `/api/v1/fd/calculations/compare` | CUSTOMER / BANK_OFFICER / ADMIN | Compare products |
+| `GET` | `/api/v1/fd/calculations/{id}` | CUSTOMER / BANK_OFFICER / ADMIN | Retrieve calculation |
+| `GET` | `/api/v1/fd/calculations/uuid/{uuid}` | CUSTOMER / BANK_OFFICER / ADMIN | Retrieve by UUID |
+| `POST` | `/api/v1/fd/cache/rates/evict` | CUSTOMER / BANK_OFFICER / ADMIN | Evict cached rates |
+| `GET` | `/api/v1/fd/calculations/{id}/export` | CUSTOMER / BANK_OFFICER / ADMIN | Export as CSV |
+| `POST` | `/api/v1/fd/calculations/{id}/explain` | CUSTOMER / BANK_OFFICER / ADMIN | Plain-language explanation |
+| `POST` | `/api/v1/fd/batch/calculations` | CUSTOMER / BANK_OFFICER / ADMIN | Batch calculations |
 
-## JWT Flow
+## JWT flow and local run
 
-```
-1. Customer logs in to Auth Service → receives JWT (CUSTOMER role)
-2. Angular attaches JWT in Authorization: Bearer header
-3. API Gateway validates signature, forwards JWT
-4. FD Calculator also validates JWT (resource server):
-   - Signature (HMAC-256 in dev, extensible to RSA/JWKS in prod)
-   - Expiry, issuer, audience, CUSTOMER role
-5. Username extracted from JWT sub claim (never from request body)
-```
+Obtain a token from `POST http://localhost:8090/api/auth/login`. Send it as `Authorization: Bearer <token>`. Shared `JwtSupport` checks HS256 signature, timestamps and issuer; audience configuration is not enforced by that decoder. Identity comes from the authenticated principal. Saved calculation lookup is scoped to that identity even for staff.
 
-### Run
+From the project root, install shared security and run the calculator:
 
 ```bash
-git clone <repo>
-cd fd-calculator
-
-# Run with dev profile (H2 in-memory, mock Product/Customer clients)
-./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
+mvn -f Auth_Sec/pom.xml -pl security-common -am install
+export JWT_SECRET='<same signing secret as Auth_Sec>'
+export JWT_ISSUER=fd-platform-auth
+export DB_URL='jdbc:mysql://localhost:3307/fd_calculator'
+export DB_USER=fd_user
+export DB_PASSWORD='<calculator database password>'
+mvn -f 'fd_calc/mod 4 backend/pom.xml' spring-boot:run -Dspring-boot.run.profiles=dev
 ```
 
-The service starts on **port 8084**.
-
-### Generate a dev JWT
-
-```bash
-# Helper script (requires Java)
-./docs/generate_dev_token.sh
-```
-
-Or use the `jjwt` dependency directly in a test to generate a token with:
-```json
-{
-  "sub": "alice",
-  "roles": ["CUSTOMER"],
-  "iss": "http://localhost:8081"
-}
-```
-signed with secret `DevOnlyHmacSecretMustBeAtLeast32CharsLong!Dev`.
+Dev uses MySQL with `ddl-auto=update` and mock dependent clients. For integrated real clients, use the root Docker stack. There is no checked-in `docs/generate_dev_token.sh` helper.
 
 ### Swagger UI
 
@@ -112,39 +56,18 @@ http://localhost:8084/swagger-ui/index.html
 
 Click **Authorize**, paste your JWT (without `Bearer `), then try any endpoint.
 
-### H2 Console (dev only)
+### Database and Docker
 
-```
-http://localhost:8084/h2-console
-JDBC URL: jdbc:h2:mem:fd_calc_db
-Username: sa  Password: (blank)
-```
+The current dev profile uses MySQL; it does not enable an H2 console. Tests may use H2 via their own configuration.
 
----
-
-## Docker
+Use root Compose for the integrated deployment:
 
 ```bash
-# Build Docker image
-docker build -t fd-calculator .
-
-# Run container
-docker run -p 8084:8084 \
-  -e DB_URL=jdbc:mysql://host.docker.internal:3306/fd_calculator_db \
-  -e DB_USER=root \
-  -e DB_PASSWORD=your_password \
-  -e JWT_SECRET=your_jwt_secret \
-  -e JWT_ISSUER_URI=http://localhost:8081 \
-  fd-calculator
+# From project root, after building shared dependencies/JARs
+ docker compose up -d --build fd-calculator
 ```
 
-The Dockerfile uses:
-- Base image: `eclipse-temurin:21-jre-alpine`
-- Non-root user: `appuser`
-- Container support enabled
-- MaxRAMPercentage: 75%
-
----
+See [root usage](../../usage.md) for database initialization and shared JWT settings. The runtime image uses Java 21 and a non-root user. Standalone container startup must supply DB credentials, JWT secret/issuer and reachable service URLs; `docker run` without configuration is insufficient for the prod image.
 
 ## Observability
 
@@ -164,6 +87,8 @@ The Dockerfile uses:
   - `fd.cache.misses` - Cache misses
 
 ### Kafka Integration
+
+Topic names/configuration exist, but batchCalculate only logs results; Kafka publishing is a placeholder. Do not interpret this list as evidence of emitted messages.
 - Topics:
   - `fd-calculator-batch-calculations` - Batch calculation results
   - `fd-calculator-audit-logs` - Audit log events
@@ -187,37 +112,21 @@ Service starts on **port 8084**. MySQL on **port 3307**.
 
 ---
 
-## Production Migration: HMAC → RSA/External JWT Issuer
+## External JWT issuer migration
 
-To switch from HMAC-256 to an external JWKS-backed JWT issuer (no code changes needed):
-
-1. Add to `application-prod.yml`:
-   ```yaml
-   spring:
-     security:
-       oauth2:
-         resourceserver:
-           jwt:
-             issuer-uri: ${JWT_ISSUER_URI}
-   ```
-2. Remove the `app.jwt.secret` property.
-3. Comment out or remove the custom `JwtDecoder` bean in `SecurityConfig`.
-
-Spring Boot auto-configures OIDC/JWKS RSA validation automatically.
-
----
+RSA/JWKS support is a future migration, not enabled by setting `JWT_ISSUER_URI` alone. The calculator imports `Auth_Sec/security-common` JWT beans. Replacing those beans/configuration and reviewing issuer, role, audience and outbound-token handling is required before adopting an external issuer.
 
 ## Running Tests
 
 ```bash
 # All unit + controller tests
-./mvnw test
+mvn test
 
 # Full build including integration tests
-./mvnw verify
+mvn verify
 
 # Single test class
-./mvnw test -Dtest=CalculationEngineImplTest
+mvn test -Dtest=CalculationEngineImplTest
 ```
 
 ### Test coverage

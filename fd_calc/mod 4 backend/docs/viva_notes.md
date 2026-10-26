@@ -32,7 +32,7 @@ The **FD Calculator Service** owns:
 
 ## 3. Why DTOs (Data Transfer Objects)?
 
-- **Isolation**: `ProductConfigDto` and `CustomerCategoriesDto` in the `client.dto` package mirror exactly what the external services return. If the Product Service adds or renames a field, *only* these classes change — no business logic is affected.
+- **Isolation**: Client DTOs describe the expected external contract. A field or semantic change can require client, mapping and business-logic updates; DTOs do not make arbitrary contract changes safe.
 - **Security**: DTOs prevent accidental exposure of JPA entity internals (e.g. audit fields like `customerId`) in API responses.
 - **Flexibility**: The public `CalculationResponse` DTO can evolve independently of the internal `CalculationAudit` entity.
 
@@ -53,34 +53,22 @@ The **FD Calculator Service** owns:
 
 Rules:
 1. Normalise category strings to the `CustomerCategory` enum (unknown = ignored).
-2. Sum eligible bonuses from `application.yml` (configurable, not hardcoded).
+2. Use product-supplied category bonuses when available; otherwise use configured `application.yml` bonuses.
 3. Cap combined bonus at `calculator.category-bonus.max-total-bonus` (default 2.00%).
 4. Compute `effectiveRate = baseRate + appliedBonus`.
 5. Cap `effectiveRate` at the product's configured `maxRate`.
 
 The response transparently reports `requestedTotalBonus`, `appliedTotalBonus`, `bonusCap`, `effectiveRate`, and `rateCapped` so the customer can see exactly what was applied.
 
-**A caller can never inflate a bonus** — category strings come from the Customer Service (authoritative), and bonus amounts come from `application.yml`. No caller-supplied rate or category is accepted.
+For product-based calculations, categories come from the account customer-category API and bonus amounts come from product/configuration data. The separate custom-calculation endpoint accepts user-supplied rates for simulation; this is not a booked FD rate.
 
 ---
 
 ## 6. JWT boundaries
 
-```
-Angular UI ──► API Gateway ──► FD Calculator Service
-                (validates +    (also validates JWT
-                 forwards JWT)   independently)
-```
+The integrated frontend calls the calculator directly. Shared JWT validation checks HS256 signature, issuer and timestamps; it does not enforce audience. CUSTOMER, BANK_OFFICER and ADMIN can use `/api/v1/fd/**`. Saved calculations remain scoped to the authenticated username. Health/info/docs are public; metrics require authentication.
 
-- The API Gateway validates and forwards the JWT in the `Authorization: Bearer` header.
-- The **FD Calculator also validates** the JWT as an OAuth2 Resource Server (signature, expiry, issuer, audience, role). It does not trust arbitrary identity headers.
-- `customerId` / `username` is read from the **verified JWT `sub` claim**, never from the request body.
-- Only the `CUSTOMER` role may call `/api/v1/**`. Missing JWT → 401. Valid JWT + wrong role → 403.
-
-**Dev**: HMAC-256 symmetric secret (`app.jwt.secret`).
-**Prod migration path**: Add `spring.security.oauth2.resourceserver.jwt.issuer-uri` to `application-prod.yml` and remove the custom `JwtDecoder` bean — Spring Boot auto-configures JWKS/RSA validation automatically.
-
----
+The root stack uses Auth_Sec on 8090, Product on 8080 and Account on 8086. There is no deployed gateway. An external JWKS issuer requires changing the shared security bean integration and outbound authentication; it is not a configuration-only switch.
 
 ## 7. Why AI must NOT calculate financial results
 

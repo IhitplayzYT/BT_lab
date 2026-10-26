@@ -1,0 +1,213 @@
+.help-bot-container {
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 2rem;
+  background: var(--card-bg, #1a1a2e);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.help-bot-header {
+  text-align: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+
+  h2 {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .subtitle {
+    color: var(--text-secondary, #b0b0c0);
+    font-size: 0.95rem;
+  }
+}
+
+.question-view {
+  animation: fadeIn 0.3s ease-in;
+}
+
+.progress-indicator {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding: 0.75rem 1rem;
+  background: rgba(43, 224, 204, 0.1);
+  border-radius: 8px;
+  border: 1px solid rgba(43, 224, 204, 0.3);
+
+  .step-number {
+    color: var(--accent-color, #2be0cc);
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+
+  .btn-link {
+    background: none;
+    border: none;
+    color: var(--accent-color, #2be0cc);
+    cursor: pointer;
+    font-size: 0.9rem;
+    padding: 0;
+    transition: opacity 0.2s;
+
+    &:hover {
+      opacity: 0.8;
+    }
+  }
+}
+
+.question-box {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  border-left: 4px solid var(--accent-color, #2be0cc);
+
+  h3 {
+    font-size: 1.25rem;
+    color: var(--text-primary, #e0e0e0);
+    margin: 0;
+    line-height: 1.6;
+  }
+}
+
+.options-grid {
+  display: grid;
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+}
+
+.option-btn {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  color: var(--text-primary, #e0e0e0);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: rgba(43, 224, 204, 0.15);
+    border-color: var(--accent-color, #2be0cc);
+    transform: translateX(4px);
+  }
+
+  &:active {
+    transform: translateX(2px);
+  }
+
+  .option-text {
+    text-align: left;
+    flex: 1;
+  }
+
+  .option-arrow {
+    color: var(--accent-color, #2be0cc);
+    font-size: 1.25rem;
+    margin-left: 1rem;
+  }
+}
+
+.solution-view {
+  text-align: center;
+  padding: 2rem;
+  animation: fadeIn 0.5s ease-in;
+
+  .solution-icon {
+    font-size: 4rem;
+    margin-bottom: 1.5rem;
+  }
+
+  h3 {
+    font-size: 1.5rem;
+    color: var(--accent-color, #2be0cc);
+    margin-bottom: 1.5rem;
+  }
+
+  .solution-text {
+    font-size: 1.05rem;
+    line-height: 1.8;
+    color: var(--text-primary, #e0e0e0);
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: rgba(43, 224, 204, 0.1);
+    border-radius: 12px;
+    border: 1px solid rgba(43, 224, 204, 0.3);
+  }
+}
+
+.action-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+
+  .btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+
+    &.btn-secondary {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: var(--text-primary, #e0e0e0);
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.15);
+      }
+    }
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Dark mode adjustments
+@media (prefers-color-scheme: dark) {
+  .help-bot-container {
+    background: #1a1a2e;
+  }
+}
+
+// Light mode adjustments
+@media (prefers-color-scheme: light) {
+  .help-bot-container {
+    background: #ffffff;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  }
+
+  .question-box {
+    background: rgba(0, 0, 0, 0.03);
+  }
+
+  .option-btn {
+    background: rgba(0, 0, 0, 0.03);
+    border-color: rgba(0, 0, 0, 0.1);
+    color: #333333;
+
+    &:hover {
+      background: rgba(43, 224, 204, 0.1);
+    }
+  }
+
+  .solution-text {
+    background: rgba(43, 224, 204, 0.08);
+    color: #333333;
+  }
+}

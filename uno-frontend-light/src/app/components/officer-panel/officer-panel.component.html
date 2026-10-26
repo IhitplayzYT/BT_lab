@@ -1,0 +1,939 @@
+<section class="officer-panel section">
+  <div class="container">
+    <div class="panel-header">
+      <div class="header-content">
+        <div>
+          <h1 class="text-gradient">{{ 'Bank Officer Dashboard' | translate }}</h1>
+          <p>{{ 'Review and manage FD applications' | translate }}</p>
+        </div>
+        <div class="header-actions">
+          <app-language-selector></app-language-selector>
+          <button class="btn btn-accent" (click)="advanceTimeByMonth()" [disabled]="isAdvancingTime()">
+            @if (isAdvancingTime()) {
+              <span>{{ 'Advancing...' | translate }}</span>
+            } @else {
+              <span>{{ '+1 Month' | translate }}</span>
+            }
+          </button>
+          <button class="btn btn-secondary" (click)="toggleTheme()">
+            @if (isDarkMode) {
+              <span>{{ 'Light' | translate }}</span>
+            } @else {
+              <span>{{ 'Dark' | translate }}</span>
+            }
+          </button>
+          <button class="btn btn-secondary" (click)="logout()">{{ 'Logout' | translate }}</button>
+        </div>
+      </div>
+      <div class="tab-navigation">
+        <button class="tab-btn" [class.active]="activeTab === 'applications'" (click)="activeTab = 'applications'">{{ 'Applications' | translate }}</button>
+        <button class="tab-btn" [class.active]="activeTab === 'fds'" (click)="activeTab = 'fds'">{{ 'FDs' | translate }}</button>
+        <button class="tab-btn" [class.active]="activeTab === 'bundles'" (click)="activeTab = 'bundles'">{{ 'Bundles' | translate }}</button>
+        <button class="tab-btn" [class.active]="activeTab === 'journal'" (click)="activeTab = 'journal'">{{ 'Journal' | translate }}</button>
+        <button class="tab-btn" [class.active]="activeTab === 'ledger'" (click)="activeTab = 'ledger'">{{ 'Ledger' | translate }}</button>
+        <button class="tab-btn" [class.active]="activeTab === 'products'" (click)="activeTab = 'products'">{{ 'Product Management' | translate }}</button>
+        <button class="tab-btn" [class.active]="activeTab === 'reports'" (click)="activeTab = 'reports'">{{ 'Reports' | translate }}</button>
+        <button class="tab-btn" [class.active]="activeTab === 'relation-nets'" (click)="activeTab = 'relation-nets'">{{ 'Relation Nets' | translate }}</button>
+      </div>
+    </div>
+
+    <ng-template #pendingFdApprovals>
+    <!-- Pending Individual FD Applications -->
+    <div class="applications-section pending-fd-approvals">
+      <h2 class="text-gradient">{{ 'Pending Individual FD Approvals ({0})' | translate:[pendingApplications.length] }}</h2>
+
+      @if (!selectedApplication) {
+        <!-- Search and Filter Controls -->
+        <div class="filter-controls card">
+          <div class="filter-row">
+            <div class="filter-group">
+              <label>{{ 'Search' | translate }}</label>
+              <input type="text" [(ngModel)]="appSearchQuery" [attr.placeholder]="'Search by name, ID, or product...' | translate">
+            </div>
+            <div class="filter-group">
+              <label>{{ 'Product' | translate }}</label>
+              <select [(ngModel)]="appFilterProduct">
+                <option value="">{{ 'All Products' | translate }}</option>
+                @for (product of uniqueProducts; track product) {
+                  <option [value]="product">{{ product }}</option>
+                }
+              </select>
+            </div>
+          </div>
+          <div class="filter-row">
+            <div class="filter-group">
+              <label>{{ 'Min Amount' | translate }}</label>
+              <input type="number" [(ngModel)]="appFilterMinAmount" [attr.placeholder]="'Min amount' | translate">
+            </div>
+            <div class="filter-group">
+              <label>{{ 'Max Amount' | translate }}</label>
+              <input type="number" [(ngModel)]="appFilterMaxAmount" [attr.placeholder]="'Max amount' | translate">
+            </div>
+            <div class="filter-group">
+              <label>{{ 'Sort By' | translate }}</label>
+              <select [(ngModel)]="appSortField">
+                <option value="date">{{ 'Date' | translate }}</option>
+                <option value="amount">{{ 'Amount' | translate }}</option>
+                <option value="customer">{{ 'Customer Name' | translate }}</option>
+                <option value="tenure">{{ 'Tenure' | translate }}</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label>{{ 'Order' | translate }}</label>
+              <select [(ngModel)]="appSortOrder">
+                <option value="desc">{{ 'Descending' | translate }}</option>
+                <option value="asc">{{ 'Ascending' | translate }}</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label>&nbsp;</label>
+              <button class="btn btn-secondary" (click)="resetAppFilters()">{{ 'Reset' | translate }}</button>
+            </div>
+          </div>
+          <div class="filter-info">
+            <span>{{ 'Showing {0} of {1} applications' | translate:[filteredApplications.length, pendingApplications.length] }}</span>
+          </div>
+        </div>
+
+        @if (filteredApplications.length === 0) {
+          <div class="empty-state card">
+            <p>{{ 'No applications match your search criteria.' | translate }}</p>
+          </div>
+        } @else {
+          <div class="applications-grid">
+            @for (app of filteredApplications; track app.id) {
+              <div class="application-card card" (click)="selectApplication(app)">
+                <div class="card-header">
+                  <span class="app-id">{{ app.id }}</span>
+                  <span class="app-date">{{ app.date }}</span>
+                </div>
+                <div class="card-body">
+                  <h3>{{ app.customer }}</h3>
+                  <div class="app-details">
+                    <div class="detail-item">
+                      <span class="detail-label">{{ 'Amount' | translate }}</span>
+                      <span class="detail-value">{{ formatCurrency(app.amount) }}</span>
+                    </div>
+                    <div class="detail-item">
+                      <span class="detail-label">{{ 'Tenure' | translate }}</span>
+                      <span class="detail-value">{{ '{0} months' | translate:[app.tenure] }}</span>
+                    </div>
+                    <div class="detail-item">
+                      <span class="detail-label">{{ 'Product' | translate }}</span>
+                      <span class="detail-value">{{ app.product }}</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="card-footer">
+                  <button class="btn btn-primary">{{ 'Review Application' | translate }}</button>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      } @else {
+        <div class="review-modal card">
+          <div class="modal-header">
+            <h2 class="text-gradient">{{ 'Review Application' | translate }}</h2>
+            <button class="btn-close" (click)="cancelSelection()">✕</button>
+          </div>
+
+          <div class="modal-body">
+            <div class="review-details">
+              <div class="detail-row">
+                <span class="detail-label">{{ 'Application ID' | translate }}</span>
+                <span class="detail-value">{{ selectedApplication.id }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">{{ 'Customer Name' | translate }}</span>
+                <span class="detail-value">{{ selectedApplication.customer }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">{{ 'Principal Amount' | translate }}</span>
+                <span class="detail-value accent">{{ formatCurrency(selectedApplication.amount) }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">{{ 'Tenure' | translate }}</span>
+                <span class="detail-value">{{ '{0} months' | translate:[selectedApplication.tenure] }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">{{ 'Product Type' | translate }}</span>
+                <span class="detail-value">{{ selectedApplication.product }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">{{ 'Application Date' | translate }}</span>
+                <span class="detail-value">{{ selectedApplication.date }}</span>
+              </div>
+            </div>
+
+            @if (selectedApplication.applicantDetails) {
+              <div class="applicant-section">
+                <h3 class="section-title">{{ 'Applicant Information' | translate }}</h3>
+                <div class="review-details">
+                  <div class="detail-row">
+                    <span class="detail-label">{{ 'Age' | translate }}</span>
+                    <span class="detail-value">{{ '{0} years' | translate:[selectedApplication.applicantDetails.age] }}</span>
+                  </div>
+                  <div class="detail-row">
+                    <span class="detail-label">{{ 'Gender' | translate }}</span>
+                    <span class="detail-value">{{ selectedApplication.applicantDetails.gender }}</span>
+                  </div>
+                  <div class="detail-row">
+                    <span class="detail-label">{{ 'Occupation' | translate }}</span>
+                    <span class="detail-value">{{ selectedApplication.applicantDetails.occupation || 'Not specified' }}</span>
+                  </div>
+                  <div class="detail-row">
+                    <span class="detail-label">{{ 'Annual Income' | translate }}</span>
+                    <span class="detail-value accent">{{ formatCurrency(selectedApplication.applicantDetails.annualIncome || 0) }}</span>
+                  </div>
+                  <div class="detail-row">
+                    <span class="detail-label">{{ 'Marital Status' | translate }}</span>
+                    <span class="detail-value">{{ selectedApplication.applicantDetails.maritalStatus || 'Not specified' }}</span>
+                  </div>
+                  <div class="detail-row">
+                    <span class="detail-label">{{ 'Nationality' | translate }}</span>
+                    <span class="detail-value">{{ selectedApplication.applicantDetails.nationality || 'Not specified' }}</span>
+                  </div>
+                  <div class="detail-row">
+                    <span class="detail-label">{{ 'Email' | translate }}</span>
+                    <span class="detail-value">{{ selectedApplication.applicantDetails.email }}</span>
+                  </div>
+                  <div class="detail-row">
+                    <span class="detail-label">{{ 'Phone' | translate }}</span>
+                    <span class="detail-value">{{ selectedApplication.applicantDetails.phone }}</span>
+                  </div>
+                </div>
+              </div>
+            }
+
+            <div class="rejection-section">
+              <label for="rejectionReason">{{ 'Rejection Reason (if rejecting)' | translate }}</label>
+              <textarea
+                id="rejectionReason"
+                [(ngModel)]="rejectionReason"
+                [attr.placeholder]="'Enter reason for rejection...' | translate"
+                rows="4"
+              ></textarea>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button class="btn btn-secondary" (click)="cancelSelection()">{{ 'Cancel' | translate }}</button>
+            <button class="btn btn-danger" (click)="rejectApplication()">{{ 'Reject Application' | translate }}</button>
+            <button class="btn btn-primary" (click)="approveApplication()">{{ 'Approve Application' | translate }}</button>
+          </div>
+        </div>
+      }
+    </div>
+    </ng-template>
+
+    @if (activeTab === 'products') {
+      <app-product-management></app-product-management>
+    } @else if (activeTab === 'reports') {
+      <div class="reports-section">
+        <h2 class="text-gradient">{{ 'Reports & Downloads' | translate }}</h2>
+
+        <div class="reports-category">
+          <h3>{{ 'FD Summary Reports' | translate }}</h3>
+          <div class="reports-grid">
+            <div class="report-card card" (click)="downloadFdSummaryPdf()">
+              <div class="card-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                  <line x1="16" y1="13" x2="8" y2="13"></line>
+                  <line x1="16" y1="17" x2="8" y2="17"></line>
+                  <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+              </div>
+              <div class="card-content">
+                <span class="card-label">{{ 'Active FDs' | translate }}</span>
+                <span class="card-value">{{ 'PDF' | translate }}</span>
+              </div>
+            </div>
+            <div class="report-card card" (click)="downloadFdSummaryExcel()">
+              <div class="card-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                  <line x1="12" y1="18" x2="12" y2="12"></line>
+                  <line x1="9" y1="15" x2="15" y2="15"></line>
+                </svg>
+              </div>
+              <div class="card-content">
+                <span class="card-label">{{ 'Active FDs' | translate }}</span>
+                <span class="card-value">{{ 'Excel' | translate }}</span>
+              </div>
+            </div>
+            <div class="report-card card" (click)="downloadFdSummaryByStatus('MATURED', 'pdf')">
+              <div class="card-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+              </div>
+              <div class="card-content">
+                <span class="card-label">{{ 'Matured FDs' | translate }}</span>
+                <span class="card-value">{{ 'PDF' | translate }}</span>
+              </div>
+            </div>
+            <div class="report-card card" (click)="downloadFdSummaryByStatus('REJECTED', 'pdf')">
+              <div class="card-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="15" y1="9" x2="9" y2="15"></line>
+                  <line x1="9" y1="9" x2="15" y2="15"></line>
+                </svg>
+              </div>
+              <div class="card-content">
+                <span class="card-label">{{ 'Rejected FDs' | translate }}</span>
+                <span class="card-value">{{ 'PDF' | translate }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="reports-category">
+          <h3>{{ 'Maturity Reports' | translate }}</h3>
+          <div class="reports-grid">
+            <div class="report-card card" (click)="downloadMaturityReportPdf()">
+              <div class="card-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+              </div>
+              <div class="card-content">
+                <span class="card-label">{{ 'Maturity (30 days)' | translate }}</span>
+                <span class="card-value">{{ 'PDF' | translate }}</span>
+              </div>
+            </div>
+            <div class="report-card card" (click)="downloadMaturityReport(60, 'pdf')">
+              <div class="card-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+              </div>
+              <div class="card-content">
+                <span class="card-label">{{ 'Maturity (60 days)' | translate }}</span>
+                <span class="card-value">{{ 'PDF' | translate }}</span>
+              </div>
+            </div>
+            <div class="report-card card" (click)="downloadMaturityReport(90, 'pdf')">
+              <div class="card-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+              </div>
+              <div class="card-content">
+                <span class="card-label">{{ 'Maturity (90 days)' | translate }}</span>
+                <span class="card-value">{{ 'PDF' | translate }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="reports-category">
+          <h3>{{ 'Portfolio Reports' | translate }}</h3>
+          <div class="reports-grid">
+            <div class="report-card card" (click)="downloadCustomerPortfolioPdf()">
+              <div class="card-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                  <line x1="16" y1="13" x2="8" y2="13"></line>
+                  <line x1="16" y1="17" x2="8" y2="17"></line>
+                </svg>
+              </div>
+              <div class="card-content">
+                <span class="card-label">{{ 'All Portfolios' | translate }}</span>
+                <span class="card-value">{{ 'PDF' | translate }}</span>
+              </div>
+            </div>
+            <div class="report-card card" (click)="downloadCustomerPortfolioExcel()">
+              <div class="card-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                  <line x1="12" y1="18" x2="12" y2="12"></line>
+                  <line x1="9" y1="15" x2="15" y2="15"></line>
+                </svg>
+              </div>
+              <div class="card-content">
+                <span class="card-label">{{ 'All Portfolios' | translate }}</span>
+                <span class="card-value">{{ 'Excel' | translate }}</span>
+              </div>
+            </div>
+            <div class="report-card card" (click)="downloadCustomerPortfolioCsv()">
+              <div class="card-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                  <line x1="16" y1="13" x2="8" y2="13"></line>
+                  <line x1="16" y1="17" x2="8" y2="17"></line>
+                </svg>
+              </div>
+              <div class="card-content">
+                <span class="card-label">{{ 'All Portfolios' | translate }}</span>
+                <span class="card-value">{{ 'CSV' | translate }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="reports-category">
+          <h3>{{ 'Advanced Reports' | translate }}</h3>
+          <div class="reports-grid">
+            <div class="report-card card" (click)="generatePythonReport()">
+              <div class="card-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="16 18 22 12 16 6"></polyline>
+                  <polyline points="8 6 2 12 8 18"></polyline>
+                </svg>
+              </div>
+              <div class="card-content">
+                <span class="card-label">{{ 'Python Analysis' | translate }}</span>
+                <span class="card-value">{{ 'Generate' | translate }}</span>
+              </div>
+            </div>
+            <div class="report-card card" (click)="downloadInterestReport()">
+              <div class="card-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="12" y1="1" x2="12" y2="23"></line>
+                  <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                </svg>
+              </div>
+              <div class="card-content">
+                <span class="card-label">{{ 'Interest Report' | translate }}</span>
+                <span class="card-value">{{ 'PDF' | translate }}</span>
+              </div>
+            </div>
+            <div class="report-card card" (click)="downloadTransactionReport()">
+              <div class="card-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                  <polyline points="17 6 23 6 23 12"></polyline>
+                </svg>
+              </div>
+              <div class="card-content">
+                <span class="card-label">{{ 'Transaction Report' | translate }}</span>
+                <span class="card-value">{{ 'Excel' | translate }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    } @else if (activeTab === 'applications') {
+
+    <!-- Analytics Section -->
+    <div class="analytics-grid">
+      <div class="analytics-card card clickable-card" role="button" tabindex="0" (click)="goToPendingFds()" (keydown.enter)="goToPendingFds()">
+        <div class="card-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+        </div>
+        <div class="card-content">
+          <span class="card-label">{{ 'Pending FDs' | translate }}</span>
+          <span class="card-value accent">{{ analytics.pendingFDs }}</span>
+        </div>
+      </div>
+
+      <div class="analytics-card card clickable-card" role="button" tabindex="0" (click)="goToPendingBundles()" (keydown.enter)="goToPendingBundles()">
+        <div class="card-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+          </svg>
+        </div>
+        <div class="card-content">
+          <span class="card-label">{{ 'Pending Bundles' | translate }}</span>
+          <span class="card-value">{{ analytics.pendingBundles }}</span>
+        </div>
+      </div>
+
+      <div class="analytics-card card">
+        <div class="card-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="1" x2="12" y2="23"></line>
+            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+          </svg>
+        </div>
+        <div class="card-content">
+          <span class="card-label">{{ 'Total Pending Amount' | translate }}</span>
+          <span class="card-value">{{ formatCurrency(analytics.totalPendingAmount) }}</span>
+        </div>
+      </div>
+
+      <div class="analytics-card card">
+        <div class="card-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+          </svg>
+        </div>
+        <div class="card-content">
+          <span class="card-label">{{ 'Avg Pending Amount' | translate }}</span>
+          <span class="card-value">{{ formatCurrency(analytics.avgPendingAmount) }}</span>
+        </div>
+      </div>
+    </div>
+
+      <ng-container *ngTemplateOutlet="pendingFdApprovals"></ng-container>
+
+    } @else if (activeTab === 'fds') {
+      <ng-container *ngTemplateOutlet="pendingFdApprovals"></ng-container>
+    } @else if (activeTab === 'bundles') {
+
+    <!-- Pending Bundles -->
+      <div class="bundles-section">
+        <h2 class="text-gradient">{{ 'Pending Bundle Approvals ({0})' | translate:[pendingBundles.length] }}</h2>
+        <p class="section-note">{{ 'Approve or reject entire FD packages as a single unit' | translate }}</p>
+
+        @if (!selectedBundle) {
+          <!-- Search and Filter Controls -->
+          <div class="filter-controls card">
+            <div class="filter-row">
+              <div class="filter-group">
+                <label>{{ 'Search' | translate }}</label>
+                <input type="text" [(ngModel)]="bundleSearchQuery" [attr.placeholder]="'Search by customer, ID, or name...' | translate">
+              </div>
+            </div>
+            <div class="filter-row">
+              <div class="filter-group">
+                <label>{{ 'Min Amount' | translate }}</label>
+                <input type="number" [(ngModel)]="bundleFilterMinAmount" [attr.placeholder]="'Min amount' | translate">
+              </div>
+              <div class="filter-group">
+                <label>{{ 'Max Amount' | translate }}</label>
+                <input type="number" [(ngModel)]="bundleFilterMaxAmount" [attr.placeholder]="'Max amount' | translate">
+              </div>
+              <div class="filter-group">
+                <label>{{ 'Sort By' | translate }}</label>
+                <select [(ngModel)]="bundleSortField">
+                  <option value="date">{{ 'Date' | translate }}</option>
+                  <option value="amount">{{ 'Amount' | translate }}</option>
+                  <option value="customer">{{ 'Customer Name' | translate }}</option>
+                  <option value="name">{{ 'Bundle Name' | translate }}</option>
+                </select>
+              </div>
+              <div class="filter-group">
+                <label>{{ 'Order' | translate }}</label>
+                <select [(ngModel)]="bundleSortOrder">
+                  <option value="desc">{{ 'Descending' | translate }}</option>
+                  <option value="asc">{{ 'Ascending' | translate }}</option>
+                </select>
+              </div>
+              <div class="filter-group">
+                <label>&nbsp;</label>
+                <button class="btn btn-secondary" (click)="resetBundleFilters()">{{ 'Reset' | translate }}</button>
+              </div>
+            </div>
+            <div class="filter-info">
+              <span>{{ 'Showing {0} of {1} bundles' | translate:[filteredBundles.length, pendingBundles.length] }}</span>
+            </div>
+          </div>
+
+          @if (filteredBundles.length === 0) {
+            <div class="empty-state card">
+              <p>{{ 'No bundles match your search criteria.' | translate }}</p>
+            </div>
+          } @else {
+            <div class="bundles-grid">
+              @for (bundle of filteredBundles; track bundle.id) {
+              <div class="bundle-card card" (click)="selectBundle(bundle)">
+                <div class="card-header">
+                  <span class="bundle-id">{{ bundle.id }}</span>
+                  <span class="bundle-date">{{ bundle.date }}</span>
+                </div>
+                <div class="card-body">
+                  <h3>{{ bundle.name }}</h3>
+                  <p class="bundle-description">{{ bundle.description }}</p>
+                  <div class="bundle-details">
+                    <div class="detail-item">
+                      <span class="detail-label">{{ 'Customer' | translate }}</span>
+                      <span class="detail-value">{{ bundle.customer }}</span>
+                    </div>
+                    <div class="detail-item">
+                      <span class="detail-label">{{ 'Total Amount' | translate }}</span>
+                      <span class="detail-value accent">{{ formatCurrency(bundle.totalAmount) }}</span>
+                    </div>
+                    <div class="detail-item">
+                      <span class="detail-label">{{ 'FD Count' | translate }}</span>
+                      <span class="detail-value">{{ bundle.fdCount }}</span>
+                    </div>
+                    <div class="detail-item">
+                      <span class="detail-label">{{ 'Est. Return' | translate }}</span>
+                      <span class="detail-value">{{ formatCurrency(bundle.estimatedReturn) }}</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="card-footer">
+                  <button class="btn btn-primary">{{ 'Review Bundle' | translate }}</button>
+                </div>
+              </div>
+            }
+          </div>
+          }
+        } @else {
+          <div class="review-modal card">
+            <div class="modal-header">
+              <h2 class="text-gradient">{{ 'Review Bundle' | translate }}</h2>
+              <button class="btn-close" (click)="cancelBundleSelection()">✕</button>
+            </div>
+
+            <div class="modal-body">
+              <div class="review-details">
+                <div class="detail-row">
+                  <span class="detail-label">{{ 'Bundle ID' | translate }}</span>
+                  <span class="detail-value">{{ selectedBundle.id }}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">{{ 'Bundle Name' | translate }}</span>
+                  <span class="detail-value">{{ selectedBundle.name }}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">{{ 'Description' | translate }}</span>
+                  <span class="detail-value">{{ selectedBundle.description }}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">{{ 'Customer' | translate }}</span>
+                  <span class="detail-value">{{ selectedBundle.customer }}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">{{ 'Total Investment' | translate }}</span>
+                  <span class="detail-value accent">{{ formatCurrency(selectedBundle.totalAmount) }}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">{{ 'Estimated Return' | translate }}</span>
+                  <span class="detail-value">{{ formatCurrency(selectedBundle.estimatedReturn) }}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">{{ 'Number of FDs' | translate }}</span>
+                  <span class="detail-value">{{ selectedBundle.fdCount }}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">{{ 'Application Date' | translate }}</span>
+                  <span class="detail-value">{{ selectedBundle.date }}</span>
+                </div>
+              </div>
+
+              @if (selectedBundle.customerDetails) {
+                <div class="applicant-section">
+                  <h3 class="section-title">{{ 'Customer Information' | translate }}</h3>
+                  <div class="review-details">
+                    <div class="detail-row">
+                      <span class="detail-label">{{ 'Age' | translate }}</span>
+                      <span class="detail-value">{{ '{0} years' | translate:[selectedBundle.customerDetails.age] }}</span>
+                    </div>
+                    <div class="detail-row">
+                      <span class="detail-label">{{ 'Gender' | translate }}</span>
+                      <span class="detail-value">{{ selectedBundle.customerDetails.gender }}</span>
+                    </div>
+                    <div class="detail-row">
+                      <span class="detail-label">{{ 'Occupation' | translate }}</span>
+                      <span class="detail-value">{{ selectedBundle.customerDetails.occupation || 'Not specified' }}</span>
+                    </div>
+                    <div class="detail-row">
+                      <span class="detail-label">{{ 'Annual Income' | translate }}</span>
+                      <span class="detail-value accent">{{ formatCurrency(selectedBundle.customerDetails.annualIncome || 0) }}</span>
+                    </div>
+                    <div class="detail-row">
+                      <span class="detail-label">{{ 'Marital Status' | translate }}</span>
+                      <span class="detail-value">{{ selectedBundle.customerDetails.maritalStatus || 'Not specified' }}</span>
+                    </div>
+                    <div class="detail-row">
+                      <span class="detail-label">{{ 'Nationality' | translate }}</span>
+                      <span class="detail-value">{{ selectedBundle.customerDetails.nationality || 'Not specified' }}</span>
+                    </div>
+                    <div class="detail-row">
+                      <span class="detail-label">{{ 'Email' | translate }}</span>
+                      <span class="detail-value">{{ selectedBundle.customerDetails.email }}</span>
+                    </div>
+                    <div class="detail-row">
+                      <span class="detail-label">{{ 'Phone' | translate }}</span>
+                      <span class="detail-value">{{ selectedBundle.customerDetails.phone }}</span>
+                    </div>
+                  </div>
+                </div>
+              }
+
+              <div class="rejection-section">
+                <label for="bundleRejectionReason">{{ 'Rejection Reason (if rejecting)' | translate }}</label>
+                <textarea
+                  id="bundleRejectionReason"
+                  [(ngModel)]="bundleRejectionReason"
+                  [attr.placeholder]="'Enter reason for rejection...' | translate"
+                  rows="4"
+                ></textarea>
+              </div>
+            </div>
+
+            <div class="modal-footer">
+              <button class="btn btn-secondary" (click)="cancelBundleSelection()">{{ 'Cancel' | translate }}</button>
+              <button class="btn btn-danger" (click)="rejectBundle()">{{ 'Reject Bundle' | translate }}</button>
+              <button class="btn btn-primary" (click)="approveBundle()">{{ 'Approve Bundle' | translate }}</button>
+            </div>
+          </div>
+        }
+      </div>
+    } @else if (activeTab === 'journal') {
+      <div class="journal-section">
+        <h2 class="text-gradient">{{ 'General Journal' | translate }}</h2>
+        <p>{{ 'View all transactions across all FD accounts' | translate }}</p>
+
+        <!-- Journal Summary -->
+        <div class="journal-summary card">
+          <div class="summary-item">
+            <span class="summary-label">{{ 'Total Transactions' | translate }}</span>
+            <span class="summary-value">{{ journalSummary.totalTransactions || 0 }}</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">{{ 'Deposits' | translate }}</span>
+            <span class="summary-value">{{ journalSummary.totalDeposits || 0 }}</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">{{ 'Interest' | translate }}</span>
+            <span class="summary-value">{{ journalSummary.totalInterest || 0 }}</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">{{ 'Interest Accruals' | translate }}</span>
+            <span class="summary-value">{{ journalSummary.totalInterestAccruals || 0 }}</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">{{ 'Maturity Payouts' | translate }}</span>
+            <span class="summary-value">{{ journalSummary.totalMaturityPayouts || 0 }}</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">{{ 'Premature Withdrawals' | translate }}</span>
+            <span class="summary-value">{{ journalSummary.totalPrematureWithdrawals || 0 }}</span>
+          </div>
+        </div>
+
+        <!-- Filter Controls -->
+        <div class="filter-controls card">
+          <div class="filter-row">
+            <div class="filter-group">
+              <label>{{ 'Filter by Type' | translate }}</label>
+              <select [(ngModel)]="journalFilterType">
+                <option value="">{{ 'All Types' | translate }}</option>
+                <option value="DEPOSIT">{{ 'Deposit' | translate }}</option>
+                <option value="INTEREST">{{ 'Interest' | translate }}</option>
+                <option value="INTEREST_ACCRUAL">{{ 'Interest Accruals' | translate }}</option>
+                <option value="MATURITY_PAYOUT">{{ 'Maturity Payout' | translate }}</option>
+                <option value="PREMATURE_WITHDRAWAL">{{ 'Premature Withdrawal' | translate }}</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label>&nbsp;</label>
+              <button class="btn btn-secondary" (click)="loadJournal()">{{ 'Refresh' | translate }}</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Journal Transactions -->
+        @if (journalTransactions.length === 0) {
+          <div class="empty-state card">
+            <p>{{ 'No transactions found in journal.' | translate }}</p>
+          </div>
+        } @else {
+          <div class="journal-table card">
+            <table>
+              <thead>
+                <tr>
+                  <th>{{ 'Transaction ID' | translate }}</th>
+                  <th>{{ 'Account No' | translate }}</th>
+                  <th>{{ 'Type' | translate }}</th>
+                  <th>{{ 'Amount' | translate }}</th>
+                  <th>{{ 'Debit GL' | translate }}</th>
+                  <th>{{ 'Credit GL' | translate }}</th>
+                  <th>{{ 'Timestamp' | translate }}</th>
+                  <th>{{ 'Remarks' | translate }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (txn of journalTransactions; track txn.txnId) {
+                  <tr>
+                    <td>{{ txn.txnId }}</td>
+                    <td>{{ txn.fdAccountNo }}</td>
+                    <td><span class="badge badge-{{ txn.txnType.toLowerCase() }}">{{ txn.txnType }}</span></td>
+                    <td>{{ formatCurrency(txn.amount) }}</td>
+                    <td>{{ txn.debitGlAccount }}</td>
+                    <td>{{ txn.creditGlAccount }}</td>
+                    <td>{{ formatDateTime(txn.txnTimestamp) }}</td>
+                    <td>{{ txn.remarks }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+    } @else if (activeTab === 'ledger') {
+      <div class="ledger-section">
+        <h2 class="text-gradient">{{ 'Account Ledger' | translate }}</h2>
+        <p>{{ 'Search and view individual FD account ledgers' | translate }}</p>
+
+        @if (!selectedLedgerAccount) {
+          <!-- Search Controls -->
+          <div class="filter-controls card">
+            <div class="filter-row">
+              <div class="filter-group">
+                <label>{{ 'Search by Name' | translate }}</label>
+                <input type="text" [(ngModel)]="ledgerSearchName" [attr.placeholder]="'Enter customer name...' | translate">
+              </div>
+              <div class="filter-group">
+                <label>{{ 'Search by Customer ID' | translate }}</label>
+                <input type="text" [(ngModel)]="ledgerSearchId" [attr.placeholder]="'Enter customer ID...' | translate">
+              </div>
+              <div class="filter-group">
+                <label>&nbsp;</label>
+                <button class="btn btn-primary" (click)="searchLedger()">{{ 'Search' | translate }}</button>
+              </div>
+              <div class="filter-group">
+                <label>&nbsp;</label>
+                <button class="btn btn-secondary" (click)="loadAllLedgerAccounts()" [disabled]="ledgerAccountsLoading">{{ 'Refresh Ledgers' | translate }}</button>
+              </div>
+            </div>
+          </div>
+
+          @if (ledgerAccountsLoading && ledgerAccounts.length === 0) {
+            <div class="empty-state card"><p>{{ 'Loading FD ledgers…' | translate }}</p></div>
+          } @else if (ledgerAccountsError) {
+            <div class="empty-state card">
+              <p>{{ ledgerAccountsError | translate }}</p>
+              <button class="btn btn-secondary" (click)="loadAllLedgerAccounts()">{{ 'Retry' | translate }}</button>
+            </div>
+          } @else if (ledgerAccounts.length === 0) {
+            <div class="empty-state card">
+              <p>{{ 'No accounts found. Search by name or ID, or refresh the ledger list.' | translate }}</p>
+            </div>
+          } @else {
+            <div class="ledger-accounts-grid">
+              @for (account of ledgerAccounts; track account.fdAccountNo) {
+                <div class="ledger-account-card card" (click)="selectLedgerAccount(account)">
+                  <div class="card-header">
+                    <span class="account-no">{{ account.fdAccountNo }}</span>
+                    <span class="account-status">{{ account.approvalStatus }}</span>
+                  </div>
+                  <div class="card-body">
+                    <h3>{{ account.applicantFullName }}</h3>
+                    <div class="account-details">
+                      <div class="detail-item">
+                        <span class="detail-label">{{ 'Customer ID' | translate }}</span>
+                        <span class="detail-value">{{ account.customerId }}</span>
+                      </div>
+                      <div class="detail-item">
+                        <span class="detail-label">{{ 'Principal' | translate }}</span>
+                        <span class="detail-value">{{ formatCurrency(account.principalAmount) }}</span>
+                      </div>
+                      <div class="detail-item">
+                        <span class="detail-label">{{ 'Product' | translate }}</span>
+                        <span class="detail-value">{{ account.productCode }}</span>
+                      </div>
+                      <div class="detail-item">
+                        <span class="detail-label">{{ 'Status' | translate }}</span>
+                        <span class="detail-value">{{ account.status }}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="card-footer">
+                    <button class="btn btn-primary">{{ 'View Ledger' | translate }}</button>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        } @else {
+          <div class="ledger-detail-view">
+            <div class="ledger-header card">
+              <button class="btn btn-secondary" (click)="closeLedgerDetail()">{{ '← Back to Search' | translate }}</button>
+              <h2 class="text-gradient">{{ 'Account Ledger: {0}' | translate:[selectedLedgerAccount.fdAccountNo] }}</h2>
+            </div>
+
+            <!-- Account Details -->
+            <div class="account-details-card card">
+              <h3>{{ 'Account Information' | translate }}</h3>
+              <div class="details-grid">
+                <div class="detail-row">
+                  <span class="detail-label">{{ 'Account No' | translate }}</span>
+                  <span class="detail-value">{{ selectedLedgerAccount.fdAccountNo }}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">{{ 'Customer Name' | translate }}</span>
+                  <span class="detail-value">{{ selectedLedgerAccount.applicantFullName }}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">{{ 'Customer ID' | translate }}</span>
+                  <span class="detail-value">{{ selectedLedgerAccount.customerId }}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">{{ 'Principal Amount' | translate }}</span>
+                  <span class="detail-value accent">{{ formatCurrency(selectedLedgerAccount.principalAmount) }}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">{{ 'Interest Rate' | translate }}</span>
+                  <span class="detail-value">{{ selectedLedgerAccount.interestRate }}%</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">{{ 'Tenure' | translate }}</span>
+                  <span class="detail-value">{{ selectedLedgerAccount.tenureMonths }} {{ 'months' | translate }}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">{{ 'Maturity Date' | translate }}</span>
+                  <span class="detail-value">{{ formatDate(selectedLedgerAccount.maturityDate) }}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">{{ 'Status' | translate }}</span>
+                  <span class="detail-value">{{ selectedLedgerAccount.status }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Transaction History -->
+            <div class="ledger-transactions card">
+              <h3>{{ 'Transaction History' | translate }}</h3>
+              @if (ledgerHistoryLoading) {
+                <p>{{ 'Loading transaction history…' | translate }}</p>
+              } @else if (ledgerHistoryError) {
+                <p class="error-message">{{ ledgerHistoryError | translate }}</p>
+              } @else if (ledgerTransactions.length === 0) {
+                <p class="empty-state">{{ 'No transactions found for this account.' | translate }}</p>
+              } @else {
+                <table>
+                  <thead>
+                    <tr>
+                      <th>{{ 'Transaction ID' | translate }}</th>
+                      <th>{{ 'Type' | translate }}</th>
+                      <th>{{ 'Amount' | translate }}</th>
+                      <th>{{ 'Debit GL' | translate }}</th>
+                      <th>{{ 'Credit GL' | translate }}</th>
+                      <th>{{ 'Timestamp' | translate }}</th>
+                      <th>{{ 'Remarks' | translate }}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (txn of ledgerTransactions; track txn.txnId) {
+                      <tr>
+                        <td>{{ txn.txnId }}</td>
+                        <td><span class="badge badge-{{ txn.txnType.toLowerCase() }}">{{ txn.txnType }}</span></td>
+                        <td>{{ formatCurrency(txn.amount) }}</td>
+                        <td>{{ txn.debitGlAccount }}</td>
+                        <td>{{ txn.creditGlAccount }}</td>
+                        <td>{{ formatDateTime(txn.txnTimestamp) }}</td>
+                        <td>{{ txn.remarks }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    } @else if (activeTab === 'relation-nets') {
+      <app-relation-nets></app-relation-nets>
+    }
+  </div>
+</section>

@@ -1,0 +1,34 @@
+:host { display: block; }
+
+.audit-log-section .section-header,
+.audit-log-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.audit-log-filters .filter-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+}
+
+.audit-filter-actions {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.audit-filter-actions label { flex-basis: 100%; }
+
+.audit-log-table {
+  overflow-x: auto;
+  margin-top: 1rem;
+}
+
+.audit-log-table table { min-width: 760px; }
+
+.audit-log-pagination { margin-top: 1rem; }

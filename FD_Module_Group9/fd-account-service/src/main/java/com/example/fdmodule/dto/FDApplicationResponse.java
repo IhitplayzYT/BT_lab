@@ -6,7 +6,7 @@ public class FDApplicationResponse {
     private String productCode;
     private String principalAmount;
     private String interestRate;
-    private Integer termMonths;
+    private Integer tenureMonths;
     private String maturityDate;
     private String status;
     private String approvalStatus;
@@ -32,16 +32,22 @@ public class FDApplicationResponse {
     private String applicantPan;
     private String applicantAccountNumber;
     private String applicantIfsc;
+    private String accruedInterest;
+    private String maturityAmount;
+
+    // Nominee details
+    private String nomineeName;
+    private String nomineeRelation;
 
     public FDApplicationResponse(String fdAccountNo, String customerId, String productCode,
-                                 String principalAmount, String interestRate, Integer termMonths,
+                                 String principalAmount, String interestRate, Integer tenureMonths,
                                  String maturityDate, String status, String approvalStatus, String createdAt) {
         this.fdAccountNo = fdAccountNo;
         this.customerId = customerId;
         this.productCode = productCode;
         this.principalAmount = principalAmount;
         this.interestRate = interestRate;
-        this.termMonths = termMonths;
+        this.tenureMonths = tenureMonths;
         this.maturityDate = maturityDate;
         this.status = status;
         this.approvalStatus = approvalStatus;
@@ -53,7 +59,7 @@ public class FDApplicationResponse {
     public String getProductCode() { return productCode; }
     public String getPrincipalAmount() { return principalAmount; }
     public String getInterestRate() { return interestRate; }
-    public Integer getTermMonths() { return termMonths; }
+    public Integer getTenureMonths() { return tenureMonths; }
     public String getMaturityDate() { return maturityDate; }
     public String getStatus() { return status; }
     public String getApprovalStatus() { return approvalStatus; }
@@ -96,4 +102,12 @@ public class FDApplicationResponse {
     public void setApplicantAccountNumber(String applicantAccountNumber) { this.applicantAccountNumber = applicantAccountNumber; }
     public String getApplicantIfsc() { return applicantIfsc; }
     public void setApplicantIfsc(String applicantIfsc) { this.applicantIfsc = applicantIfsc; }
+    public String getAccruedInterest() { return accruedInterest; }
+    public void setAccruedInterest(String accruedInterest) { this.accruedInterest = accruedInterest; }
+    public String getMaturityAmount() { return maturityAmount; }
+    public void setMaturityAmount(String maturityAmount) { this.maturityAmount = maturityAmount; }
+    public String getNomineeName() { return nomineeName; }
+    public void setNomineeName(String nomineeName) { this.nomineeName = nomineeName; }
+    public String getNomineeRelation() { return nomineeRelation; }
+    public void setNomineeRelation(String nomineeRelation) { this.nomineeRelation = nomineeRelation; }
 }

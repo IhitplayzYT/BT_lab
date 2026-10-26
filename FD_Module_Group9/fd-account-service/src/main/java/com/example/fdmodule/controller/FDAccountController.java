@@ -82,7 +82,17 @@ public class FDAccountController {
                     response.setApplicantPan(acc.getApplicantPan());
                     response.setApplicantAccountNumber(acc.getApplicantAccountNumber());
                     response.setApplicantIfsc(acc.getApplicantIfsc());
-                    return response;
+                    response.setAccruedInterest(acc.getAccruedInterest() != null ? acc.getAccruedInterest().toString() : "0");
+                    // Calculate maturity amount: principal + (principal * rate * tenure / 12 / 100)
+                    java.math.BigDecimal principal = acc.getPrincipalAmount();
+                    java.math.BigDecimal rate = acc.getInterestRate();
+                    Integer tenure = acc.getTenureMonths();
+                    java.math.BigDecimal maturityAmount = principal.add(
+                        principal.multiply(rate).multiply(java.math.BigDecimal.valueOf(tenure))
+                        .divide(java.math.BigDecimal.valueOf(1200), 2, java.math.RoundingMode.HALF_UP)
+                    );
+                    response.setMaturityAmount(maturityAmount.toString());
+                   	return response;
                 })
                 .toList();
         return ResponseEntity.ok(responses);
@@ -118,7 +128,19 @@ public class FDAccountController {
                     response.setApplicantPan(acc.getApplicantPan());
                     response.setApplicantAccountNumber(acc.getApplicantAccountNumber());
                     response.setApplicantIfsc(acc.getApplicantIfsc());
-                    return response;
+                    response.setAccruedInterest(acc.getAccruedInterest() != null ? acc.getAccruedInterest().toString() : "0");
+                    response.setNomineeName(acc.getNomineeName());
+                    response.setNomineeRelation(acc.getNomineeRelation());
+                    // Calculate maturity amount: principal + (principal * rate * tenure / 12 / 100)
+                    java.math.BigDecimal principal = acc.getPrincipalAmount();
+                    java.math.BigDecimal rate = acc.getInterestRate();
+                    Integer tenure = acc.getTenureMonths();
+                    java.math.BigDecimal maturityAmount = principal.add(
+                        principal.multiply(rate).multiply(java.math.BigDecimal.valueOf(tenure))
+                        .divide(java.math.BigDecimal.valueOf(1200), 2, java.math.RoundingMode.HALF_UP)
+                    );
+                    response.setMaturityAmount(maturityAmount.toString());
+                   	return response;
                 })
                 .toList();
         return ResponseEntity.ok(responses);
@@ -154,7 +176,19 @@ public class FDAccountController {
                     response.setApplicantPan(acc.getApplicantPan());
                     response.setApplicantAccountNumber(acc.getApplicantAccountNumber());
                     response.setApplicantIfsc(acc.getApplicantIfsc());
-                    return response;
+                    response.setAccruedInterest(acc.getAccruedInterest() != null ? acc.getAccruedInterest().toString() : "0");
+                    response.setNomineeName(acc.getNomineeName());
+                    response.setNomineeRelation(acc.getNomineeRelation());
+                    // Calculate maturity amount: principal + (principal * rate * tenure / 12 / 100)
+                    java.math.BigDecimal principal = acc.getPrincipalAmount();
+                    java.math.BigDecimal rate = acc.getInterestRate();
+                    Integer tenure = acc.getTenureMonths();
+                    java.math.BigDecimal maturityAmount = principal.add(
+                        principal.multiply(rate).multiply(java.math.BigDecimal.valueOf(tenure))
+                        .divide(java.math.BigDecimal.valueOf(1200), 2, java.math.RoundingMode.HALF_UP)
+                    );
+                    response.setMaturityAmount(maturityAmount.toString());
+                   	return response;
                 })
                 .toList();
         return ResponseEntity.ok(responses);
@@ -233,5 +267,16 @@ public class FDAccountController {
     public ResponseEntity<FixedDepositAccount> get(@PathVariable String fdAccountNo, Authentication authentication) {
         access.requireAccess(authentication, fdAccountNo);
         return ResponseEntity.ok(fdAccountService.getById(fdAccountNo));
+    }
+
+    @PostMapping("/{fdAccountNo}/withdraw")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public ResponseEntity<Map<String, String>> withdrawApplication(
+            @PathVariable String fdAccountNo,
+            Authentication authentication) {
+        fdAccountService.withdrawApplication(fdAccountNo, authentication.getName());
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Application withdrawn successfully");
+        return ResponseEntity.ok(response);
     }
 }

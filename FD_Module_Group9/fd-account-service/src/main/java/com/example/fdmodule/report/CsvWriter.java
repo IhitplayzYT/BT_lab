@@ -1,6 +1,9 @@
 package com.example.fdmodule.report;
 
+import java.io.IOException;
 import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
@@ -23,6 +26,11 @@ public final class CsvWriter {
             sb.append("\r\n");
         }
         return sb.toString();
+    }
+
+    public static void writeCsv(ReportData data, String filePath) throws IOException {
+        String csvContent = toCsv(data.columns(), data.rows());
+        Files.writeString(Path.of(filePath), csvContent);
     }
 
     static String cell(Object value) {

@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Component;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Component;
 import jakarta.mail.internet.MimeMessage;
 
 @Component
+@ConditionalOnProperty(name = "spring.mail.host")
 public class EmailChannel implements NotificationChannel {
     private static final Logger log = LoggerFactory.getLogger(EmailChannel.class);
     private final ObjectProvider<JavaMailSender> mail;

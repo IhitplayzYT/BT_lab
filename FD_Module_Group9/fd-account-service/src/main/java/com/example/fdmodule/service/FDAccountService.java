@@ -1,5 +1,6 @@
 package com.example.fdmodule.service;
 
+import com.example.fdmodule.client.AuthServiceClient;
 import com.example.fdmodule.dto.*;
 import com.example.fdmodule.entity.*;
 import com.example.fdmodule.repository.*;
@@ -10,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class FDAccountService {
@@ -24,6 +26,7 @@ public class FDAccountService {
     @Lazy
     private final FDTransactionService fdTransactionService;
     private final FdCreatedPublisher createdPublisher;
+    private final AuthServiceClient authServiceClient;
 
     public FDAccountService(FixedDepositAccountRepository fdRepository,
                             CustomerProfileRepository customerRepository,
@@ -34,7 +37,8 @@ public class FDAccountService {
                             RateService rateService,
                             AccountNumberGenerator accountNumberGenerator,
                             @Lazy FDTransactionService fdTransactionService,
-                            FdCreatedPublisher createdPublisher) {
+                            FdCreatedPublisher createdPublisher,
+                            AuthServiceClient authServiceClient) {
         this.fdRepository = fdRepository;
         this.customerRepository = customerRepository;
         this.nomineeRepository = nomineeRepository;
@@ -45,6 +49,7 @@ public class FDAccountService {
         this.accountNumberGenerator = accountNumberGenerator;
         this.fdTransactionService = fdTransactionService;
         this.createdPublisher = createdPublisher;
+        this.authServiceClient = authServiceClient;
     }
 
     private com.example.fdmodule.clock.BusinessClock clock;
@@ -100,17 +105,68 @@ public class FDAccountService {
 
     @Transactional
     public FDApplicationResponse applyForFD(FDApplicationRequest request, String username) {
-        // For now, use username as customer_id directly
-        // In production, this should be resolved via a proper user-customer mapping
-        String customerId = username;
-
-        // Check if customer profile exists, if not create a basic one
-        if (!customerRepository.existsById(customerId)) {
+        // Generate a proper customer_id (CUST + sequential number)
+        // First, try to find existing customer profile by user_id with retry for timing issues
+        Long userId = null;
+        java.util.Optional<CustomerProfile> existingProfileOpt = java.util.Optional.empty();
+        
+        // Retry mechanism for auth service call (handles timing issues during OTP signup)
+        for (int attempt = 0; attempt < 3; attempt++) {
+            userId = authServiceClient.getUserIdByUsername(username);
+            if (userId != null) {
+                break;
+            }
+            if (attempt < 2) {
+                try {
+                    Thread.sleep(500); // Wait 500ms before retry
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
+        }
+        
+        if (userId == null) {
+            System.err.println("CRITICAL ERROR: Could not fetch user_id from auth service for username: " + username + " after 3 retries. Cannot proceed with FD application.");
+            throw new IllegalStateException("User authentication failed. Please try logging out and back in.");
+        }
+        
+        existingProfileOpt = customerRepository.findByUserId(userId);
+        
+        String customerId;
+        CustomerProfile profile;
+        
+        if (existingProfileOpt.isPresent()) {
+            // Use existing customer profile
+            CustomerProfile existingProfile = existingProfileOpt.get();
+            customerId = existingProfile.getCustomerId();
+            profile = existingProfile;
+            // Update profile with latest info
+            profile.setFullName(request.getApplicantFullName());
+            profile.setPhone(request.getApplicantPhone());
+            customerRepository.save(profile);
+        } else {
+            // Create new customer profile with generated customer_id
+            String maxCustomerId = customerRepository.findMaxCustomerId();
+            int nextNum = 1;
+            if (maxCustomerId != null && maxCustomerId.startsWith("CUST")) {
+                try {
+                    nextNum = Integer.parseInt(maxCustomerId.substring(4)) + 1;
+                } catch (NumberFormatException e) {
+                    nextNum = 1;
+                }
+            }
+            customerId = String.format("CUST%06d", nextNum);
+            
             CustomerProfile newProfile = new CustomerProfile();
             newProfile.setCustomerId(customerId);
+            newProfile.setUserId(userId); // userId is guaranteed non-null here
             newProfile.setFullName(request.getApplicantFullName());
             newProfile.setPhone(request.getApplicantPhone());
-            customerRepository.save(newProfile);
+            newProfile.setCategory("GENERAL");
+            profile = customerRepository.save(newProfile);
+            
+            System.out.println("Created new customer profile: customerId=" + customerId + ", userId=" + userId + ", username=" + username);
         }
 
         int termMonthsInt = Integer.parseInt(request.getTermMonths());
@@ -186,6 +242,7 @@ public class FDAccountService {
         }
 
         FixedDepositAccount saved = fdRepository.save(fd);
+        if (createdPublisher != null) createdPublisher.publishStatus(saved, username);
 
         return new FDApplicationResponse(
                 saved.getFdAccountNo(), saved.getCustomerId(), saved.getProductCode(),
@@ -230,6 +287,7 @@ public class FDAccountService {
             fd.setStatus("REJECTED");
             fd.setApprovalStatus("REJECTED");
             fd.setRejectionReason(request.getRejectionReason());
+            if (createdPublisher != null) createdPublisher.publishStatus(fd, approvedBy);
         } else {
             throw new IllegalArgumentException("Invalid action. Must be APPROVE or REJECT");
         }
@@ -244,9 +302,50 @@ public class FDAccountService {
 
     @Transactional(readOnly = true)
     public List<FixedDepositAccount> getCustomerApplications(String username) {
-        // For now, use username as customer_id directly
-        String customerId = username;
-        return fdRepository.findByCustomerId(customerId);
+        // Get user_id from auth-service with retry - NO FALLBACK to username
+        Long userId = null;
+        for (int attempt = 0; attempt < 3; attempt++) {
+            userId = authServiceClient.getUserIdByUsername(username);
+            if (userId != null) break;
+            if (attempt < 2) {
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
+        }
+        
+        System.out.println("getCustomerApplications - username: " + username + ", userId from auth: " + userId);
+
+        if (userId == null) {
+            System.err.println("CRITICAL: User ID not found in auth-service for username: " + username + ". User session is invalid.");
+            throw new IllegalStateException("User session invalid. Please log out and log in again. User ID synchronization failed.");
+        }
+
+        // Look up customerId from CustomerProfile using user_id
+        Optional<CustomerProfile> profileOpt = customerRepository.findByUserId(userId);
+        if (profileOpt.isEmpty()) {
+            System.err.println("getCustomerApplications - no profile found for userId: " + userId);
+            // This is OK for new users who haven't applied for FD yet
+            return List.of();
+        }
+
+        String customerId = profileOpt.get().getCustomerId();
+        System.out.println("getCustomerApplications - found customerId: " + customerId);
+        List<FixedDepositAccount> accounts = fdRepository.findByCustomerId(customerId);
+        System.out.println("getCustomerApplications - found " + accounts.size() + " accounts for customerId: " + customerId);
+        
+        // Additional safety check: verify all accounts belong to this customer
+        for (FixedDepositAccount account : accounts) {
+            if (!customerId.equals(account.getCustomerId())) {
+                System.err.println("SECURITY WARNING: Account " + account.getFdAccountNo() + 
+                    " has customerId " + account.getCustomerId() + " but expected " + customerId);
+            }
+        }
+        
+        return accounts;
     }
 
     @Transactional(readOnly = true)
@@ -262,17 +361,42 @@ public class FDAccountService {
 
     @Transactional
     public BundleApplicationResponse applyForBundle(BundleApplicationRequest request, String username) {
-        String customerId = username;
+        // Get user_id from auth-service - NO FALLBACK to username
+        Long userId = authServiceClient.getUserIdByUsername(username);
+        if (userId == null) {
+            System.err.println("CRITICAL: User ID not found in auth-service for username: " + username + ". User session is invalid.");
+            throw new IllegalStateException("User session invalid. Please log out and log in again. User ID synchronization failed.");
+        }
 
-        // Check if customer profile exists, if not create a basic one
-        if (!customerRepository.existsById(customerId)) {
+        // Look up customerId from CustomerProfile using user_id
+        Optional<CustomerProfile> profileOpt = customerRepository.findByUserId(userId);
+        String customerId;
+        
+        if (profileOpt.isPresent()) {
+            customerId = profileOpt.get().getCustomerId();
+        } else {
+            // Create new customer profile with generated customer_id
+            String maxCustomerId = customerRepository.findMaxCustomerId();
+            int nextNum = 1;
+            if (maxCustomerId != null && maxCustomerId.startsWith("CUST")) {
+                try {
+                    nextNum = Integer.parseInt(maxCustomerId.substring(4)) + 1;
+                } catch (NumberFormatException e) {
+                    nextNum = 1;
+                }
+            }
+            customerId = String.format("CUST%06d", nextNum);
+            
             CustomerProfile newProfile = new CustomerProfile();
             newProfile.setCustomerId(customerId);
+            newProfile.setUserId(userId);
             newProfile.setFullName(request.getFdItems().get(0).getApplicantFirstName() + " " +
                                    request.getFdItems().get(0).getApplicantLastName());
             newProfile.setPhone(request.getFdItems().get(0).getApplicantPhone());
-            newProfile.setCategory("GENERAL"); // Set default category
+            newProfile.setCategory("GENERAL");
             customerRepository.save(newProfile);
+            
+            System.out.println("Created customer profile for bundle: customerId=" + customerId + ", userId=" + userId);
         }
 
         // Generate bundle ID
@@ -359,6 +483,8 @@ public class FDAccountService {
 
             fdRepository.saveAndFlush(fd);
 
+            if (createdPublisher != null) createdPublisher.publishStatus(fd, username);
+
             // Create bundle item record
             BundleItem bundleItem = new BundleItem();
             bundleItem.setBundleId(bundleId);
@@ -444,6 +570,7 @@ public class FDAccountService {
                 fd.setStatus("REJECTED");
                 fd.setApprovalStatus("REJECTED");
                 fd.setRejectionReason(rejectionReason);
+                if (createdPublisher != null) createdPublisher.publishStatus(fd, approvedBy);
             }
 
             fdRepository.save(fd);
@@ -457,7 +584,40 @@ public class FDAccountService {
 
     @Transactional(readOnly = true)
     public List<BundleApplication> getCustomerBundles(String username) {
-        String customerId = username;
-        return bundleApplicationRepository.findByCustomerId(customerId);
+        // Get user_id from auth-service - NO FALLBACK
+        Long userId = authServiceClient.getUserIdByUsername(username);
+        if (userId == null) {
+            System.err.println("CRITICAL: User ID not found in auth-service for username: " + username + ". User session is invalid.");
+            throw new IllegalStateException("User session invalid. Please log out and log in again. User ID synchronization failed.");
+        }
+
+        // Look up customerId from CustomerProfile using user_id
+        Optional<CustomerProfile> profileOpt = customerRepository.findByUserId(userId);
+        if (profileOpt.isEmpty()) {
+            // This is OK for new users who haven't applied for bundles yet
+            return List.of();
+        }
+
+        return bundleApplicationRepository.findByCustomerId(profileOpt.get().getCustomerId());
+    }
+
+    @Transactional
+    public void withdrawApplication(String fdAccountNo, String username) {
+        FixedDepositAccount fd = fdRepository.findById(fdAccountNo)
+                .orElseThrow(() -> new IllegalArgumentException("FD account not found: " + fdAccountNo));
+
+        if (!username.equals(fd.getCustomerId())) {
+            throw new IllegalArgumentException("You can only withdraw your own applications");
+        }
+
+        if (!"PENDING".equals(fd.getStatus()) && !"PENDING_APPROVAL".equals(fd.getApprovalStatus())) {
+            throw new IllegalArgumentException("Only pending applications can be withdrawn");
+        }
+
+        fd.setStatus("REJECTED");
+        fd.setApprovalStatus("REJECTED");
+        fd.setRejectionReason("Withdrawn by customer");
+        if (createdPublisher != null) createdPublisher.publishStatus(fd, username);
+        fdRepository.save(fd);
     }
 }

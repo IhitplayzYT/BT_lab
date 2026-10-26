@@ -25,4 +25,7 @@ public interface FDTransactionRepository extends Repository<FDTransaction, Long>
     Optional<FDTransaction> findFirstByFdAccountNoAndTxnTypeOrderByTxnIdAsc(String fdAccountNo, String txnType);
 
     long countByFdAccountNo(String fdAccountNo);
+
+    /** Get all transactions for journal view (read-only) */
+    List<FDTransaction> findAllByOrderByTxnTimestampAscTxnIdAsc();
 }

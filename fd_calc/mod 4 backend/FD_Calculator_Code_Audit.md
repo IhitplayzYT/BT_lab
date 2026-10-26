@@ -17,17 +17,19 @@ The FD Calculator Service is a simulation-only Fixed Deposit maturity estimation
 ## Architecture Overview
 
 ### Service Communication
+
+```text
+Angular → Calculator :8084 → Product :8080
+                          → Account customer-category API :8086
+Angular → Auth_Sec :8090 (token issuance)
 ```
-Angular UI → API Gateway → FD Calculator (8084)
-                            ↓
-                    Product Service (8080)
-                    Customer Service (8082)
-```
+
+This report was originally generated on 2026-10-14; deployment/security corrections reflect the current source. It is a descriptive code review, not a new test run. No gateway is deployed in root Compose.
 
 ### Key Integrations
 - **Product Service:** Fetches product configuration and rates via REST
 - **Customer Service:** Fetches customer categories via REST
-- **Kafka:** Batch calculation logging and audit events
+- **Kafka:** Configuration scaffolding; batch publication is not implemented
 - **MySQL:** Calculation audit persistence
 
 ---
@@ -39,18 +41,18 @@ Angular UI → API Gateway → FD Calculator (8084)
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | GET | /actuator/health | None | Health check |
-| GET | /actuator/metrics | None | Metrics endpoint |
-| GET | /actuator/prometheus | None | Prometheus metrics |
+| GET | /actuator/metrics | Authenticated | Metrics endpoint |
+| GET | /actuator/prometheus | Authenticated | Prometheus metrics |
 | GET | /swagger-ui/index.html | None | API documentation |
-| GET | /api/v1/fd/products/{code}/preview | CUSTOMER | Product constraints |
-| POST | /api/v1/fd/calculations | CUSTOMER | Calculate maturity |
-| POST | /api/v1/fd/calculations/compare | CUSTOMER | Compare products |
-| GET | /api/v1/fd/calculations/{id} | CUSTOMER | Retrieve calculation |
-| GET | /api/v1/fd/calculations/uuid/{uuid} | CUSTOMER | Retrieve by UUID |
-| POST | /api/v1/fd/cache/rates/evict | CUSTOMER | Evict cached rates |
-| GET | /api/v1/fd/calculations/{id}/export | CUSTOMER | Export as CSV |
-| POST | /api/v1/fd/calculations/{id}/explain | CUSTOMER | Plain-language explanation |
-| POST | /api/v1/fd/batch/calculations | CUSTOMER | Batch calculations |
+| GET | /api/v1/fd/products/{code}/preview | CUSTOMER / BANK_OFFICER / ADMIN | Product constraints |
+| POST | /api/v1/fd/calculations | CUSTOMER / BANK_OFFICER / ADMIN | Calculate maturity |
+| POST | /api/v1/fd/calculations/compare | CUSTOMER / BANK_OFFICER / ADMIN | Compare products |
+| GET | /api/v1/fd/calculations/{id} | CUSTOMER / BANK_OFFICER / ADMIN | Retrieve calculation |
+| GET | /api/v1/fd/calculations/uuid/{uuid} | CUSTOMER / BANK_OFFICER / ADMIN | Retrieve by UUID |
+| POST | /api/v1/fd/cache/rates/evict | CUSTOMER / BANK_OFFICER / ADMIN | Evict cached rates |
+| GET | /api/v1/fd/calculations/{id}/export | CUSTOMER / BANK_OFFICER / ADMIN | Export as CSV |
+| POST | /api/v1/fd/calculations/{id}/explain | CUSTOMER / BANK_OFFICER / ADMIN | Plain-language explanation |
+| POST | /api/v1/fd/batch/calculations | CUSTOMER / BANK_OFFICER / ADMIN | Batch calculations |
 
 ---
 
@@ -60,16 +62,16 @@ Angular UI → API Gateway → FD Calculator (8084)
 - `DB_URL` - Database connection URL
 - `DB_USER` - Database username
 - `DB_PASSWORD` - Database password
-- `JWT_SECRET` - JWT secret key (dev only)
-- `JWT_ISSUER_URI` - JWT issuer URI (default: http://localhost:8081)
-- `PRODUCT_SERVICE_URL` - Product Service URL (default: http://localhost:8083)
-- `CUSTOMER_SERVICE_URL` - Customer Service URL (default: http://localhost:8082)
+- `JWT_SECRET` - Shared HS256 signing/validation secret
+- `JWT_ISSUER` - Validated issuer (root stack: fd-platform-auth; standalone calculator default differs)
+- `PRODUCT_SERVICE_URL` - Root/prod Product URL (root stack: http://product-service:8080); dev overrides its mock-client URL
+- `CUSTOMER_SERVICE_URL` - Root stack: http://fd-account-service:8086; standalone defaults differ
 - `KAFKA_BOOTSTRAP_SERVERS` - Kafka bootstrap servers (default: localhost:9092)
 - `SERVER_PORT` - Server port (default: 8084)
 
 ### Standardized Configuration
 - Profile-based configuration (dev, prod)
-- JPA ddl-auto: validate (prod), update (dev)
+- JPA ddl-auto: validate (prod), update (dev; MySQL, not H2)
 - Actuator endpoints: health, info, metrics, prometheus
 - Structured JSON logging with correlation IDs
 - Cache configuration for product rates
@@ -82,11 +84,11 @@ Angular UI → API Gateway → FD Calculator (8084)
 ### Authentication
 - OAuth2 Resource Server
 - JWT validation
-- HMAC-256 (dev) or JWKS (prod)
+- HS256 through the shared security library in both profiles
 
 ### Authorization
 - Role-based access control
-- CUSTOMER role required for all endpoints
+- CUSTOMER, BANK_OFFICER or ADMIN may access `/api/v1/fd/**`; health/info/docs are public
 - Method-level security with @PreAuthorize
 
 ### CORS
@@ -114,6 +116,8 @@ Angular UI → API Gateway → FD Calculator (8084)
   - fd.cache.misses - Cache misses
 
 ### Kafka Integration
+
+Topic names/configuration exist, but batchCalculate only logs results; Kafka publishing is a placeholder. Do not interpret this list as evidence of emitted messages.
 - Topics:
   - fd-calculator-batch-calculations - Batch calculation results
   - fd-calculator-audit-logs - Audit log events
@@ -125,7 +129,7 @@ Angular UI → API Gateway → FD Calculator (8084)
 
 ### CalculationAudit Entity
 - Table: fd_calculation_audit
-- Primary Key: id (String with CALC- prefix)
+- Primary Key: id (UUID string); calculationId is a separate CALC- business identifier
 - Persistent UUID: uuid (String)
 - Customer: customerId (String)
 - Product: productCode (String)
@@ -185,10 +189,10 @@ Angular UI → API Gateway → FD Calculator (8084)
 
 ### Enums
 - PayoutMode: CUMULATIVE, PERIODIC
-- InterestType: SIMPLE, COMPOUND
-- CompoundingFrequency: DAILY, MONTHLY, QUARTERLY, YEARLY
-- TermUnit: DAYS, MONTHS, YEARS
-- CustomerCategory: GENERAL, SENIOR_CITIZEN, EMPLOYEE, CORPORATE
+- InterestType: SIMPLE, COMPOUND, CREDIT
+- CompoundingFrequency: MONTHLY, QUARTERLY, HALF_YEARLY, YEARLY
+- TermUnit: MONTHS, YEARS
+- CustomerCategory: SENIOR_CITIZEN, EMPLOYEE, PREMIUM
 
 ---
 
@@ -241,7 +245,8 @@ mvn clean package
 ### Run
 ```bash
 docker build -t fd-calculator .
-docker run -p 8084:8084 fd-calculator
+# Use root Compose, which supplies database, JWT and dependency settings:
+# docker compose up -d --build fd-calculator
 ```
 
 ---
@@ -272,14 +277,14 @@ mvn verify
 - Fallback: Mock client (dev)
 
 ### Customer Service
-- Endpoint: /customers/{customerId}/category
+- Endpoint: /internal/customers/{username}/categories
 - Purpose: Fetch customer category
 - Cached: No
 - Fallback: Mock client (dev)
 
 ### Kafka
 - Topics: fd-calculator-batch-calculations, fd-calculator-audit-logs
-- Purpose: Batch processing and logging
+- Purpose: Planned batch-result/audit publication; current batch path only logs locally
 
 ---
 

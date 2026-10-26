@@ -1,0 +1,476 @@
+/* Customer dashboard, admin console, officer desk, product management */
+
+.dashboard,
+.officer-panel,
+.admin-panel {
+  position: relative;
+  min-height: 100vh;
+}
+.dashboard {
+  padding: clamp(1.5rem, 3vw, 2.5rem) 0 6rem;
+}
+.panel-header {
+  margin-bottom: 0.5rem;
+}
+
+/* ---- Page header ------------------------------------------------------- */
+.dashboard-header,
+.header-content {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin-bottom: 2.2rem;
+}
+.dashboard-header h1,
+.header-content h1 {
+  font-size: clamp(2.3rem, 4.6vw, 4rem);
+  margin-bottom: 0.35rem;
+  background: linear-gradient(100deg, var(--gold-hi), var(--gold) 45%, var(--gold-lo) 70%, var(--gold-hi));
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gold-sheen 9s ease-in-out infinite alternate;
+}
+.header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+/* ---- Dashboard cards --------------------------------------------------- */
+.package-card,
+.product-card,
+.contract-card,
+.distribution-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+.package-card,
+.pricing-card {
+  overflow: hidden;
+}
+.package-card .package-badge {
+  position: absolute;
+  top: 1.2rem;
+  right: 1.2rem;
+  z-index: 2;
+}
+.package-card h3,
+.product-card h3 {
+  padding-right: 5.5rem;
+}
+.product-card h3 {
+  padding-right: 0;
+}
+.package-description {
+  font-size: 0.92rem;
+}
+.product-code {
+  display: inline-block;
+  width: fit-content;
+  padding: 0.2rem 0.7rem;
+  border-radius: var(--r-pill);
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--gold);
+  background: color-mix(in srgb, var(--gold) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--gold) 35%, transparent);
+}
+.package-details,
+.product-details,
+.contract-details {
+  display: flex;
+  flex-direction: column;
+}
+.package-products h4 {
+  margin: 0.4rem 0 0.6rem;
+  color: var(--text-3);
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+}
+.mini-product {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.8rem;
+  padding: 0.55rem 0.85rem;
+  margin-bottom: 0.4rem;
+  border-radius: var(--r-sm);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-2);
+  background: color-mix(in srgb, var(--text) 5%, transparent);
+  border: 1px solid var(--line);
+  transition: transform 0.4s var(--ease-out), border-color 0.3s;
+}
+.mini-product:hover {
+  transform: translateX(5px);
+  border-color: var(--gold);
+}
+.package-card > .btn,
+.product-card > .btn,
+.pricing-card > .btn,
+.application-card .card-footer .btn {
+  margin-top: auto;
+  width: 100%;
+}
+
+.contract-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.9rem;
+  border-bottom: 1px solid var(--line);
+}
+.contract-id {
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: var(--gold);
+  font-variant-numeric: tabular-nums;
+}
+.contract-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: auto;
+  padding-top: 0.6rem;
+}
+.contracts-summary {
+  margin-bottom: 1.5rem;
+}
+.summary-stats .stat .value {
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 2.8vw, 2.4rem);
+  text-align: left;
+  line-height: 1.1;
+}
+.summary-stats .stat .label {
+  font-size: 0.8rem;
+}
+
+.export-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 1.6rem 1.2rem;
+  text-align: center;
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--text) 4%, transparent);
+  border: 1px solid var(--line);
+  transition: transform 0.6s var(--ease-out), border-color 0.3s;
+}
+.export-option:hover {
+  border-color: var(--gold);
+}
+.export-icon {
+  display: grid;
+  place-items: center;
+  width: 4.2rem;
+  height: 4.2rem;
+  border-radius: 20px;
+  color: var(--gold);
+  background: linear-gradient(145deg, color-mix(in srgb, var(--gold) 24%, transparent), color-mix(in srgb, var(--violet) 16%, transparent));
+  border: 1px solid color-mix(in srgb, var(--gold) 40%, transparent);
+  transition: transform 0.6s var(--ease-spring);
+}
+.export-icon svg {
+  width: 1.9rem;
+  height: 1.9rem;
+}
+.export-option:hover .export-icon {
+  transform: translateY(-6px) rotate(-6deg) scale(1.08);
+}
+.export-info {
+  margin-top: 1.25rem;
+}
+.info-list,
+.help-list {
+  list-style: none;
+  display: grid;
+  gap: 0.6rem;
+  margin-top: 0.8rem;
+}
+.info-list li,
+.help-list li {
+  position: relative;
+  padding-left: 1.7rem;
+  color: var(--text-2);
+}
+.info-list li::before,
+.help-list li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.55em;
+  width: 0.8rem;
+  height: 0.45rem;
+  border-left: 2px solid var(--gold);
+  border-bottom: 2px solid var(--gold);
+  rotate: -45deg;
+}
+
+.settings-section h2 {
+  margin-bottom: 0.5rem;
+}
+.settings-form {
+  margin-top: 1.5rem;
+}
+.help-section {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+.help-card h3 {
+  margin-bottom: 0.9rem;
+}
+.contact-details {
+  display: grid;
+  gap: 0.4rem;
+}
+.contact-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.55rem 0;
+  border-bottom: 1px dashed var(--line);
+}
+
+/* ---- Admin + officer --------------------------------------------------- */
+:is(.user-management-section, .officer-management-section, .visualizations-section, .reports-section, .applications-section, .distribution-section, .bundles-section) {
+  margin-bottom: clamp(2.5rem, 5vw, 4rem);
+}
+:is(.user-management-section, .officer-management-section, .visualizations-section, .reports-section, .applications-section, .distribution-section, .bundles-section) > h2,
+.section-title {
+  font-size: clamp(1.9rem, 3vw, 2.6rem);
+  margin-bottom: 1.4rem;
+}
+.section-note {
+  margin: -0.8rem 0 1.5rem;
+  font-size: 0.95rem;
+}
+.section-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  margin-bottom: 1.4rem;
+}
+.reports-category {
+  margin-bottom: 2.2rem;
+}
+.reports-category h3 {
+  margin-bottom: 1.1rem;
+}
+.report-card {
+  cursor: pointer;
+}
+.report-card .card-value {
+  font-size: 1.7rem;
+}
+
+.filter-controls {
+  margin-bottom: 1.4rem;
+  padding-block: 1.3rem 0.4rem;
+}
+.filter-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 0 1.2rem;
+  align-items: end;
+}
+.filter-group {
+  margin-bottom: 0.9rem;
+}
+.filter-info {
+  margin-top: 0.4rem;
+  padding-bottom: 0.9rem;
+  font-size: 0.85rem;
+  color: var(--text-3);
+}
+
+.metrics-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem;
+  margin-top: 1.2rem;
+}
+.metric-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.metric-value {
+  font-family: var(--font-display);
+  font-size: 1.9rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+.metric-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-3);
+}
+
+.chart-card h3 {
+  margin-bottom: 1.2rem;
+}
+.simple-bar-chart {
+  display: grid;
+  gap: 1rem;
+}
+.bar-item {
+  display: grid;
+  grid-template-columns: 5.5rem 1fr 3.5rem;
+  align-items: center;
+  gap: 1rem;
+}
+.bar-label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-2);
+}
+.bar-value {
+  font-weight: 800;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.distribution-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.product-name {
+  font-weight: 700;
+}
+.product-count {
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--gold);
+}
+.product-percentage {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-3);
+}
+
+/* Officer cards */
+.application-card,
+.bundle-card {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  cursor: pointer;
+}
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.8rem;
+  border-bottom: 1px solid var(--line);
+}
+.app-id,
+.bundle-id {
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: var(--gold);
+}
+.app-date,
+.bundle-date {
+  font-size: 0.8rem;
+  color: var(--text-3);
+}
+.card-body {
+  flex: 1;
+}
+.card-body h3 {
+  font-size: 1.6rem;
+  margin-bottom: 0.6rem;
+}
+.bundle-description {
+  font-size: 0.9rem;
+}
+.review-modal {
+  max-width: 820px;
+}
+.review-details,
+.applicant-section,
+.rejection-section {
+  display: grid;
+  gap: 0.2rem;
+  margin-bottom: 1.2rem;
+}
+.rejection-section textarea {
+  margin-top: 0.4rem;
+}
+
+/* ---- Product management ------------------------------------------------ */
+.product-management-container {
+  animation: rise-in 0.6s var(--ease-out);
+}
+.product-management-container > .header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.6rem;
+}
+.product-management-container > .header h2 {
+  font-size: clamp(1.9rem, 3vw, 2.6rem);
+}
+.product-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.product-header h3 {
+  font-size: 1.5rem;
+}
+.product-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: auto;
+}
+.form-container {
+  width: 100%;
+  max-width: 820px;
+  margin: auto;
+  padding: clamp(1.4rem, 3vw, 2.2rem);
+  border-radius: var(--r-lg);
+  background: var(--card-solid);
+  border: 1px solid var(--line-2);
+  box-shadow: var(--shadow-2), 0 60px 120px -30px rgba(0, 0, 0, 0.6);
+  animation: modal-in 0.6s var(--ease-spring);
+}
+.form-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.form-header h3 {
+  font-size: 2rem;
+}
+
+@media (max-width: 720px) {
+  .bar-item {
+    grid-template-columns: 4.2rem 1fr 2.6rem;
+    gap: 0.6rem;
+  }
+  .dashboard-header,
+  .header-content {
+    align-items: flex-start;
+  }
+}

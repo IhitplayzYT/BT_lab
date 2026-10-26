@@ -1,97 +1,30 @@
-> Parth L14/L17 handover: this module now belongs to the root Maven reactor. Follow the project root README for builds and service startup. The historical standalone instructions below describe the earlier module.
+# FD Account Service
 
-# Banking Technology Lab — FD Module L12 + L13
+Java 21 / Spring Boot 3.3.4 service on **8086**, backed by `banking_technology_lab`. Implements L12–L21 account creation/application approval, initial deposits, ledger, interest, maturity, withdrawal, reports and time travel.
 
-This is a standalone Spring Boot implementation of the Fixed Deposit Module setup and account-creation flow.
+Use the [backend guide](backend.md) for classes and behavior, [API contracts](../docs/API_CONTRACTS.md) for roles, and the [root usage guide](../../usage.md#building-jars) for build/startup. Install Auth_Sec/security-common first, then build the Group 9 reactor. Root Compose supplies MySQL, Kafka, product/calculator URLs and JWT settings.
 
-## Stack
-- Java 25
-- Spring Boot 4.1.1
-- Spring Web
-- Spring Data JPA / Hibernate
-- MySQL
-- Spring Security (HTTP Basic for standalone testing)
+## Account creation example
 
-## Important
-The lab manual uses JWT in the earlier authentication labs. This standalone project uses HTTP Basic only so that L12/L13 can be run independently in Postman. When you integrate it into your existing L1-L4/L9-L10 project, replace the standalone `SecurityConfig` with your existing JWT security configuration.
+Obtain a BANK_OFFICER token from Auth_Sec on port 8090. Use a product code from the Product service and an existing customer profile:
 
-## Run
-1. Create the MySQL database/tables using `sql/l12_l13_setup.sql`.
-2. Open `src/main/resources/application.properties` and set your MySQL username/password.
-3. From this folder run:
-   `mvn spring-boot:run`
-4. The application runs on port 8080.
-
-## Postman
-### Health
-GET `http://localhost:8080/health`
-No authentication.
-
-### Create FD account
-POST `http://localhost:8080/api/fd/account/create`
-Authorization: Basic Auth
-- Username: `officer1`
-- Password: `officer123`
-
-Body → raw → JSON:
-```json
-{
-  "customerId": "CUST001",
-  "productCode": "FDSTD",
-  "principalAmount": 200000,
-  "termMonths": 12,
-  "branchCode": "BR001"
-}
+```bash
+curl -X POST http://localhost:8086/api/fd/account/create-with-txn \
+  -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{"customerId":"CUST001","productCode":"FD001","principalAmount":200000,"termMonths":12,"branchCode":"BR001"}'
 ```
 
-### Get created FD
-GET `http://localhost:8080/api/fd/account/{fdAccountNo}`
-Use Basic Auth with `officer1/officer123`.
+The response includes `fdAccountNo`, `initialTransactionId`, `message`, and `transactionHistoryUrl`. Use the returned account number for `GET /api/fd/account/{fdAccountNo}/transactions`.
 
-### Test authorization
-Try POST create with:
-- `customer1 / customer123` → should return 403
-- `officer1 / officer123` → should succeed
-- `admin1 / admin123` → should succeed
+`/create-with-txn` requires BANK_OFFICER. `/create` allows BANK_OFFICER or ADMIN and now also records the initial deposit. Customers apply through `/apply`, then staff approve/reject through `/approve`. Customer detail/history access is ownership-checked.
 
-## Account number
-The generator follows the lab's idea of:
-`branch + 6-digit sequence + 1-digit checksum`
-Example: `BR0010000015`.
+## Database and accounting
 
-## L13 flow implemented
-Angular/Postman → POST API → Spring Controller → role check → customer validation → product/term/deposit validation → rate determination → account number generation → `fd_accounts` insert → response.
+Root Compose initializes base, transaction, interest, clock/contact and historical-backfill SQL on an empty database volume. Existing databases require applicable migrations in [sql/](sql/); `ddl-auto=validate` does not create missing account tables. Product data is retrieved over HTTP; do not rely on the legacy local `FDSTD` seed for integrated product validation.
 
----
+A transaction row carries debit and credit GL codes for a balanced entry. The unique deposit guard prevents multiple initial deposits per FD; it does not make repeated account-creation requests idempotent. Account numbers use a branch prefix, sequence and checksum, generated in memory with collision checks.
 
-## Lab 16 — Initial deposit transaction logging + GL (Anirudh Syam Menon)
+## Historical handover
 
-Adds the `fd_transactions` ledger, atomic FD creation with an initial `DEPOSIT`, double-entry GL
-codes, and a transaction-history endpoint. The L12/L13 code is unchanged. Full details:
-[`docs/LAB16_HANDOVER.md`](docs/LAB16_HANDOVER.md).
-
-### Database (run once)
-1. Put your MySQL username/password in `src/main/resources/application.properties` (marked block).
-2. In MySQL Workbench open and execute, in this order:
-   - `sql/l12_l13_setup.sql`: base tables + test data (CUST001, FDSTD)
-   - `sql/l16_fd_transactions.sql`: Lab 16 ledger table
-
-Required because `ddl-auto=validate`: the app will not start without the tables.
-
-### Create FD with initial deposit (Lab Manual L16)
-POST `http://localhost:8080/api/fd/account/create-with-txn` — Basic Auth `officer1 / officer123`
-(BANK_OFFICER only). Same body as `/create`. Response:
-```json
-{
-  "fdAccountNo": "BR0010000015",
-  "initialTransactionId": 1,
-  "message": "Account and initial deposit created.",
-  "transactionHistoryUrl": "/api/fd/account/BR0010000015/transactions"
-}
-```
-
-### Transaction history
-GET `http://localhost:8080/api/fd/account/{fdAccountNo}/transactions` (BANK_OFFICER, ADMIN, CUSTOMER).
-
-### Tests
-`mvn test` (uses in-memory H2; no MySQL needed).
+[Lab 16 handover](docs/LAB16_HANDOVER.md) preserves the original delivery snapshot. Its old Java versions, test counts, Basic-auth examples and statements that account creation lacked ledger/ownership support are historical, not current behavior.

@@ -1,7 +1,7 @@
 # Comprehensive Guide: Banking Product & Pricing Backend Module
 
 **Academic / Enterprise Context**: Derived from Banking Lab L5 (Product & Pricing APIs), Lab L9 (Login/JWT Integration), and Lab L13 (FD Account Creation Integration).  
-**Technology Stack**: Java 21, Spring Boot 3.3.2, Spring Security 6.3, JJWT 0.12.6, Spring Data JPA, Hibernate, MySQL, H2 Database, Springdoc OpenAPI 3.0, Spring Boot Actuator.  
+**Technology Stack**: Java 21, Spring Boot 3.3.4, Spring Security 6.3, JJWT 0.12.6, Spring Data JPA, Hibernate, MySQL, H2 Database, Springdoc OpenAPI 3.0, Spring Boot Actuator.  
 **Scope**: Backend Architecture, REST API Design, Business Rules Enforcement, Security, and Module Integration.
 
 ---
@@ -57,7 +57,7 @@ The module adheres to a clean, layered, hexagonal-inspired architecture:
    - Intercepts all incoming requests before they reach the controller.
    - Extracts and verifies the JSON Web Token (JWT).
    - Establishes a stateless `SecurityContext` with granted authorities (`ROLE_ADMIN`, `ROLE_BANK_OFFICER`).
-   - Returns RFC 7807–compliant JSON error payloads on authentication failure (`401`) or unauthorized access (`403`).
+   - Returns HTTP error responses on authentication failure (`401`) or unauthorized access (`403`).
 
 2. **Controller Layer (`com.bank.product.controller`)**:
    - Exposes RESTful endpoints conforming to HTTP standards.
@@ -86,12 +86,12 @@ The database schema is normalized to accommodate 1-to-many relationships for rul
 
 | Table Name | Primary Key | Foreign Key | Purpose |
 |---|---|---|---|
-| `products` | `productId` (INT) | None | Core product definition, limits, dates, status, interest type, and audit columns |
-| `productBusinessRules` | `ruleId` (INT) | `productId` → `products` | Term limits (`minTerm`, `maxTerm`) and interest rate bounds (`rateLimitMin`, `rateLimitMax`) |
-| `productCharges` | `chargeId` (INT) | `productId` → `products` | Fees and charges (interest credit, tax deduction, withdrawal fees, fee types) |
-| `productRoles` | `roleId` (INT) | `productId` → `products` | Permissible account holder roles (Owner, Co-owner, Nominee) |
-| `product_rate_variations` | Composite | `productId` → `products` | Rate bonuses by customer category (`SENIOR_CITIZEN`, `EMPLOYEE`, `CORPORATE`) |
-| `fd_calculations` | `id` (BIGINT) | None | Audit log of computed maturity calculations |
+| `products` | `product_id` (INT) | None | Core product definition, limits, dates, status, interest type, and audit columns |
+| `product_business_rules` | `rule_id` (INT) | `product_id` → `products` | Term limits (`minTerm`, `maxTerm`) and interest rate bounds (`rateLimitMin`, `rateLimitMax`) |
+| `product_charges` | `charge_id` (INT) | `product_id` → `products` | Fees and charges (interest credit, tax deduction, withdrawal fees, fee types) |
+| `product_roles` | `role_id` (INT) | `product_id` → `products` | Permissible account holder roles (Owner, Co-owner, Nominee) |
+| `product_rate_variations` | No declared primary key in schema.sql | `product_id` → `products` | Rate bonuses by customer category (`SENIOR_CITIZEN`, `EMPLOYEE`, `CORPORATE`) |
+| `fd_calculations` | `calculation_id` (BIGINT) | None | Audit log of computed maturity calculations |
 
 ### Key Entity Columns in `products`
 - `productCode`: Unique natural business key (e.g. `FD001`, `SAV001`, `LN001`). Indexed with a unique constraint.
@@ -125,27 +125,14 @@ To satisfy regulatory compliance and core banking audit traceability, the persis
 ## 4. Security & Role-Based Authorization (Lab L9)
 
 ### 4.1 Stateless Authentication
-The backend does not maintain server-side HTTP sessions (`SessionCreationPolicy.STATELESS`). Every HTTP request must supply credentials in the HTTP header:
+The backend does not maintain server-side HTTP sessions (`SessionCreationPolicy.STATELESS`). Protected requests supply credentials in the HTTP header:
 ```http
 Authorization: Bearer <eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...>
 ```
 
 ### 4.2 Role Segregation
 
-- **`ROLE_ADMIN`**:
-  - Full system authority.
-  - Exclusively allowed to **create new products** (`POST /api/product`).
-  - Exclusively allowed to **retire products** (`DELETE /api/product/{code}`).
-  - Can perform all update and read operations.
-- **`ROLE_BANK_OFFICER`**:
-  - Operational authority.
-  - Allowed to **update product parameters** (name, rates) (`PUT /api/product/{code}`).
-  - Allowed to **search and view products** (`GET /api/product/...`).
-  - Allowed to execute **FD Integration APIs** (validate criteria, calculate rates, view defaults).
-  - **Forbidden (`403`)** from creating or retiring products.
-- **`ROLE_CUSTOMER` / Anonymous**:
-  - **Unauthorized (`401`)** if no token is provided.
-  - **Forbidden (`403`)** from administrative and officer endpoints.
+ADMIN and BANK_OFFICER can create, update and retire products. Only ADMIN can permanently delete a product (`DELETE /api/product/{code}/permanent`). CUSTOMER can search, read, validate, calculate rates and read defaults. The active-products endpoint is public. The embedded legacy `/api/fd/**` calculator requires authentication but has no additional controller role restriction. The same product permissions apply to `/api/v1/products` aliases.
 
 ### 4.3 Audit Logging
 When an Admin creates a product or a Bank Officer updates one, `Product.java` intercepts the persistence lifecycle via `@PrePersist` and `@PreUpdate`:
@@ -168,7 +155,7 @@ The service layer rigorously enforces **11 distinct business rules**:
 6. **Interest Type Alignment**: Deposits (`FD`, `SAVINGS`) must have interest type `CREDIT`. Loans must have `DEBIT`. Mismatches are rejected with `400 Bad Request`.
 7. **Minimum Age Eligibility**: Customer age is evaluated against the product's `minAge` requirement.
 8. **Active Status & Effective Date Check**: Accounts can only be created against products that are in `ACTIVE` status and whose current date falls within `[effectiveDate, endDate]`. Violations throw `422 Unprocessable Entity` (`PRODUCT_INACTIVE`).
-9. **Lifecycle Management**: Products are **never hard-deleted** from the database to preserve historical ledger integrity. Deletion transitions the product status to `RETIRED`.
+9. **Lifecycle Management**: Normal DELETE retires a product. The separate ADMIN-only `/permanent` endpoint hard-deletes it.
 10. **Contract Integrity on Updates**: Updates are constrained to prevent breaking existing active accounts (e.g. rate limits remain within valid bounds).
 11. **Account Defaulting**: The system provides canonical defaults (default term, default amount, charges, roles) to ensure consistent account instantiation.
 
@@ -238,7 +225,7 @@ The Fixed Deposit (FD) module integrates with the Product module through four sp
 
 ## 7. Standardized Error Handling
 
-All controller errors are caught by [`GlobalExceptionHandler`](file:///Users/nityakhandelwal/Desktop/BANKINGTECH/src/main/java/com/bank/product/exception/GlobalExceptionHandler.java) and converted to a uniform JSON body:
+Controller business errors are caught by [`GlobalExceptionHandler`](src/main/java/com/bank/product/exception/GlobalExceptionHandler.java) and converted to a uniform JSON body:
 
 ```json
 {
@@ -266,11 +253,11 @@ All controller errors are caught by [`GlobalExceptionHandler`](file:///Users/nit
 
 ## 8. Verification & Test Suite
 
-The module is verified by **44 automated tests** across 5 distinct test suites, achieving a 100% pass rate:
+The following list records historical test coverage; counts and results must be checked against the current test run:
 
 1. **`ProductEndToEndIntegrationTest`** (4 tests):
    - Real Spring Boot application test without mocks.
-   - Tests end-to-end HTTP calls against an in-memory database using real JWT tokens issued by `/api/auth/token`.
+   - Tests end-to-end HTTP calls against an in-memory database using real JWT tokens issued by `http://localhost:8090/api/auth/login`.
    - Verifies the complete lifecycle: Admin creates product → Officer updates → FD module validates → Rate calculates with modifier → Admin retires → Retired product rejected.
 2. **`ProductSecurityTest`** (6 tests):
    - Verifies security filters: 401 on missing token, 403 on invalid role, 403 on role escalation, 201 on Admin creation, 200 on Officer read.
@@ -281,15 +268,14 @@ The module is verified by **44 automated tests** across 5 distinct test suites, 
 5. **`FdCalculatorServiceTest`** (7 tests):
    - Regression suite verifying that FD maturity calculations and compound interest formulas continue functioning seamlessly.
 6. **`OpenApiExportTest`** (1 test):
-   - Boots context and exports [`openapi.json`](file:///Users/nityakhandelwal/Desktop/BANKINGTECH/openapi.json).
+   - Boots context and exports [`openapi.json`](openapi.json).
 
 ---
 
 ## 9. Deliverables & Integration Artifacts
 
-- **Standalone Backend Folder**: [`banking-product-backend/`](file:///Users/nityakhandelwal/Desktop/BANKINGTECH/banking-product-backend)
-- **Standalone Zip Package**: [`banking-product-backend.zip`](file:///Users/nityakhandelwal/Desktop/BANKINGTECH/banking-product-backend.zip) (85 KB)
-- **OpenAPI 3.0 Specification**: [`openapi.json`](file:///Users/nityakhandelwal/Desktop/BANKINGTECH/openapi.json)
-- **Postman Collection**: [`postman_collection.json`](file:///Users/nityakhandelwal/Desktop/BANKINGTECH/postman_collection.json)
-- **Automated Smoke Test Script**: [`smoke_test_endpoints.sh`](file:///Users/nityakhandelwal/Desktop/BANKINGTECH/smoke_test_endpoints.sh)
-- **Database Scripts**: [`schema.sql`](file:///Users/nityakhandelwal/Desktop/BANKINGTECH/src/main/resources/schema.sql) and [`insert_dummy_data.sql`](file:///Users/nityakhandelwal/Desktop/BANKINGTECH/insert_dummy_data.sql)
+- **Backend Folder**: [current directory](.)
+- **OpenAPI 3.0 Specification**: [`openapi.json`](openapi.json)
+- **Postman Collection**: [`postman_collection.json`](postman_collection.json)
+- **Automated Smoke Test Script**: [`smoke_test_endpoints.sh`](smoke_test_endpoints.sh)
+- **Database Scripts**: [`schema.sql`](schema.sql) and [`insert_dummy_data.sql`](insert_dummy_data.sql)

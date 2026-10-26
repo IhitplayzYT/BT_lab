@@ -1,18 +1,18 @@
 # Banking Product & Pricing Backend Module: Solution Document
 
 **Derived from**: Lab L5 (Product & Pricing APIs), Lab L9 (Login/JWT Integration), and Lab L13 (FD Account Creation Integration).  
-**Scope**: Backend (Spring Boot 3.3.2 + Java 21 + MySQL + Spring Security + JJWT + OpenAPI 3).  
+**Scope**: Backend (Spring Boot 3.3.4 + Java 21 + MySQL + Spring Security + JJWT + OpenAPI 3).  
 
 ---
 
 ## 1. Executive Summary & Architecture
 
-The **Product & Pricing Module** serves as the single enterprise source of truth for all banking products (`FD`, `TD`, `CASA`, `LOAN`, `SAVINGS`). It enforces banking lifecycle rules, parameter limits, interest rate formulas, and multi-layered security. External consumers (such as the FD Account Module and Calculator) access product metadata and pricing **exclusively via versioned REST APIs**.
+The **Product & Pricing Module** serves as the single enterprise source of truth for all banking products (`FD`, `TD`, `CASA`, `LOAN`, `SAVINGS`). It enforces banking lifecycle rules, parameter limits, interest rate formulas, and multi-layered security. External consumers (such as the FD Account Module and Calculator) access product metadata and pricing **via REST APIs with both `/api/product` and `/api/v1/products` aliases**.
 
 ```mermaid
 graph TD
     Client["Client / Angular Frontend / Teammate Modules"]
-    AuthFilter["JwtAuthenticationFilter (Bearer Token Validation)"]
+    AuthFilter["Shared OAuth2 Resource Server (Bearer JWT validation)"]
     Controller["ProductController (@PreAuthorize)"]
     Service["ProductService / ProductServiceImpl (@Cacheable)"]
     Repo["ProductRepository (Spring Data JPA)"]
@@ -41,18 +41,18 @@ graph TD
 
 | Endpoint | Method | Required Role | Description |
 |---|---|---|---|
-| `/api/auth/token` | POST | Public | Test token generation helper |
+| `http://localhost:8090/api/auth/login` | POST | Public | Central Auth_Sec login (separate service) |
 | `/actuator/health` | GET | Public | Health and observability |
 | `/swagger-ui/**`, `/api-docs/**` | GET | Public | OpenAPI documentation UI |
-| `/api/product` | POST | `ROLE_ADMIN` | Create new banking product |
+| `/api/product` | POST | `ROLE_ADMIN`, `ROLE_BANK_OFFICER` | Create new banking product |
 | `/api/product/{code}` | PUT | `ROLE_ADMIN`, `ROLE_BANK_OFFICER` | Update product details |
-| `/api/product/{code}` | DELETE | `ROLE_ADMIN` | Soft retire product (`RETIRED`) |
-| `/api/product/{code}` | GET | `ROLE_ADMIN`, `ROLE_BANK_OFFICER` | Get product details |
-| `/api/product/search` | GET | `ROLE_ADMIN`, `ROLE_BANK_OFFICER` | Search with filters & pagination |
-| `/api/product/active` | GET | `ROLE_ADMIN`, `ROLE_BANK_OFFICER` | Dropdown feed for active products |
-| `/api/product/{code}/validate` | GET | `ROLE_ADMIN`, `ROLE_BANK_OFFICER` | FD module account pre-validation |
-| `/api/product/{code}/rate` | POST | `ROLE_ADMIN`, `ROLE_BANK_OFFICER` | Determine final calculated rate |
-| `/api/product/{code}/defaults` | GET | `ROLE_ADMIN`, `ROLE_BANK_OFFICER` | Auto-populate FD creation form |
+| `/api/product/{code}` | DELETE | `ROLE_ADMIN`, `ROLE_BANK_OFFICER` | Soft retire product (`RETIRED`) |
+| `/api/product/{code}` | GET | `ROLE_ADMIN`, `ROLE_BANK_OFFICER`, `ROLE_CUSTOMER` | Get product details |
+| `/api/product/search` | GET | `ROLE_ADMIN`, `ROLE_BANK_OFFICER`, `ROLE_CUSTOMER` | Search with filters & pagination |
+| `/api/product/active` | GET | Public | Dropdown feed for active products |
+| `/api/product/{code}/validate` | GET | `ROLE_ADMIN`, `ROLE_BANK_OFFICER`, `ROLE_CUSTOMER` | FD module account pre-validation |
+| `/api/product/{code}/rate` | POST | `ROLE_ADMIN`, `ROLE_BANK_OFFICER`, `ROLE_CUSTOMER` | Determine final calculated rate |
+| `/api/product/{code}/defaults` | GET | `ROLE_ADMIN`, `ROLE_BANK_OFFICER`, `ROLE_CUSTOMER` | Auto-populate FD creation form |
 
 ---
 
@@ -60,7 +60,7 @@ graph TD
 
 ### 3.1 Create Product
 - **Endpoint**: `POST /api/product`
-- **Security**: `@PreAuthorize("hasRole('ADMIN')")`
+- **Security**: `@PreAuthorize("hasAnyRole('BANK_OFFICER','ADMIN')")`
 - **Sample Request**:
 ```json
 {
@@ -127,7 +127,7 @@ graph TD
 
 ### 3.3 Search Products with Filters & Pagination
 - **Endpoint**: `GET /api/product/search?productType=FD&startDate=2025-01-01&endDate=2025-12-31&page=0&size=10&sortBy=productId`
-- **Security**: `@PreAuthorize("hasAnyRole('BANK_OFFICER','ADMIN')")`
+- **Security**: `@PreAuthorize("hasAnyRole('BANK_OFFICER','ADMIN','CUSTOMER')")`
 - **Response**: `200 OK` (List of `ProductResponseDTO`)
 
 ---
@@ -198,7 +198,7 @@ graph TD
 
 ## 5. Standardized Error Handling Matrix
 
-All exceptions are intercepted by `GlobalExceptionHandler` and return a unified JSON payload:
+Controller business exceptions are intercepted by `GlobalExceptionHandler` and return a unified JSON payload:
 
 ```json
 {
@@ -215,7 +215,7 @@ All exceptions are intercepted by `GlobalExceptionHandler` and return a unified 
 | `400 Bad Request` | `VALIDATION_FAILED` | Bean Validation constraint violation (`@NotBlank`, `@Pattern`, etc.) |
 | `400 Bad Request` | `INVALID_PRODUCT` | Range rule violation (`minTerm > maxTerm`, `minDeposit > maxDeposit`) |
 | `401 Unauthorized` | `UNAUTHORIZED` | Missing or invalid JWT Bearer token |
-| `403 Forbidden` | `FORBIDDEN` | Authenticated user lacks required role (e.g. Bank Officer creating product) |
+| `403 Forbidden` | `FORBIDDEN` | Authenticated user lacks required role (e.g. Customer creating product) |
 | `404 Not Found` | `PRODUCT_NOT_FOUND` | Product code does not exist in the database |
 | `409 Conflict` | `DUPLICATE_PRODUCT` | Attempt to register an already existing `productCode` |
 | `422 Unprocessable`| `PRODUCT_INACTIVE` | Attempting to validate or create accounts on `INACTIVE`, `SUSPENDED`, or expired products |
@@ -224,8 +224,8 @@ All exceptions are intercepted by `GlobalExceptionHandler` and return a unified 
 
 ## 6. Deliverables Reference
 
-- **OpenAPI 3.0 Specification**: [`openapi.json`](file:///Users/nityakhandelwal/Desktop/BANKINGTECH/openapi.json)
-- **Postman Collection**: [`postman_collection.json`](file:///Users/nityakhandelwal/Desktop/BANKINGTECH/postman_collection.json)
-- **End-to-End Smoke Test Script**: [`smoke_test_endpoints.sh`](file:///Users/nityakhandelwal/Desktop/BANKINGTECH/smoke_test_endpoints.sh)
-- **Database Schema**: [`schema.sql`](file:///Users/nityakhandelwal/Desktop/BANKINGTECH/src/main/resources/schema.sql)
-- **Seed Data**: [`insert_dummy_data.sql`](file:///Users/nityakhandelwal/Desktop/BANKINGTECH/insert_dummy_data.sql)
+- **OpenAPI 3.0 Specification**: [`openapi.json`](openapi.json)
+- **Postman Collection**: [`postman_collection.json`](postman_collection.json)
+- **End-to-End Smoke Test Script**: [`smoke_test_endpoints.sh`](smoke_test_endpoints.sh)
+- **Database Schema**: [`schema.sql`](schema.sql)
+- **Seed Data**: [`insert_dummy_data.sql`](insert_dummy_data.sql)

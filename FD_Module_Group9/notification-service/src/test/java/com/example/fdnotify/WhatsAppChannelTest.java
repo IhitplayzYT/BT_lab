@@ -57,6 +57,23 @@ class WhatsAppChannelTest {
     }
 
     @Test
+    void htmlEmailIsConvertedToReadableWhatsAppText() {
+        channel("ACtest1234567890", "token", false).send("9876543210", "FD opened",
+                "<html><style>body {color:red}</style><body><p>Dear Customer</p><p>Account FD001</p></body></html>");
+        String decoded = URLDecoder.decode(form.get(), StandardCharsets.UTF_8);
+        assertThat(decoded).contains("Dear Customer").contains("Account FD001").doesNotContain("<html>").doesNotContain("color:red");
+    }
+
+    @Test
+    void configuredTemplateIsUsedForScheduledNotifications() {
+        var ch = channel("ACtest1234567890", "token", false);
+        org.springframework.test.util.ReflectionTestUtils.setField(ch, "contentSid", "HXtemplate");
+        ch.send("9876543210", "FD matured", "Account FD001");
+        String decoded = URLDecoder.decode(form.get(), StandardCharsets.UTF_8);
+        assertThat(decoded).contains("ContentSid=HXtemplate").contains("ContentVariables=").doesNotContain("&Body=");
+    }
+
+    @Test
     void aTwilioErrorIsRecordedAsFailedWithoutTheResponseBody() {
         answer = 400;
         var result = channel("ACtest1234567890", "secret-token", false).send("9876543210", "s", "b");

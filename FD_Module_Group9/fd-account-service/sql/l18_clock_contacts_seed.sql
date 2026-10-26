@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS business_clock (
 INSERT IGNORE INTO business_clock (id, day_offset) VALUES (1, 0);
 
 -- Give demo customer CUST001 a login record with an e-mail address, so FdCreated events carry contact details.
--- !!! Replace the e-mail with YOUR OWN address to receive the real e-mail in the demo:
+-- !!! Replace the e-mail with FYOUR OWN address to receive the real e-mail in the demo:
 --     UPDATE users SET email = 'you@example.com' WHERE username = 'customer1';
 INSERT IGNORE INTO users (username, password_hash, email, role)
 VALUES ('customer1', 'not-used-login-is-in-memory', 'customer1@example.com', 'CUSTOMER');

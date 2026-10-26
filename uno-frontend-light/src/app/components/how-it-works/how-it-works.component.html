@@ -1,0 +1,26 @@
+<section class="how-it-works section" id="how-it-works">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="text-gradient">{{ 'How It Works' | translate }}</h2>
+      <p>{{ 'Start your investment journey in three simple steps' | translate }}</p>
+    </div>
+
+    <div class="steps-container">
+      <svg class="trail" viewBox="0 0 60 1000" preserveAspectRatio="none" aria-hidden="true">
+        <path class="trail-base" d="M30 0C62 150 -2 330 30 500S62 850 30 1000" />
+        <path class="trail-glow" d="M30 0C62 150 -2 330 30 500S62 850 30 1000" />
+      </svg>
+
+      @for (step of steps; track step.number) {
+        <div class="step-card card">
+          <div class="step-number">{{ step.number }}</div>
+          <div class="step-art"><app-icon [name]="step.icon" /></div>
+          <div class="step-content">
+            <h3>{{ step.title }}</h3>
+            <p>{{ step.description }}</p>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</section>

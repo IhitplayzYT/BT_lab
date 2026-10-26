@@ -1,0 +1,111 @@
+<div class="relation-nets">
+  <div class="relation-nets-header">
+    <h2>Relation Nets</h2>
+    <p>Visualize customer relationships and connections</p>
+  </div>
+
+  <div class="search-bar">
+    <div class="search-inputs">
+      <select [(ngModel)]="searchType" class="search-type-select">
+        <option value="name">Search by Name</option>
+        <option value="id">Search by ID</option>
+      </select>
+      <input 
+        type="text" 
+        [(ngModel)]="searchQuery" 
+        [placeholder]="searchType === 'name' ? 'Enter customer name...' : 'Enter customer ID...'"
+        class="search-input"
+        (keyup.enter)="searchCustomer()"
+      />
+      <button class="btn btn-primary" (click)="searchCustomer()">Search</button>
+      <button class="btn btn-secondary" (click)="resetGraph()">Reset</button>
+    </div>
+  </div>
+
+  @if (isLoading) {
+    <div class="loading-state">
+      <p>Loading relationship data...</p>
+    </div>
+  } @else if (error) {
+    <div class="error-state">
+      <p>{{ error }}</p>
+    </div>
+  } @else {
+    <div class="graph-container-wrapper">
+      <div class="graph-container"></div>
+      
+      <div class="graph-legend">
+        <h3>Legend</h3>
+        <div class="legend-item">
+          <span class="legend-color" style="background: #f6b945;"></span>
+          <span>Customer Node</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-color" style="background: #2be0cc;"></span>
+          <span>Highlighted Node</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-line"></span>
+          <span>Connection Link</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-line highlighted"></span>
+          <span>Highlighted Connection</span>
+        </div>
+      </div>
+    </div>
+
+    @if (selectedCustomer) {
+      <div class="customer-details card">
+        <h3>Customer Details</h3>
+        <div class="details-grid">
+          <div class="detail-item">
+            <span class="label">Name:</span>
+            <span class="value">{{ selectedCustomer.name }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="label">ID:</span>
+            <span class="value">{{ selectedCustomer.id }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="label">Email:</span>
+            <span class="value">{{ selectedCustomer.email || 'N/A' }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="label">Phone:</span>
+            <span class="value">{{ selectedCustomer.phone || 'N/A' }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="label">FD Count:</span>
+            <span class="value">{{ selectedCustomer.fdCount }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="label">Total Investment:</span>
+            <span class="value">{{ formatCurrency(selectedCustomer.totalInvestment) }}</span>
+          </div>
+        </div>
+      </div>
+    }
+
+    <div class="graph-stats">
+      <div class="stat-item">
+        <span class="stat-label">Total Customers:</span>
+        <span class="stat-value">{{ nodes.length }}</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Total Connections:</span>
+        <span class="stat-value">{{ links.length }}</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Highlighted Nodes:</span>
+        <span class="stat-value">{{ highlightedNodes.size }}</span>
+      </div>
+    </div>
+  }
+
+  <div class="graph-controls">
+    <p class="control-tip">
+      <strong>Controls:</strong> Drag to pan • Scroll to zoom • Click node to select • Search to find connections
+    </p>
+  </div>
+</div>

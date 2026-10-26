@@ -19,6 +19,7 @@ services:
       - ./fd-account-service/sql/l16_fd_transactions.sql:/docker-entrypoint-initdb.d/03-l16_fd_transactions.sql:ro
       - ./fd-account-service/sql/l14_l17_interest.sql:/docker-entrypoint-initdb.d/04-l14_l17_interest.sql:ro
       - ./fd-account-service/sql/l18_clock_contacts_seed.sql:/docker-entrypoint-initdb.d/05-l18_clock_contacts_seed.sql:ro
+      - ./fd-account-service/sql/migration_add_admin_operation_logs.sql:/docker-entrypoint-initdb.d/06-admin_operation_logs.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h localhost -p\"$$MYSQL_ROOT_PASSWORD\""]
       interval: 5s

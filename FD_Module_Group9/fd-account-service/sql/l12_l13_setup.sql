@@ -28,6 +28,8 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 -- customer_profile  ->  entity CustomerProfile
+-- Note: user_id references auth-service users table, not local users table
+-- Foreign key constraint removed to support distributed auth
 CREATE TABLE IF NOT EXISTS customer_profile (
     customer_id         VARCHAR(20)  NOT NULL,
     user_id             BIGINT       NULL,
@@ -37,15 +39,16 @@ CREATE TABLE IF NOT EXISTS customer_profile (
     pii_masked_aadhaar  VARCHAR(20)  NULL,
     category            VARCHAR(50)  NULL,      -- e.g. GENERAL, SENIOR
     created_at          TIMESTAMP    NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (customer_id),
-    CONSTRAINT fk_customer_profile_user FOREIGN KEY (user_id) REFERENCES users (id)
+    PRIMARY KEY (customer_id)
 );
 
 -- fd_accounts  ->  entity FixedDepositAccount
 CREATE TABLE IF NOT EXISTS fd_accounts (
     fd_account_no          VARCHAR(20)   NOT NULL,
     customer_id            VARCHAR(20)   NOT NULL,
-    product_code           VARCHAR(10)   NOT NULL,
+    bundle_id              VARCHAR(50)   NULL,
+    bundle_name            VARCHAR(255)  NULL,
+    product_code           VARCHAR(50)   NOT NULL,
     currency               VARCHAR(3)    NULL,
     principal_amount       DECIMAL(18,2) NOT NULL,
     interest_rate          DECIMAL(5,2)  NOT NULL,
@@ -56,14 +59,27 @@ CREATE TABLE IF NOT EXISTS fd_accounts (
     approved_by            VARCHAR(50)   NULL,
     approved_at            TIMESTAMP     NULL,
     rejection_reason       VARCHAR(500)  NULL,
-    nominee_name           VARCHAR(255)  NULL,
-    nominee_relation       VARCHAR(50)   NULL,
-    applicant_full_name    VARCHAR(255)  NULL,
-    applicant_email        VARCHAR(255)  NULL,
-    applicant_phone        VARCHAR(20)   NULL,
-    applicant_pan          VARCHAR(20)   NULL,
+    nominee_name           VARCHAR(255) NULL,
+    nominee_relation       VARCHAR(50)  NULL,
+    applicant_full_name    VARCHAR(255) NULL,
+    applicant_first_name   VARCHAR(100)  NULL,
+    applicant_middle_name  VARCHAR(100)  NULL,
+    applicant_last_name    VARCHAR(100)  NULL,
+    applicant_age          INT           NULL,
+    applicant_gender       VARCHAR(20)   NULL,
+    applicant_occupation   VARCHAR(100)  NULL,
+    applicant_annual_income DECIMAL(15,2) NULL,
+    applicant_address      TEXT          NULL,
+    applicant_city         VARCHAR(100)  NULL,
+    applicant_state        VARCHAR(100)  NULL,
+    applicant_pincode      VARCHAR(10)   NULL,
+    applicant_nationality VARCHAR(50)   NULL,
+    applicant_marital_status VARCHAR(20)  NULL,
+    applicant_email        VARCHAR(255) NULL,
+    applicant_phone        VARCHAR(20)  NULL,
+    applicant_pan          VARCHAR(20)  NULL,
     applicant_account_number VARCHAR(50) NULL,
-    applicant_ifsc         VARCHAR(20)   NULL,
+    applicant_ifsc         VARCHAR(20)  NULL,
     maturity_date          DATE          NULL,
     accrued_interest       DECIMAL(18,2) NULL,
     created_at             TIMESTAMP     NULL DEFAULT CURRENT_TIMESTAMP,
@@ -71,7 +87,8 @@ CREATE TABLE IF NOT EXISTS fd_accounts (
     modified_at            TIMESTAMP     NULL,
     uuid                   VARCHAR(255)  NULL,
     PRIMARY KEY (fd_account_no),
-    KEY idx_fd_accounts_customer (customer_id)
+    KEY idx_fd_accounts_customer (customer_id),
+    KEY idx_fd_accounts_bundle (bundle_id)
 );
 
 -- fd_nominees  ->  entity Nominee (for multiple nominees support)

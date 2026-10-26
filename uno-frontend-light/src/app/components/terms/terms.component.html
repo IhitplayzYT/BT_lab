@@ -1,0 +1,39 @@
+<app-navbar></app-navbar>
+<section class="terms-section section">
+  <div class="container">
+    <div class="terms-header">
+      <h1 class="text-gradient">{{ 'Terms and Conditions' | translate }}</h1>
+      <p>{{ 'Last Updated: January 2025' | translate }}</p>
+    </div>
+
+    <div class="terms-intro card">
+      <p>
+        {{ 'Welcome to UNO Bank. Please read these Terms and Conditions carefully before using our services. By accessing or using UNO Bank\'s platform and services, you agree to be bound by these terms.' | translate }}
+      </p>
+    </div>
+
+    <div class="terms-content">
+      @for (section of sections; track section.title) {
+        <div class="term-section card">
+          <h3>{{ section.title }}</h3>
+          <div class="term-text">
+            {{ section.content }}
+          </div>
+        </div>
+      }
+    </div>
+
+    <div class="terms-footer card">
+      <h3>{{ 'Contact Us' | translate }}</h3>
+      <p>
+        {{ 'If you have any questions about these Terms and Conditions, please contact our customer support team:' | translate }}
+      </p>
+      <div class="contact-info">
+        <p><strong>{{ 'Email:' | translate }}</strong> {{ 'support@unobank.com' | translate }}</p>
+        <p><strong>{{ 'Phone:' | translate }}</strong> {{ '1800-XXX-XXXX (Toll Free)' | translate }}</p>
+        <p><strong>{{ 'Address:' | translate }}</strong> {{ 'UNO Bank Headquarters, Mumbai, Maharashtra, India' | translate }}</p>
+      </div>
+    </div>
+  </div>
+</section>
+<app-footer></app-footer>
