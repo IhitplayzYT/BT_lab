@@ -109,6 +109,26 @@ start_backend() {
     fi
 }
 
+# Start the optional local Python AI API separately; failures never block banking startup.
+start_optional_ai_assistant() {
+    log_info "Attempting to start the optional local Python AI assistant..."
+    if command -v python3 &> /dev/null; then
+        if python3 "$PROJECT_ROOT/ai-assistant/start_local.py"; then
+            log_success "Local AI assistant startup completed"
+        else
+            log_warning "AI assistant could not start; banking services and frontend will continue. Customer AI tabs will show Service unavailable."
+        fi
+    elif command -v python &> /dev/null; then
+        if python "$PROJECT_ROOT/ai-assistant/start_local.py"; then
+            log_success "Local AI assistant startup completed"
+        else
+            log_warning "AI assistant could not start; banking services and frontend will continue. Customer AI tabs will show Service unavailable."
+        fi
+    else
+        log_warning "Python is unavailable; banking services and frontend will continue. Customer AI tabs will show Service unavailable."
+    fi
+}
+
 # Check/build fd-python-base image
 check_python_base_image() {
     log_info "Checking fd-python-base Docker image..."
@@ -194,15 +214,18 @@ print_urls() {
     echo -e "  ${GREEN}Product Service:${NC}    http://localhost:8080"
     echo -e "  ${GREEN}Calculator Service:${NC} http://localhost:8084"
     echo -e "  ${GREEN}Account Service:${NC}    http://localhost:8086"
+    echo -e "  ${GREEN}AI Assistant (optional):${NC} http://localhost:8091"
     echo -e "  ${GREEN}Notification Service:${NC} http://localhost:8083"
     echo -e "  ${GREEN}Mailpit Web UI:${NC}     http://localhost:8025"
     echo ""
     log_info "To stop all services:"
     echo -e "  ${GREEN}cd $PROJECT_ROOT && docker compose -f docker-compose.yml down${NC}"
     echo -e "  ${GREEN}kill $FRONTEND_PID${NC}  (to stop frontend)"
+    echo -e "  ${GREEN}AI assistant PID is printed at startup; stop it with kill <PID>${NC}"
     echo ""
     log_info "To view backend logs:"
     echo -e "  ${GREEN}docker compose -f $PROJECT_ROOT/docker-compose.yml logs -f${NC}"
+    echo -e "  ${GREEN}tail -f /tmp/uno-ai-assistant.log${NC}"
     echo ""
 }
 
@@ -221,6 +244,10 @@ main() {
     
     # Start backend services
     start_backend
+    echo ""
+
+    # Non-critical: failures here must not prevent the frontend or banking services from starting.
+    start_optional_ai_assistant
     echo ""
     
     # Check and install frontend dependencies

@@ -32,6 +32,7 @@ export class FdCalculatorComponent implements AfterViewInit {
   productCode = signal('FD_STD_SHORT');
   interestType = signal('COMPOUND');
   interestRate = signal(7.0); // User-selected interest rate within product range
+  customerCategory = signal('GENERAL');
 
   // Product-specific limits
   minInterestRate = signal(5.0);
@@ -48,6 +49,7 @@ export class FdCalculatorComponent implements AfterViewInit {
 
   // Products list
   products = signal<any[]>([]);
+  readonly selectedProduct = computed(() => this.products().find(product => product.productCode === this.productCode()) || null);
   
   // Validation errors
   principalError = '';
@@ -113,6 +115,12 @@ export class FdCalculatorComponent implements AfterViewInit {
       // Initialize limits based on the first product or current selection
       if (validProducts && validProducts.length > 0) {
         this.onProductChange();
+        const savedProfile = localStorage.getItem(this.apiClient.getUserStorageKey('default_fd_details'));
+        if (savedProfile) {
+          const profile = JSON.parse(savedProfile);
+          if (profile.customerCategory) this.customerCategory.set(profile.customerCategory);
+          this.onProductChange();
+        }
       }
     } catch (error) {
       console.error('Failed to load products:', error);
@@ -179,11 +187,14 @@ export class FdCalculatorComponent implements AfterViewInit {
       this.maxInterestRate.set(rateLimit?.max || 10.0);
       this.minPrincipal.set(selectedProduct.minDeposit || 1000);
       this.maxPrincipal.set(selectedProduct.maxDeposit || 100000000);
-      this.minTerm.set(termLimit?.min || 3);
-      this.maxTerm.set(termLimit?.max || 120);
+      this.minTerm.set(Number(termLimit?.min ?? 3));
+      this.maxTerm.set(Number(termLimit?.max ?? 120));
+      this.termMonths.set(Math.min(this.maxTerm(), Math.max(this.minTerm(), this.termMonths())));
+      const categories = (selectedProduct.rateVariations || []).map((variation: any) => String(variation.customerCategory).toUpperCase().replace(/\s+/g, '_'));
+      if (this.customerCategory() !== 'GENERAL' && !categories.includes(this.customerCategory())) this.customerCategory.set('GENERAL');
 
       // Set interest rate to the max rate of the selected product
-      this.interestRate.set(rateLimit?.max || 7.0);
+      this.interestRate.set(rateLimit?.min ?? 7.0);
 
       console.log('Product limits updated:', {
         productCode: selectedProduct.productCode,
@@ -270,12 +281,23 @@ export class FdCalculatorComponent implements AfterViewInit {
       // Try to use the API if authenticated
       if (this.authService.isLoggedIn()) {
         const result = await this.apiClient.calculateMaturity({
+          principal: this.principal(),
+          term: { value: this.termMonths(), unit: 'MONTHS' },
+          baseRate: this.interestRate(),
           productCode: this.productCode(),
+          categories: this.customerCategory() === 'GENERAL' ? [] : [this.customerCategory()],
+          interestType: this.interestType(),
+          currency: 'INR',
+          compoundingFrequency: 4
+        }).toPromise();
+        const maturityDate = new Date();
+        maturityDate.setMonth(maturityDate.getMonth() + this.termMonths());
+        this.calculationResult.set({
+          ...result,
           principal: this.principal(),
           termMonths: this.termMonths(),
-          interestType: this.interestType()
-        }).toPromise();
-        this.calculationResult.set(result);
+          maturityDate: maturityDate.toISOString().split('T')[0]
+        });
       } else {
         // Fallback to client-side calculation for non-authenticated users
         this.calculateClientSide();
@@ -298,7 +320,9 @@ export class FdCalculatorComponent implements AfterViewInit {
     const termMonths = this.termMonths();
     const termYears = termMonths / 12;
     const interestType = this.interestType();
-    const interestRate = this.interestRate(); // Use user-selected interest rate
+    const product = this.products().find(item => item.productCode === this.productCode());
+    const variation = (product?.rateVariations || []).find((item: any) => String(item.customerCategory).toUpperCase().replace(/\s+/g, '_') === this.customerCategory());
+    const interestRate = Math.min(this.maxInterestRate(), Math.max(this.minInterestRate(), this.interestRate() + Number(variation?.rateModifier || 0)));
 
     let maturityAmount: number;
     let interestEarned: number;
@@ -323,6 +347,7 @@ export class FdCalculatorComponent implements AfterViewInit {
       principal,
       termMonths,
       interestRate,
+      effectiveRate: interestRate,
       interestType,
       maturityAmount: Math.round(maturityAmount * 100) / 100,
       interestEarned: Math.round(interestEarned * 100) / 100,

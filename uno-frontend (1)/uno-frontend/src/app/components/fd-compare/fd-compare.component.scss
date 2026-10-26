@@ -207,6 +207,28 @@
   appearance: none;
 }
 
+.slider-container input[type="range"]:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.slider-container input[type="range"]:disabled::-webkit-slider-thumb {
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.slider-container input[type="range"]:disabled::-moz-range-thumb {
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.fixed-value-note {
+  display: block;
+  margin-top: 0.35rem;
+  color: var(--text-2);
+  font-size: 0.75rem;
+}
+
 .slider-container input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;

@@ -1,6 +1,6 @@
 import { TranslatePipe } from '../../pipes/translate.pipe';
-import { Component, inject, signal, computed, AfterViewInit, ElementRef, OnDestroy, effect } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, inject, signal, computed, AfterViewInit, ElementRef, OnDestroy, effect, ViewChild, PLATFORM_ID } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiClientService } from '../../services/api-client.service';
 import { ValidationService } from '../../services/validation.service';
@@ -18,15 +18,16 @@ import { Chart, ChartConfiguration, ChartType } from 'chart.js/auto';
 })
 export class FdCompareComponent implements AfterViewInit, OnDestroy {
   private apiClient = inject(ApiClientService);
-  private elementRef = inject(ElementRef);
   private validationService = inject(ValidationService);
   private authService = inject(AuthService);
+  private platformId = inject(PLATFORM_ID);
 
   // Product 1 inputs
   principal1 = signal(100000);
   termMonths1 = signal(12);
   interestType1 = signal('COMPOUND');
   productCode1 = signal('FD_STD_SHORT');
+  customerCategory1 = signal('GENERAL');
   interestRate1 = signal(7.0);
 
   // Product 2 inputs
@@ -34,6 +35,7 @@ export class FdCompareComponent implements AfterViewInit, OnDestroy {
   termMonths2 = signal(24);
   interestType2 = signal('COMPOUND');
   productCode2 = signal('FD_STD_LONG');
+  customerCategory2 = signal('GENERAL');
   interestRate2 = signal(7.5);
 
   // Product-specific limits for product 1
@@ -71,6 +73,13 @@ export class FdCompareComponent implements AfterViewInit, OnDestroy {
 
   // Chart instance
   private chart: Chart | null = null;
+  private chartCanvas: HTMLCanvasElement | null = null;
+
+  @ViewChild('growthChart')
+  set growthChart(canvas: ElementRef<HTMLCanvasElement> | undefined) {
+    this.chartCanvas = canvas?.nativeElement ?? null;
+    if (this.chartCanvas) this.updateChart();
+  }
 
   // Debounce timer
   private debounceTimer: any = null;
@@ -82,11 +91,13 @@ export class FdCompareComponent implements AfterViewInit, OnDestroy {
     this.termMonths1();
     this.interestType1();
     this.productCode1();
+    this.customerCategory1();
     this.interestRate1();
     this.principal2();
     this.termMonths2();
     this.interestType2();
     this.productCode2();
+    this.customerCategory2();
     this.interestRate2();
     this.selectedCurrency();
 
@@ -165,6 +176,16 @@ export class FdCompareComponent implements AfterViewInit, OnDestroy {
     this.loadProducts().then(() => {
       this.onProductChange1();
       this.onProductChange2();
+      const savedProfile = localStorage.getItem(this.apiClient.getUserStorageKey('default_fd_details'));
+      if (savedProfile) {
+        const category = JSON.parse(savedProfile).customerCategory;
+        if (category) {
+          this.customerCategory1.set(category);
+          this.customerCategory2.set(category);
+          this.normalizeProductCategory(1, this.products().find(product => product.productCode === this.productCode1()));
+          this.normalizeProductCategory(2, this.products().find(product => product.productCode === this.productCode2()));
+        }
+      }
       this.calculate();
     });
   }
@@ -214,9 +235,13 @@ export class FdCompareComponent implements AfterViewInit, OnDestroy {
       this.maxInterestRate1.set(rateLimit?.max || 10.0);
       this.minPrincipal1.set(selectedProduct.minDeposit || 1000);
       this.maxPrincipal1.set(selectedProduct.maxDeposit || 100000000);
-      this.minTerm1.set(termLimit?.min || 3);
-      this.maxTerm1.set(termLimit?.max || 120);
-      this.interestRate1.set(rateLimit?.max || 7.0);
+      const minTerm = Number(termLimit?.min ?? 3);
+      const maxTerm = Number(termLimit?.max ?? 120);
+      this.minTerm1.set(minTerm);
+      this.maxTerm1.set(maxTerm);
+      this.termMonths1.set(this.normalizeTenure(this.termMonths1(), minTerm, maxTerm));
+      this.interestRate1.set(rateLimit?.min ?? 7.0);
+      this.normalizeProductCategory(1, selectedProduct);
     }
   }
 
@@ -230,10 +255,31 @@ export class FdCompareComponent implements AfterViewInit, OnDestroy {
       this.maxInterestRate2.set(rateLimit?.max || 10.0);
       this.minPrincipal2.set(selectedProduct.minDeposit || 1000);
       this.maxPrincipal2.set(selectedProduct.maxDeposit || 100000000);
-      this.minTerm2.set(termLimit?.min || 3);
-      this.maxTerm2.set(termLimit?.max || 120);
-      this.interestRate2.set(rateLimit?.max || 7.0);
+      const minTerm = Number(termLimit?.min ?? 3);
+      const maxTerm = Number(termLimit?.max ?? 120);
+      this.minTerm2.set(minTerm);
+      this.maxTerm2.set(maxTerm);
+      this.termMonths2.set(this.normalizeTenure(this.termMonths2(), minTerm, maxTerm));
+      this.interestRate2.set(rateLimit?.min ?? 7.0);
+      this.normalizeProductCategory(2, selectedProduct);
     }
+  }
+
+  private normalizeTenure(tenure: number, min: number, max: number): number {
+    return Math.min(max, Math.max(min, Number(tenure) || min));
+  }
+
+  private normalizeProductCategory(productNum: 1 | 2, product: any): void {
+    if (!product) return;
+    const current = productNum === 1 ? this.customerCategory1() : this.customerCategory2();
+    const categories = (product.rateVariations || []).map((variation: any) => String(variation.customerCategory).toUpperCase().replace(/\s+/g, '_'));
+    if (current !== 'GENERAL' && !categories.includes(current)) {
+      productNum === 1 ? this.customerCategory1.set('GENERAL') : this.customerCategory2.set('GENERAL');
+    }
+  }
+
+  rateVariationsFor(productCode: string): any[] {
+    return this.products().find(product => product.productCode === productCode)?.rateVariations || [];
   }
 
   validatePrincipal1(): void {
@@ -343,7 +389,14 @@ export class FdCompareComponent implements AfterViewInit, OnDestroy {
     const termMonths = productNum === 1 ? this.termMonths1() : this.termMonths2();
     const termYears = termMonths / 12;
     const interestType = productNum === 1 ? this.interestType1() : this.interestType2();
-    const interestRate = productNum === 1 ? this.interestRate1() : this.interestRate2();
+    const baseRate = productNum === 1 ? this.interestRate1() : this.interestRate2();
+    const productCode = productNum === 1 ? this.productCode1() : this.productCode2();
+    const category = productNum === 1 ? this.customerCategory1() : this.customerCategory2();
+    const product = this.products().find(item => item.productCode === productCode);
+    const variation = (product?.rateVariations || []).find((item: any) => String(item.customerCategory).toUpperCase().replace(/\s+/g, '_') === category);
+    const minRate = productNum === 1 ? this.minInterestRate1() : this.minInterestRate2();
+    const maxRate = productNum === 1 ? this.maxInterestRate1() : this.maxInterestRate2();
+    const interestRate = Math.min(maxRate, Math.max(minRate, baseRate + Number(variation?.rateModifier || 0)));
 
     let maturityAmount: number;
     let interestEarned: number;
@@ -379,8 +432,8 @@ export class FdCompareComponent implements AfterViewInit, OnDestroy {
   }
 
   private updateChart(): void {
-    const canvas = this.elementRef.nativeElement.querySelector('#growthChart');
-    if (!canvas) return;
+    const canvas = this.chartCanvas;
+    if (!canvas || !isPlatformBrowser(this.platformId)) return;
 
     const result1 = this.calculationResult1();
     const result2 = this.calculationResult2();

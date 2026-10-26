@@ -1,5 +1,8 @@
 :host { display: block; }
 
+.api-doc-links { display: flex; align-items: center; gap: .65rem; flex-wrap: wrap; margin-top: 1rem; }
+.api-doc-links strong { margin-right: .3rem; color: var(--text-2); font-size: .9rem; }
+
 .audit-log-section .section-header,
 .audit-log-pagination {
   display: flex;

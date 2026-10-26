@@ -116,6 +116,36 @@
             </div>
           </div>
 
+          <section class="product-options-section">
+            <h4>{{ 'Account Holder Roles' | translate }}</h4>
+            <div class="product-role-options">
+              @for (role of ['OWNER', 'CO-OWNER', 'NOMINEE']; track role) {
+                <label class="product-role-option">
+                  <input type="checkbox" [checked]="isRoleAllowed(role)" [disabled]="role === 'OWNER'" (change)="toggleAllowedRole(role, $any($event.target).checked)">
+                  <span>{{ role === 'OWNER' ? 'Owner' : role === 'CO-OWNER' ? 'Co-Owner' : 'Nominee' | translate }}</span>
+                </label>
+              }
+            </div>
+            @if (formErrors['allowedRoles']) {
+              <div class="validation-error">{{ formErrors['allowedRoles'] }}</div>
+            }
+          </section>
+
+          <section class="product-options-section">
+            <h4>{{ 'Customer Categories & Rate Bonuses' | translate }}</h4>
+            @for (variation of productForm.rateVariations; track $index) {
+              <div class="rate-variation-row">
+                <input type="text" [(ngModel)]="variation.customerCategory" name="category_{{$index}}" [attr.placeholder]="'Customer category' | translate" required>
+                <input type="number" [(ngModel)]="variation.rateModifier" name="bonus_{{$index}}" step="0.1" [attr.aria-label]="'Rate bonus percentage' | translate">
+                <button type="button" class="btn btn-sm btn-danger" (click)="removeRateVariation($index)">{{ 'Remove' | translate }}</button>
+              </div>
+            }
+            @if (formErrors['rateVariations']) {
+              <div class="validation-error">{{ formErrors['rateVariations'] }}</div>
+            }
+            <button type="button" class="btn btn-secondary btn-sm" (click)="addRateVariation()">{{ 'Add Category' | translate }}</button>
+          </section>
+
           <div class="form-row">
             <div class="form-group">
               <label>{{ 'Min Deposit' | translate }}</label>
@@ -212,6 +242,14 @@
           <div class="detail-row">
             <span class="label">{{ 'Rate Range:' | translate }}</span>
             <span class="value">{{ product.rateLimit?.min }}% - {{ product.rateLimit?.max }}%</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">{{ 'Roles:' | translate }}</span>
+            <span class="value">{{ product.allowedRoles?.join(', ') || 'Owner' }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">{{ 'Categories:' | translate }}</span>
+            <span class="value">{{ formatRateVariations(product.rateVariations) }}</span>
           </div>
           <div class="detail-row">
             <span class="label">{{ 'Deposit Range:' | translate }}</span>

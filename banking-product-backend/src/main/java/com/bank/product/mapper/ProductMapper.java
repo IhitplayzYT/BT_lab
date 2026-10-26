@@ -64,13 +64,15 @@ public class ProductMapper {
                         .isMandatory("owner".equalsIgnoreCase(roleName))
                         .build());
             }
+        } else {
+            roles.add(ProductRole.builder().roleType("owner").isMandatory(true).build());
         }
 
         List<RateVariation> rateVariations = new ArrayList<>();
         if (dto.getRateVariations() != null) {
             for (RateVariationDTO v : dto.getRateVariations()) {
                 rateVariations.add(RateVariation.builder()
-                        .customerCategory(v.getCustomerCategory())
+                        .customerCategory(v.getCustomerCategory().trim().toUpperCase().replace(' ', '_'))
                         .rateModifier(v.getRateModifier())
                         .build());
             }

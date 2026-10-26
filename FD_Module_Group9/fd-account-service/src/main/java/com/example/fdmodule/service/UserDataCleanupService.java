@@ -1,114 +1,130 @@
 package com.example.fdmodule.service;
 
+import com.example.fdmodule.client.AuthServiceClient;
+import com.example.fdmodule.entity.CustomerProfile;
+import com.example.fdmodule.entity.FixedDepositAccount;
+import com.example.fdmodule.maturity.MaturityService;
+import com.example.fdmodule.repository.CustomerProfileRepository;
+import com.example.fdmodule.repository.FixedDepositAccountRepository;
+import com.example.fdmodule.withdrawal.WithdrawalService;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.UUID;
+import java.time.LocalDate;
+import java.util.List;
 
-/** Detaches a deleted login from its customer data without deleting the financial audit trail. */
+/** Removes a deleted login's ownership link while retaining its financial audit trail. */
 @Service
 public class UserDataCleanupService {
-    private final JdbcTemplate jdbc;
+    private static final String ACCOUNT_DELETION_ACTOR = "ACCOUNT_DELETION";
 
-    public UserDataCleanupService(JdbcTemplate jdbc) {
+    private final JdbcTemplate jdbc;
+    private final AuthServiceClient authServiceClient;
+    private final CustomerProfileRepository customerRepository;
+    private final FixedDepositAccountRepository fdRepository;
+    private final MaturityService maturityService;
+    private final WithdrawalService withdrawalService;
+    private final com.example.fdmodule.clock.BusinessClock clock;
+
+    public UserDataCleanupService(JdbcTemplate jdbc,
+                                  AuthServiceClient authServiceClient,
+                                  CustomerProfileRepository customerRepository,
+                                  FixedDepositAccountRepository fdRepository,
+                                  MaturityService maturityService,
+                                  WithdrawalService withdrawalService,
+                                  com.example.fdmodule.clock.BusinessClock clock) {
         this.jdbc = jdbc;
+        this.authServiceClient = authServiceClient;
+        this.customerRepository = customerRepository;
+        this.fdRepository = fdRepository;
+        this.maturityService = maturityService;
+        this.withdrawalService = withdrawalService;
+        this.clock = clock;
     }
 
     @Transactional
     public void detach(String username) {
-        Long userId = jdbc.query("SELECT id FROM users WHERE username = ?", rs ->
-                rs.next() ? rs.getLong(1) : null, username);
-
+        // Auth owns the canonical user ID. The account service's local users table is not
+        // synchronized reliably and must never be used to decide whose contracts to close.
+        Long userId = authServiceClient.getUserIdByUsername(username);
         if (userId == null) {
-            System.err.println("WARNING: User not found in users table for username: " + username);
-            return;
+            throw new IllegalStateException("Could not resolve the auth user before account cleanup");
         }
 
-        // Get all customer_ids associated with this user_id before deleting
-        String customerIds = jdbc.query(
-            "SELECT customer_id FROM customer_profile WHERE user_id = ?",
-            rs -> {
-                StringBuilder sb = new StringBuilder();
-                while (rs.next()) {
-                    if (sb.length() > 0) sb.append(",");
-                    sb.append("'").append(rs.getString(1)).append("'");
+        List<CustomerProfile> profiles = customerRepository.findAllByUserId(userId);
+        List<String> customerIds = profiles.stream()
+                .map(CustomerProfile::getCustomerId)
+                .distinct()
+                .toList();
+
+        if (!customerIds.isEmpty()) {
+            List<FixedDepositAccount> accounts = fdRepository.findByCustomerIdIn(customerIds);
+            LocalDate businessDate = clock.today();
+            for (FixedDepositAccount account : accounts) {
+                String status = account.getStatus() == null ? "" : account.getStatus().toUpperCase();
+                String approval = account.getApprovalStatus() == null ? "" : account.getApprovalStatus().toUpperCase();
+
+                if ("PENDING".equals(status) || "PENDING_APPROVAL".equals(approval)) {
+                    jdbc.update("UPDATE fd_accounts SET status='WITHDRAWN', approval_status='WITHDRAWN', " +
+                                    "rejection_reason='Withdrawn because the customer account was deleted', " +
+                                    "modified_at=CURRENT_TIMESTAMP WHERE fd_account_no=?",
+                            account.getFdAccountNo());
+                } else if ("ACTIVE".equals(status)) {
+                    if (account.getMaturityDate() == null) {
+                        throw new IllegalStateException("Cannot settle FD without a maturity date: " + account.getFdAccountNo());
+                    }
+                    if (!account.getMaturityDate().isAfter(businessDate)) {
+                        maturityService.matureAccount(account.getFdAccountNo(), businessDate, ACCOUNT_DELETION_ACTOR);
+                    } else {
+                        // A future-dated FD cannot be labeled matured without an invalid payout.
+                        // Close it through the normal early-withdrawal ledger and penalty path.
+                        withdrawalService.withdraw(account.getFdAccountNo(),
+                                "Customer account deleted", ACCOUNT_DELETION_ACTOR);
+                    }
                 }
-                return sb.toString();
-            }, userId);
+            }
 
-        if (customerIds != null && !customerIds.isEmpty()) {
-            // DELETE pending applications (not approved yet) - complete wipe
-            int deletedPendingFDs = jdbc.update(
-                "DELETE FROM fd_accounts WHERE customer_id IN (" + customerIds + ") AND " +
-                "(status = 'PENDING' OR approval_status = 'PENDING_APPROVAL' OR approval_status = 'REJECTED')"
-            );
-            System.out.println("Deleted " + deletedPendingFDs + " pending/rejected FD accounts for user: " + username);
-            
-            int deletedPendingBundles = jdbc.update(
-                "DELETE FROM bundle_applications WHERE customer_id IN (" + customerIds + ") AND " +
-                "(status = 'PENDING' OR approval_status = 'PENDING_APPROVAL' OR approval_status = 'REJECTED')"
-            );
-            System.out.println("Deleted " + deletedPendingBundles + " pending/rejected bundle applications for user: " + username);
+            jdbc.update("UPDATE bundle_applications SET status='WITHDRAWN', approval_status='WITHDRAWN', " +
+                            "rejection_reason='Withdrawn because the customer account was deleted', " +
+                            "modified_at=CURRENT_TIMESTAMP WHERE customer_id IN (" +
+                            String.join(",", java.util.Collections.nCopies(customerIds.size(), "?")) +
+                            ") AND (status='PENDING' OR approval_status='PENDING_APPROVAL')",
+                    customerIds.toArray());
 
-            // Archive approved/active accounts for audit trail
-            String archivedCustomerId = "DEL" + UUID.randomUUID().toString().replace("-", "").substring(0, 17);
-            int archivedFDs = jdbc.update(
-                "UPDATE fd_accounts SET customer_id = ? WHERE customer_id IN (" + customerIds + ") AND " +
-                "(status != 'PENDING' AND approval_status != 'PENDING_APPROVAL' AND approval_status != 'REJECTED')",
-                archivedCustomerId
-            );
-            System.out.println("Archived " + archivedFDs + " approved/active FD accounts for user: " + username);
-            
-            int archivedBundles = jdbc.update(
-                "UPDATE bundle_applications SET customer_id = ? WHERE customer_id IN (" + customerIds + ") AND " +
-                "(status != 'PENDING' AND approval_status != 'PENDING_APPROVAL' AND approval_status != 'REJECTED')",
-                archivedCustomerId
-            );
-            System.out.println("Archived " + archivedBundles + " approved/active bundle applications for user: " + username);
-
-            // Delete the customer_profile entries entirely to prevent reuse
-            jdbc.update("DELETE FROM customer_profile WHERE user_id = ?", userId);
-        } else {
-            // Fallback: if no customer_profile found, at least set user_id to NULL
-            jdbc.update("UPDATE customer_profile SET user_id = NULL WHERE user_id = ?", userId);
+            // Keep profile and account rows for statements/audit, but sever the deleted login link.
+            profiles.forEach(profile -> profile.setUserId(null));
+            customerRepository.saveAll(profiles);
         }
 
-        jdbc.update("DELETE FROM users WHERE id = ?", userId);
+        // Remove any legacy local mirror row. The canonical auth user is deleted by auth-service
+        // only after this method completes successfully.
+        jdbc.update("DELETE FROM users WHERE username=?", username);
     }
 
     @Transactional
     public void syncCustomerProfile(String username, String email, Long userId) {
-        // Check if customer profile already exists for this user_id
-        Long existingUserId = jdbc.query(
-            "SELECT user_id FROM customer_profile WHERE user_id = ?",
-            rs -> rs.next() ? rs.getLong(1) : null,
-            userId
-        );
-
-        if (existingUserId != null) {
-            System.out.println("Customer profile already exists for userId: " + userId);
+        if (userId == null) {
+            throw new IllegalArgumentException("Auth user ID is required to sync a customer profile");
+        }
+        if (!customerRepository.findAllByUserId(userId).isEmpty()) {
             return;
         }
 
-        // Generate a new customer_id
-        String maxCustomerId = jdbc.queryForObject("SELECT MAX(customer_id) FROM customer_profile", String.class);
-        int nextNum = 1;
+        String maxCustomerId = customerRepository.findMaxCustomerId();
+        int nextNumber = 1;
         if (maxCustomerId != null && maxCustomerId.startsWith("CUST")) {
             try {
-                nextNum = Integer.parseInt(maxCustomerId.substring(4)) + 1;
-            } catch (NumberFormatException e) {
-                nextNum = 1;
+                nextNumber = Integer.parseInt(maxCustomerId.substring(4)) + 1;
+            } catch (NumberFormatException ignored) {
+                nextNumber = 1;
             }
         }
-        String customerId = String.format("CUST%06d", nextNum);
-
-        // Create customer profile with the correct user_id from auth-service
-        jdbc.update(
-            "INSERT INTO customer_profile (customer_id, user_id, full_name, phone, category) VALUES (?, ?, ?, ?, ?)",
-            customerId, userId, username, "", "GENERAL"
-        );
-
-        System.out.println("Created customer profile: customerId=" + customerId + ", userId=" + userId + ", username=" + username);
+        CustomerProfile profile = new CustomerProfile();
+        profile.setCustomerId(String.format("CUST%06d", nextNumber));
+        profile.setUserId(userId);
+        profile.setFullName(username);
+        profile.setCategory("GENERAL");
+        customerRepository.save(profile);
     }
 }

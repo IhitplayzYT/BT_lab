@@ -1,5 +1,5 @@
 import { TranslatePipe } from '../../pipes/translate.pipe';
-import { Component, ElementRef, OnInit, AfterViewInit, inject, signal, ChangeDetectorRef } from '@angular/core';
+import { Component, ElementRef, OnInit, OnDestroy, AfterViewInit, inject, signal, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiClientService } from '../../services/api-client.service';
@@ -15,10 +15,11 @@ import { RelationNetsComponent } from '../relation-nets/relation-nets.component'
   templateUrl: './admin-panel.component.html',
   styleUrls: ['./admin-panel.component.scss']
 })
-export class AdminPanelComponent implements AfterViewInit, OnInit {
+export class AdminPanelComponent implements AfterViewInit, OnInit, OnDestroy {
   private elementRef = inject(ElementRef);
   private apiClient = inject(ApiClientService);
   private cdr = inject(ChangeDetectorRef);
+  private analyticsRefreshTimer: ReturnType<typeof setInterval> | null = null;
 
   showProductManagement = false;
 
@@ -125,11 +126,35 @@ export class AdminPanelComponent implements AfterViewInit, OnInit {
       this.loadClockStatus();
       this.loadUsers();
     });
+    this.analyticsRefreshTimer = setInterval(() => {
+      if (!this.isLoading) void this.loadAnalyticsData();
+    }, 30000);
+  }
+
+  ngOnDestroy(): void {
+    if (this.analyticsRefreshTimer) clearInterval(this.analyticsRefreshTimer);
   }
 
   async loadAnalyticsData(): Promise<void> {
     try {
       this.isLoading = true;
+      this.analytics.totalFDs = 0;
+      this.analytics.totalDeposits = 0;
+      this.analytics.pendingApprovals = 0;
+      this.analytics.activeFDs = 0;
+      this.analytics.maturedFDs = 0;
+      this.analytics.rejectedFDs = 0;
+      this.analytics.averageTenure = 0;
+      this.analytics.totalInterestEarned = 0;
+      this.analytics.approvalRate = 0;
+      this.analytics.avgDepositAmount = 0;
+      this.analytics.totalCustomers = 0;
+      this.allApplications = [];
+      this.recentApplications = [];
+      this.visualizationAccounts = [];
+      this.visualizationMonthly = [];
+      this.visualizationAmounts = [];
+      this.visualizationTenures = [];
 
       // Ensure token is loaded before making requests
       this.apiClient.loadToken();
@@ -173,12 +198,9 @@ export class AdminPanelComponent implements AfterViewInit, OnInit {
         const totalTenure = allApps.reduce((sum: number, app: any) => sum + (app.tenureMonths || 0), 0);
         this.analytics.averageTenure = Math.round(totalTenure / allApps.length);
 
-        // Calculate total interest (maturity amount - principal)
-        this.analytics.totalInterestEarned = allApps.reduce((sum: number, app: any) => {
-          const principal = parseFloat(app.principalAmount) || 0;
-          const maturityAmount = parseFloat(app.maturityAmount) || principal;
-          return sum + (maturityAmount - principal);
-        }, 0);
+        // Use interest actually accrued to date, rather than projected maturity interest.
+        this.analytics.totalInterestEarned = allApps.reduce((sum: number, app: any) =>
+          sum + (parseFloat(app.accruedInterest) || 0), 0);
 
         // Calculate approval rate
         const totalProcessed = this.analytics.activeFDs + this.analytics.rejectedFDs;

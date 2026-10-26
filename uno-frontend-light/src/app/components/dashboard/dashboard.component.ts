@@ -9,11 +9,13 @@ import { CurrencyService } from '../../services/currency.service';
 import { HttpClient } from '@angular/common/http';
 import { LanguageSelectorComponent } from '../language-selector/language-selector.component';
 import { HelpBotComponent } from '../help-bot/help-bot.component';
+import { CustomerAssistantComponent } from '../customer-assistant/customer-assistant.component';
+import { CustomerAdvisorComponent } from '../customer-advisor/customer-advisor.component';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [TranslatePipe, CommonModule, FormsModule, DatePipe, LanguageSelectorComponent, HelpBotComponent],
+  imports: [TranslatePipe, CommonModule, FormsModule, DatePipe, LanguageSelectorComponent, HelpBotComponent, CustomerAssistantComponent, CustomerAdvisorComponent],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.scss']
 })
@@ -58,6 +60,8 @@ export class DashboardComponent implements OnInit {
     phone: '',
     panNumber: '',
     age: '',
+    customerCategory: 'GENERAL',
+    accountHolderRoles: ['OWNER'] as string[],
     gender: '',
     occupation: '',
     annualIncome: '',
@@ -153,7 +157,9 @@ export class DashboardComponent implements OnInit {
       const activeApps = (applications || []).filter(app => {
         console.log(`Checking app ${app.fdAccountNo}: status=${app.status}, approvalStatus=${app.approvalStatus}`);
         return app.approvalStatus !== 'REJECTED' &&
-               app.status !== 'REJECTED';
+               app.status !== 'REJECTED' &&
+               app.approvalStatus !== 'WITHDRAWN' &&
+               app.status !== 'WITHDRAWN';
       });
       // Sort: ACTIVE and PENDING first, then closed/matured at the bottom
       const sortedApps = activeApps.sort((a, b) => {
@@ -164,7 +170,11 @@ export class DashboardComponent implements OnInit {
         return 0;
       });
       console.log('Filtered and sorted apps:', sortedApps);
-      this.fdAccounts.set(sortedApps);
+      // Pending requests already have a dedicated Applications tab. Keep them out of
+      // Contracts so an unapproved FD is not shown as an extra contract.
+      this.fdAccounts.set(sortedApps.filter(app =>
+        app.status !== 'PENDING' && app.approvalStatus !== 'PENDING_APPROVAL'
+      ));
       // Applications tab should only show PENDING applications
       const pendingApps = activeApps.filter(app =>
         app.status === 'PENDING' || app.approvalStatus === 'PENDING_APPROVAL'
@@ -307,6 +317,8 @@ export class DashboardComponent implements OnInit {
       phone: this.settingsData.phone,
       panNumber: this.settingsData.panNumber,
       age: this.settingsData.age,
+      customerCategory: this.settingsData.customerCategory,
+      accountHolderRoles: this.settingsData.accountHolderRoles,
       gender: this.settingsData.gender,
       occupation: this.settingsData.occupation,
       annualIncome: this.settingsData.annualIncome,
@@ -323,7 +335,21 @@ export class DashboardComponent implements OnInit {
       profilePicture: this.settingsData.profilePicture
     };
     localStorage.setItem(this.apiClient.getUserStorageKey('default_fd_details'), JSON.stringify(defaultDetails));
+    this.apiClient.updateCustomerCategory(this.settingsData.customerCategory).subscribe({
+      error: error => console.warn('Could not sync customer category to the FD profile:', error)
+    });
     alert('Settings saved successfully!');
+  }
+
+  toggleDefaultHolderRole(role: string, checked: boolean): void {
+    if (role === 'OWNER') return;
+    const roles = new Set(this.settingsData.accountHolderRoles || ['OWNER']);
+    checked ? roles.add(role) : roles.delete(role);
+    this.settingsData.accountHolderRoles = ['OWNER', ...Array.from(roles).filter(value => value !== 'OWNER')];
+  }
+
+  hasDefaultHolderRole(role: string): boolean {
+    return (this.settingsData.accountHolderRoles || ['OWNER']).includes(role);
   }
 
   loadSettings(): void {
@@ -341,6 +367,8 @@ export class DashboardComponent implements OnInit {
           phone: details.phone || '',
           panNumber: details.panNumber || '',
           age: details.age || '',
+          customerCategory: details.customerCategory || 'GENERAL',
+          accountHolderRoles: details.accountHolderRoles || ['OWNER'],
           gender: details.gender || '',
           occupation: details.occupation || '',
           annualIncome: details.annualIncome || '',

@@ -94,6 +94,7 @@ export class OfficerPanelComponent implements AfterViewInit, OnInit, OnDestroy {
   journalPage = 0;
   journalPageSize = 100;
   journalLoading = false;
+  journalError = '';
 
   // Ledger data
   ledgerAccounts: any[] = [];
@@ -120,11 +121,11 @@ export class OfficerPanelComponent implements AfterViewInit, OnInit, OnDestroy {
     this.accountingRefreshHandle = setInterval(() => {
       if (document.hidden) return;
       if (this.activeTab === 'journal') void this.loadJournal();
-      if (this.activeTab === 'ledger') {
+      if (this.activeTab === 'ledger' && !this.ledgerHistoryLoading) {
         if (this.selectedLedgerAccount) void this.loadAccountLedger(this.selectedLedgerAccount.fdAccountNo);
-        else void this.refreshVisibleLedgerAccounts();
+        else if (!this.ledgerAccountsLoading) void this.refreshVisibleLedgerAccounts();
       }
-    }, 15000);
+    }, 5000);
   }
 
   ngOnDestroy(): void {
@@ -624,19 +625,20 @@ export class OfficerPanelComponent implements AfterViewInit, OnInit, OnDestroy {
   async loadJournal(): Promise<void> {
     if (this.journalLoading) return;
     this.journalLoading = true;
+    this.journalError = '';
     try {
       this.apiClient.loadToken();
       if (this.journalFilterType) {
-        const data = await this.apiClient.getJournalByType(this.journalFilterType, this.journalPage, this.journalPageSize).toPromise();
-        this.journalTransactions = data || [];
+        const data: any = await this.apiClient.getJournalByType(this.journalFilterType, this.journalPage, this.journalPageSize).toPromise();
+        this.journalTransactions = Array.isArray(data) ? data : (data?.content || data?.transactions || []);
       } else {
-        const data = await this.apiClient.getJournalAll(this.journalPage, this.journalPageSize).toPromise();
-        this.journalTransactions = data || [];
+        const data: any = await this.apiClient.getJournalAll(this.journalPage, this.journalPageSize).toPromise();
+        this.journalTransactions = Array.isArray(data) ? data : (data?.content || data?.transactions || []);
       }
       await this.loadJournalSummary();
     } catch (error: any) {
       console.error('Error loading journal:', error);
-      this.journalTransactions = [];
+      this.journalError = 'Could not load journal transactions. Please retry.';
     } finally {
       this.journalLoading = false;
     }
@@ -702,10 +704,12 @@ export class OfficerPanelComponent implements AfterViewInit, OnInit, OnDestroy {
   async selectLedgerAccount(account: any): Promise<void> {
     this.selectedLedgerAccount = account;
     this.ledgerTransactions = [];
+    this.ledgerHistoryError = '';
     const accountNo = account?.fdAccountNo || account?.fd_account_no || account?.accountNumber;
     if (!accountNo) {
       this.ledgerHistoryError = 'The selected account does not include an FD account number.';
       this.ledgerTransactions = [];
+      this.ledgerHistoryLoading = false;
       return;
     }
     this.selectedLedgerAccount.fdAccountNo = accountNo;
@@ -726,7 +730,6 @@ export class OfficerPanelComponent implements AfterViewInit, OnInit, OnDestroy {
     } catch (error: any) {
       console.error('Error loading account ledger:', error);
       if (requestId === this.ledgerHistoryRequestId) {
-        this.ledgerTransactions = [];
         this.ledgerHistoryError = 'Could not load transaction history for this FD account.';
       }
     } finally {

@@ -113,6 +113,9 @@
           <button class="tab-btn" [class.active]="activeTab() === 'settings'" (click)="setActiveTab('settings')">
             <span>{{ 'Settings' | translate }}</span>
           </button>
+          <button class="tab-btn" [class.active]="activeTab() === 'advisor'" (click)="setActiveTab('advisor')">
+            <span>Advisor</span>
+          </button>
           <button class="tab-btn" [class.active]="activeTab() === 'help'" (click)="setActiveTab('help')">
             <span>{{ 'Help' | translate }}</span>
           </button>
@@ -396,6 +399,14 @@
                           <span class="value">{{ account.interestRate }}%</span>
                         </div>
                         <div class="detail">
+                          <span class="label">{{ 'Customer Category' | translate }}</span>
+                          <span class="value">{{ account.customerCategory || 'GENERAL' }}</span>
+                        </div>
+                        <div class="detail">
+                          <span class="label">{{ 'Account Holder Roles' | translate }}</span>
+                          <span class="value">{{ account.accountHolderRoles || 'OWNER' }}{{ account.coOwnerName ? ' · ' + account.coOwnerName : '' }}</span>
+                        </div>
+                        <div class="detail">
                           <span class="label">{{ 'Tenure' | translate }}</span>
                           <span class="value">{{ '{0} months' | translate:[account.tenureMonths] }}</span>
                         </div>
@@ -595,6 +606,29 @@
                   </div>
 
                   <div class="form-group">
+                    <label for="customerCategory">{{ 'Customer Category' | translate }}</label>
+                    <select id="customerCategory" [(ngModel)]="settingsData.customerCategory" name="customerCategory">
+                      <option value="GENERAL">{{ 'General' | translate }}</option>
+                      <option value="SENIOR_CITIZEN">{{ 'Senior Citizen' | translate }}</option>
+                      <option value="EMPLOYEE">{{ 'Employee' | translate }}</option>
+                      <option value="STUDENT">{{ 'Student' | translate }}</option>
+                      <option value="CORPORATE">{{ 'Corporate' | translate }}</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group full-width">
+                    <label>{{ 'Default FD Account Holder Roles' | translate }}</label>
+                    <div class="product-role-options">
+                      @for (role of ['OWNER', 'CO-OWNER']; track role) {
+                        <label class="product-role-option">
+                          <input type="checkbox" [checked]="hasDefaultHolderRole(role)" [disabled]="role === 'OWNER'" (change)="toggleDefaultHolderRole(role, $any($event.target).checked)">
+                          <span>{{ role === 'OWNER' ? 'Owner' : 'Co-Owner' | translate }}</span>
+                        </label>
+                      }
+                    </div>
+                  </div>
+
+                  <div class="form-group">
                     <label for="gender">{{ 'Gender' | translate }}</label>
                     <select id="gender" [(ngModel)]="settingsData.gender" name="gender">
                       <option value="">{{ '-- Select Gender --' | translate }}</option>
@@ -780,9 +814,16 @@
           </div>
         }
 
+        @if (activeTab() === 'advisor') {
+          <div class="tab-content">
+            <app-customer-advisor [portfolio]="fdAccounts()" [products]="products()"></app-customer-advisor>
+          </div>
+        }
+
         <!-- Help Tab -->
         @if (activeTab() === 'help') {
           <div class="tab-content">
+            <app-customer-assistant></app-customer-assistant>
             <div class="help-section">
               <div class="help-bot-section">
                 <app-help-bot></app-help-bot>

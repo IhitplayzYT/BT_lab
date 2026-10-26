@@ -101,6 +101,14 @@ public class MaturityService {
         return new Result(businessDate, matured, skipped, failed);
     }
 
+    /** Settle one due account using the same guarded maturity transaction as the daily batch. */
+    public boolean matureAccount(String account, LocalDate businessDate, String actor) {
+        if (businessDate.isAfter(today())) {
+            throw new IllegalArgumentException("Future maturity dates are not permitted");
+        }
+        return Boolean.TRUE.equals(tx.execute(status -> matureOne(account, businessDate, actor)));
+    }
+
     private boolean matureOne(String account, LocalDate businessDate, String actor) {
         Map<String, Object> fd = jdbc.queryForMap("SELECT * FROM fd_accounts WHERE fd_account_no=? FOR UPDATE", account);
         LocalDate maturityDate = ((java.sql.Date) fd.get("maturity_date")).toLocalDate();

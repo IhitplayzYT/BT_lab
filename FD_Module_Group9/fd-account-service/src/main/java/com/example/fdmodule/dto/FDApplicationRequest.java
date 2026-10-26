@@ -87,6 +87,16 @@ public class FDApplicationRequest {
 
     private List<NomineeDTO> nominees;
 
+    @Size(max = 50)
+    private String customerCategory;
+
+    @Size(max = 2)
+    private List<String> accountHolderRoles;
+
+    @Size(max = 255)
+    @Pattern(regexp = "^[a-zA-Z\\s]*$", message = "Co-owner name must contain only letters and spaces")
+    private String coOwnerName;
+
     public static class NomineeDTO {
         @NotBlank
         @Size(max = 255)
@@ -157,6 +167,12 @@ public class FDApplicationRequest {
     public void setApplicantIfsc(String applicantIfsc) { this.applicantIfsc = applicantIfsc; }
     public List<NomineeDTO> getNominees() { return nominees; }
     public void setNominees(List<NomineeDTO> nominees) { this.nominees = nominees; }
+    public String getCustomerCategory() { return customerCategory; }
+    public void setCustomerCategory(String customerCategory) { this.customerCategory = customerCategory; }
+    public List<String> getAccountHolderRoles() { return accountHolderRoles; }
+    public void setAccountHolderRoles(List<String> accountHolderRoles) { this.accountHolderRoles = accountHolderRoles; }
+    public String getCoOwnerName() { return coOwnerName; }
+    public void setCoOwnerName(String coOwnerName) { this.coOwnerName = coOwnerName; }
     public String getNomineeName() { return nomineeName; }
     public void setNomineeName(String nomineeName) { this.nomineeName = nomineeName; }
     public String getNomineeRelation() { return nomineeRelation; }

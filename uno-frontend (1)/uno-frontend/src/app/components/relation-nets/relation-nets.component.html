@@ -1,8 +1,54 @@
 <div class="relation-nets">
   <div class="relation-nets-header">
     <h2>Relation Nets</h2>
-    <p>Visualize customer relationships and connections</p>
+    <p>Declared nominee relationships with explainable graph review signals</p>
   </div>
+
+  <section class="risk-review card" aria-labelledby="risk-review-title">
+    <div class="risk-review-heading">
+      <div>
+        <h3 id="risk-review-title">Relationship risk review</h3>
+        <p>Heuristic review priority from nominee nodes and directed nominee edges in this graph.</p>
+      </div>
+      <span class="risk-disclaimer">A review signal is not evidence of wrongdoing or an automated decision. Possible chains use exact nominee/customer name matches; identities are not verified.</span>
+    </div>
+    <details class="risk-method">
+      <summary>How the heuristic score is calculated</summary>
+      <p>Three or more directed links in a nominee chain: +30 (two links: +15); a directed cycle: +35; a nominee linked from multiple customers: +15 per shared nominee, capped at +30; groups of five or more customers: +10. Scores are capped at 100 and are review-priority indicators, not probabilities. On request, the local AI assistant receives only these aggregate counts and flags, never names or IDs.</p>
+    </details>
+    @if (isLoading) {
+      <p class="risk-empty">Building assessment from the loaded nominee graph…</p>
+    } @else if (riskGroups.length) {
+      <div class="risk-group-list">
+        @for (group of riskGroups; track group.id) {
+          <article class="risk-group" [class.risk-high]="group.tier === 'High'" [class.risk-review-tier]="group.tier === 'Review'">
+            <div class="risk-group-title">
+              <strong>{{ group.id }}</strong>
+              <span class="risk-tier">{{ group.tier }} · {{ group.score }}/100</span>
+            </div>
+            <p>{{ group.customerCount }} customers · {{ group.relationshipCount }} declared nominee links · longest chain {{ group.longestChain }}</p>
+            <ul>
+              @for (reason of group.reasons; track reason) { <li>{{ reason }}</li> }
+            </ul>
+            <button type="button" class="btn btn-secondary ai-insight-button" (click)="generateRiskInsight(group)" [disabled]="aiInsightLoading[group.id]">
+              {{ aiInsightLoading[group.id] ? 'Generating AI insight…' : aiInsights[group.id] ? 'Refresh AI insight' : 'Generate AI insight' }}
+            </button>
+            @if (aiInsights[group.id]) {
+              <div class="ai-insight" aria-live="polite">
+                <strong>AI insight · supporting context</strong>
+                <p>{{ aiInsights[group.id] }}</p>
+              </div>
+            }
+            @if (aiInsightErrors[group.id]) {
+              <p class="ai-insight-error" role="status">{{ aiInsightErrors[group.id] }}</p>
+            }
+          </article>
+        }
+      </div>
+    } @else {
+      <p class="risk-empty">No nominee-linked groups are present in the loaded application data.</p>
+    }
+  </section>
 
   <div class="search-bar">
     <div class="search-inputs">
@@ -41,12 +87,16 @@
           <span>Customer Node</span>
         </div>
         <div class="legend-item">
+          <span class="legend-color" style="background: #c7d2fe;"></span>
+          <span>Nominee Node</span>
+        </div>
+        <div class="legend-item">
           <span class="legend-color" style="background: #2be0cc;"></span>
           <span>Highlighted Node</span>
         </div>
         <div class="legend-item">
-          <span class="legend-line"></span>
-          <span>Connection Link</span>
+          <span class="legend-line nominee-line"></span>
+          <span>Declared nominee link →</span>
         </div>
         <div class="legend-item">
           <span class="legend-line highlighted"></span>
@@ -62,6 +112,10 @@
           <div class="detail-item">
             <span class="label">Name:</span>
             <span class="value">{{ selectedCustomer.name }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="label">Node type:</span>
+            <span class="value">{{ selectedCustomer.group === 'customer' ? 'Customer' : 'Nominee' }}{{ selectedCustomer.identityMatch === 'ambiguous' ? ' · name match ambiguous' : '' }}</span>
           </div>
           <div class="detail-item">
             <span class="label">ID:</span>
@@ -83,6 +137,20 @@
             <span class="label">Total Investment:</span>
             <span class="value">{{ formatCurrency(selectedCustomer.totalInvestment) }}</span>
           </div>
+          <div class="detail-item full-width">
+            <span class="label">Recorded nominee links:</span>
+            <span class="value">{{ selectedCustomer.relationshipSummary.length ? selectedCustomer.relationshipSummary.join('; ') : 'No nominee links recorded' }}</span>
+          </div>
+          @if (selectedCustomer.riskGroup) {
+            <div class="detail-item">
+              <span class="label">Network review:</span>
+              <span class="value">{{ selectedCustomer.riskGroup.tier }} · {{ selectedCustomer.riskGroup.score }}/100</span>
+            </div>
+            <div class="detail-item full-width">
+              <span class="label">Signals:</span>
+              <span class="value">{{ selectedCustomer.riskGroup.reasons.join('; ') }}</span>
+            </div>
+          }
         </div>
       </div>
     }
@@ -105,7 +173,7 @@
 
   <div class="graph-controls">
     <p class="control-tip">
-      <strong>Controls:</strong> Drag to pan • Scroll to zoom • Click node to select • Search to find connections
+      <strong>Controls:</strong> Drag to pan • Scroll to zoom • Click node to select • Search to find nominee connections
     </p>
   </div>
 </div>

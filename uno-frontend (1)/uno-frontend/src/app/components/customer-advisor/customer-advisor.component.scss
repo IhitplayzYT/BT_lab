@@ -1,0 +1,22 @@
+:host { display: block; }
+.advisor { padding: clamp(1.2rem, 3vw, 2rem); }
+.advisor-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; margin-bottom: 1.25rem; }
+.advisor h2 { margin: .2rem 0; }
+.advisor-heading p { margin: .4rem 0 0; color: var(--text-2); }
+.eyebrow { color: var(--gold); font-size: .72rem; letter-spacing: .12em; font-weight: 700; }
+.privacy-note, .muted { color: var(--text-3); font-size: .82rem; }
+.advisor-form { display: grid; gap: 1rem; }
+.field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.field-grid label { display: grid; gap: .45rem; color: var(--text-2); font-weight: 600; }
+.field-grid label span { display: inline; color: var(--text-3); font-weight: 400; }
+.field-grid input, .field-grid select, .field-grid textarea { width: 100%; min-height: 2.8rem; padding: .7rem .8rem; border: 1px solid var(--line-2); border-radius: 10px; color: var(--text); background: var(--bg); font: inherit; }
+.field-grid textarea { resize: vertical; }
+.full-width { grid-column: 1 / -1; }
+.data-note { margin: 1rem 0; }
+.recommendation { margin-top: 1rem; padding: 1.2rem; border-radius: 14px; background: color-mix(in srgb, var(--gold) 9%, var(--bg)); }
+.recommendation h3 { margin-top: 0; }
+.recommendation p { white-space: pre-wrap; line-height: 1.65; }
+.recommendation small { color: var(--text-3); }
+.unavailable { padding: 1rem; border-radius: 12px; background: color-mix(in srgb, #b84f45 12%, var(--bg)); }
+.unavailable p { margin-bottom: 0; color: var(--text-2); }
+@media (max-width: 640px) { .advisor-heading { flex-direction: column; } .field-grid { grid-template-columns: 1fr; } .full-width { grid-column: auto; } }

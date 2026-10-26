@@ -40,7 +40,6 @@
 [INFO] Tests are skipped.
 [INFO] 
 [INFO] --- jar:3.4.2:jar (default-jar) @ security-common ---
-[INFO] Building jar: /home/ihitplayzyt/Downloads/BT_LAB/Auth_Sec/security-common/target/security-common-1.0.0.jar
 [INFO] 
 [INFO] --- install:3.1.3:install (default-install) @ security-common ---
 [INFO] Installing /home/ihitplayzyt/Downloads/BT_LAB/Auth_Sec/security-common/pom.xml to /home/ihitplayzyt/.m2/repository/com/example/security-common/1.0.0/security-common-1.0.0.pom
@@ -56,21 +55,18 @@
 [INFO] Copying 1 resource from src/main/resources to target/classes
 [INFO] 
 [INFO] --- compiler:3.13.0:compile (default-compile) @ auth-service ---
-[INFO] Recompiling the module because of changed dependency.
-[INFO] Compiling 14 source files with javac [debug parameters release 21] to target/classes
+[INFO] Nothing to compile - all classes are up to date.
 [INFO] 
 [INFO] --- resources:3.3.1:testResources (default-testResources) @ auth-service ---
 [INFO] skip non existing resourceDirectory /home/ihitplayzyt/Downloads/BT_LAB/Auth_Sec/auth-service/src/test/resources
 [INFO] 
 [INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ auth-service ---
-[INFO] Recompiling the module because of changed dependency.
-[INFO] Compiling 1 source file with javac [debug parameters release 21] to target/test-classes
+[INFO] Nothing to compile - all classes are up to date.
 [INFO] 
 [INFO] --- surefire:3.2.5:test (default-test) @ auth-service ---
 [INFO] Tests are skipped.
 [INFO] 
 [INFO] --- jar:3.4.2:jar (default-jar) @ auth-service ---
-[INFO] Building jar: /home/ihitplayzyt/Downloads/BT_LAB/Auth_Sec/auth-service/target/auth-service-1.0.0.jar
 [INFO] 
 [INFO] --- spring-boot:3.3.4:repackage (repackage) @ auth-service ---
 [INFO] Replacing main artifact /home/ihitplayzyt/Downloads/BT_LAB/Auth_Sec/auth-service/target/auth-service-1.0.0.jar with repackaged archive, adding nested dependencies in BOOT-INF/.
@@ -82,14 +78,14 @@
 [INFO] ------------------------------------------------------------------------
 [INFO] Reactor Summary for parth-fd-platform 1.0.0:
 [INFO] 
-[INFO] parth-fd-platform .................................. SUCCESS [  0.125 s]
-[INFO] security-common .................................... SUCCESS [  0.768 s]
-[INFO] auth-service ....................................... SUCCESS [  2.313 s]
+[INFO] parth-fd-platform .................................. SUCCESS [  0.116 s]
+[INFO] security-common .................................... SUCCESS [  0.709 s]
+[INFO] auth-service ....................................... SUCCESS [  0.340 s]
 [INFO] ------------------------------------------------------------------------
 [INFO] BUILD SUCCESS
 [INFO] ------------------------------------------------------------------------
-[INFO] Total time:  3.470 s
-[INFO] Finished at: 2026-10-26T00:20:16+05:30
+[INFO] Total time:  1.414 s
+[INFO] Finished at: 2026-10-26T19:05:45+05:30
 [INFO] ------------------------------------------------------------------------
 [INFO] Scanning for projects...
 [INFO] 
@@ -100,7 +96,7 @@
 [INFO] 
 [INFO] --- resources:3.3.1:resources (default-resources) @ product ---
 [INFO] Copying 1 resource from src/main/resources to target/classes
-[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] Copying 2 resources from src/main/resources to target/classes
 [INFO] 
 [INFO] --- compiler:3.13.0:compile (default-compile) @ product ---
 [INFO] Nothing to compile - all classes are up to date.
@@ -115,7 +111,6 @@
 [INFO] Tests are skipped.
 [INFO] 
 [INFO] --- jar:3.4.2:jar (default-jar) @ product ---
-[INFO] Building jar: /home/ihitplayzyt/Downloads/BT_LAB/banking-product-backend/target/product-0.0.1-SNAPSHOT.jar
 [INFO] 
 [INFO] --- spring-boot:3.3.2:repackage (repackage) @ product ---
 [INFO] Replacing main artifact /home/ihitplayzyt/Downloads/BT_LAB/banking-product-backend/target/product-0.0.1-SNAPSHOT.jar with repackaged archive, adding nested dependencies in BOOT-INF/.
@@ -123,8 +118,8 @@
 [INFO] ------------------------------------------------------------------------
 [INFO] BUILD SUCCESS
 [INFO] ------------------------------------------------------------------------
-[INFO] Total time:  2.293 s
-[INFO] Finished at: 2026-10-26T00:20:19+05:30
+[INFO] Total time:  1.388 s
+[INFO] Finished at: 2026-10-26T19:05:48+05:30
 [INFO] ------------------------------------------------------------------------
 [INFO] Scanning for projects...
 [INFO] ------------------------------------------------------------------------
@@ -162,7 +157,6 @@
 [INFO] Tests are skipped.
 [INFO] 
 [INFO] --- jar:3.4.2:jar (default-jar) @ event-common ---
-[INFO] Building jar: /home/ihitplayzyt/Downloads/BT_LAB/FD_Module_Group9/event-common/target/event-common-1.0.0.jar
 [INFO] 
 [INFO] -------------------< com.example:fd-account-service >-------------------
 [INFO] Building fd-account-service 1.0.0                                  [3/4]
@@ -174,21 +168,18 @@
 [INFO] Copying 0 resource from src/main/resources to target/classes
 [INFO] 
 [INFO] --- compiler:3.13.0:compile (default-compile) @ fd-account-service ---
-[INFO] Recompiling the module because of changed dependency.
-[INFO] Compiling 73 source files with javac [debug parameters release 21] to target/classes
+[INFO] Nothing to compile - all classes are up to date.
 [INFO] 
 [INFO] --- resources:3.3.1:testResources (default-testResources) @ fd-account-service ---
 [INFO] Copying 3 resources from src/test/resources to target/test-classes
 [INFO] 
 [INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ fd-account-service ---
-[INFO] Recompiling the module because of changed dependency.
-[INFO] Compiling 13 source files with javac [debug parameters release 21] to target/test-classes
+[INFO] Nothing to compile - all classes are up to date.
 [INFO] 
 [INFO] --- surefire:3.2.5:test (default-test) @ fd-account-service ---
 [INFO] Tests are skipped.
 [INFO] 
 [INFO] --- jar:3.4.2:jar (default-jar) @ fd-account-service ---
-[INFO] Building jar: /home/ihitplayzyt/Downloads/BT_LAB/FD_Module_Group9/fd-account-service/target/fd-account-service-1.0.0.jar
 [INFO] 
 [INFO] --- spring-boot:3.3.4:repackage (repackage) @ fd-account-service ---
 [INFO] Replacing main artifact /home/ihitplayzyt/Downloads/BT_LAB/FD_Module_Group9/fd-account-service/target/fd-account-service-1.0.0.jar with repackaged archive, adding nested dependencies in BOOT-INF/.
@@ -204,21 +195,18 @@
 [INFO] Copying 1 resource from src/main/resources to target/classes
 [INFO] 
 [INFO] --- compiler:3.13.0:compile (default-compile) @ notification-service ---
-[INFO] Recompiling the module because of changed dependency.
-[INFO] Compiling 11 source files with javac [debug parameters release 21] to target/classes
+[INFO] Nothing to compile - all classes are up to date.
 [INFO] 
 [INFO] --- resources:3.3.1:testResources (default-testResources) @ notification-service ---
 [INFO] Copying 1 resource from src/test/resources to target/test-classes
 [INFO] 
 [INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ notification-service ---
-[INFO] Recompiling the module because of changed dependency.
-[INFO] Compiling 5 source files with javac [debug parameters release 21] to target/test-classes
+[INFO] Nothing to compile - all classes are up to date.
 [INFO] 
 [INFO] --- surefire:3.2.5:test (default-test) @ notification-service ---
 [INFO] Tests are skipped.
 [INFO] 
 [INFO] --- jar:3.4.2:jar (default-jar) @ notification-service ---
-[INFO] Building jar: /home/ihitplayzyt/Downloads/BT_LAB/FD_Module_Group9/notification-service/target/notification-service-1.0.0.jar
 [INFO] 
 [INFO] --- spring-boot:3.3.4:repackage (repackage) @ notification-service ---
 [INFO] Replacing main artifact /home/ihitplayzyt/Downloads/BT_LAB/FD_Module_Group9/notification-service/target/notification-service-1.0.0.jar with repackaged archive, adding nested dependencies in BOOT-INF/.
@@ -226,15 +214,15 @@
 [INFO] ------------------------------------------------------------------------
 [INFO] Reactor Summary for parth-fd-platform 1.0.0:
 [INFO] 
-[INFO] parth-fd-platform .................................. SUCCESS [  0.002 s]
-[INFO] event-common ....................................... SUCCESS [  1.055 s]
-[INFO] fd-account-service ................................. SUCCESS [  3.623 s]
-[INFO] notification-service ............................... SUCCESS [  0.726 s]
+[INFO] parth-fd-platform .................................. SUCCESS [  0.001 s]
+[INFO] event-common ....................................... SUCCESS [  0.939 s]
+[INFO] fd-account-service ................................. SUCCESS [  0.426 s]
+[INFO] notification-service ............................... SUCCESS [  0.086 s]
 [INFO] ------------------------------------------------------------------------
 [INFO] BUILD SUCCESS
 [INFO] ------------------------------------------------------------------------
-[INFO] Total time:  5.677 s
-[INFO] Finished at: 2026-10-26T00:20:26+05:30
+[INFO] Total time:  1.693 s
+[INFO] Finished at: 2026-10-26T19:05:50+05:30
 [INFO] ------------------------------------------------------------------------
 [INFO] Scanning for projects...
 [INFO] 
@@ -260,7 +248,6 @@
 [INFO] Tests are skipped.
 [INFO] 
 [INFO] --- jar:3.4.2:jar (default-jar) @ fd-calculator ---
-[INFO] Building jar: /home/ihitplayzyt/Downloads/BT_LAB/fd_calc/mod 4 backend/target/fd-calculator-1.0.0-SNAPSHOT.jar
 [INFO] 
 [INFO] --- spring-boot:3.3.4:repackage (repackage) @ fd-calculator ---
 [INFO] Replacing main artifact /home/ihitplayzyt/Downloads/BT_LAB/fd_calc/mod 4 backend/target/fd-calculator-1.0.0-SNAPSHOT.jar with repackaged archive, adding nested dependencies in BOOT-INF/.
@@ -268,154 +255,208 @@
 [INFO] ------------------------------------------------------------------------
 [INFO] BUILD SUCCESS
 [INFO] ------------------------------------------------------------------------
-[INFO] Total time:  1.986 s
-[INFO] Finished at: 2026-10-26T00:20:29+05:30
+[INFO] Total time:  1.575 s
+[INFO] Finished at: 2026-10-26T19:05:53+05:30
 [INFO] ------------------------------------------------------------------------
-time="2026-10-26T00:20:29+05:30" level=warning msg="buildx Docker CLI plugin not found: falling back to the classic builder. BuildKit-only build features (multi-arch, secrets, ssh, additional contexts, ...) will not be available"
+[0;34m[INFO][0m Starting the account database before application services...
+ Container fd-group9-mysql Running 
+[0;34m[INFO][0m Checking health of container: fd-group9-mysql (max attempts: 60)
+[0;32m[SUCCESS][0m fd-group9-mysql is healthy
+[0;34m[INFO][0m Applying the bundle schema migration before fd-account-service starts...
+mysql: [Warning] Using a password on the command line interface can be insecure.
+1
+1
+1
+1
+1
+1
+[0;32m[SUCCESS][0m Account database bundle schema is ready
+[0;34m[INFO][0m Ensuring the FD transaction schema exists before account service startup...
+mysql: [Warning] Using a password on the command line interface can be insecure.
+[0;32m[SUCCESS][0m FD transaction schema is ready
+mysql: [Warning] Using a password on the command line interface can be insecure.
+mysql: [Warning] Using a password on the command line interface can be insecure.
+mysql: [Warning] Using a password on the command line interface can be insecure.
+[0;32m[SUCCESS][0m Account service support schemas are ready
+time="2026-10-26T19:05:54+05:30" level=warning msg="buildx Docker CLI plugin not found: falling back to the classic builder. BuildKit-only build features (multi-arch, secrets, ssh, additional contexts, ...) will not be available"
  Image bt_lab-fd-auth-service Building 
- Image bt_lab-product-service Building 
- Image bt_lab-fd-calculator Building 
  Image bt_lab-fd-account-service Building 
+ Image bt_lab-interest-batch-service Building 
  Image bt_lab-notification-service Building 
- Image bt_lab-interest-batch-service Building 
+ Image bt_lab-fd-calculator Building 
+ Image bt_lab-product-service Building 
  Image bt_lab-fd-auth-service Building 
  Image bt_lab-fd-calculator Building 
-Sending build context to Docker daemon  524.4kBSending build context to Docker daemon  524.5kBSending build context to Docker daemon  4.814MBSending build context to Docker daemon  4.245MBSending build context to Docker daemon  8.509MBSending build context to Docker daemon  9.586MBSending build context to Docker daemon  15.53MBSending build context to Docker daemon  15.53MBSending build context to Docker daemon  20.84MBSending build context to Docker daemon  19.77MBSending build context to Docker daemon   25.6MB Image bt_lab-notification-service Building 
- Image bt_lab-interest-batch-service Building 
+Sending build context to Docker daemon  524.4kBSending build context to Docker daemon  524.5kBSending build context to Docker daemon   4.77MBSending build context to Docker daemon  6.412MBSending build context to Docker daemon  11.23MBSending build context to Docker daemon  12.25MBSending build context to Docker daemon  17.13MBSending build context to Docker daemon  18.15MBSending build context to Docker daemon  22.43MBSending build context to Docker daemon  20.86MB Image bt_lab-interest-batch-service Building 
+ Image bt_lab-notification-service Building 
  Image bt_lab-fd-account-service Building 
-Sending build context to Docker daemon  24.57MB Image bt_lab-product-service Building 
-Sending build context to Docker daemon  524.4kBSending build context to Docker daemon  524.4kBSending build context to Docker daemon  524.4kBSending build context to Docker daemon  30.38MBSending build context to Docker daemon  524.5kBSending build context to Docker daemon  28.28MBSending build context to Docker daemon  4.284MBSending build context to Docker daemon  4.284MBSending build context to Docker daemon  4.284MBSending build context to Docker daemon  35.19MBSending build context to Docker daemon  3.736MBSending build context to Docker daemon  34.14MBSending build context to Docker daemon  11.78MBSending build context to Docker daemon  11.78MBSending build context to Docker daemon  12.31MBSending build context to Docker daemon  38.35MBSending build context to Docker daemon  38.91MBSending build context to Docker daemon  5.309MBSending build context to Docker daemon  25.03MBSending build context to Docker daemon  25.03MBSending build context to Docker daemon  25.55MBSending build context to Docker daemon  43.68MBSending build context to Docker daemon  46.84MBSending build context to Docker daemon  29.77MBSending build context to Docker daemon  29.77MBSending build context to Docker daemon  30.85MBSending build context to Docker daemon  47.94MBSending build context to Docker daemon  6.882MBSending build context to Docker daemon  50.61MBSending build context to Docker daemon  36.77MBSending build context to Docker daemon  37.32MBSending build context to Docker daemon  52.72MB
-Step 1/10 : FROM eclipse-temurin:21-jre AS base
-Sending build context to Docker daemon  38.39MB ---> ccbad9e7cb84
+Sending build context to Docker daemon  524.4kBSending build context to Docker daemon  524.4kBSending build context to Docker daemon  524.4kBSending build context to Docker daemon  27.72MBSending build context to Docker daemon  25.09MBSending build context to Docker daemon  3.755MBSending build context to Docker daemon  3.755MB Image bt_lab-product-service Building 
+Sending build context to Docker daemon  4.282MBSending build context to Docker daemon  29.88MBSending build context to Docker daemon   33.6MBSending build context to Docker daemon  524.5kBSending build context to Docker daemon   9.56MBSending build context to Docker daemon   9.56MBSending build context to Docker daemon  10.11MBSending build context to Docker daemon  34.67MBSending build context to Docker daemon  36.78MBSending build context to Docker daemon  3.736MBSending build context to Docker daemon  22.26MBSending build context to Docker daemon  22.26MBSending build context to Docker daemon  22.79MBSending build context to Docker daemon  38.91MBSending build context to Docker daemon  39.94MBSending build context to Docker daemon  5.309MBSending build context to Docker daemon  26.51MBSending build context to Docker daemon  26.51MBSending build context to Docker daemon  26.51MBSending build context to Docker daemon  46.32MBSending build context to Docker daemon  44.73MBSending build context to Docker daemon  32.37MBSending build context to Docker daemon  31.84MBSending build context to Docker daemon  32.37MBSending build context to Docker daemon  6.883MBSending build context to Docker daemon  48.99MBSending build context to Docker daemon  49.51MBSending build context to Docker daemon  38.21MBSending build context to Docker daemon  52.72MB
+Sending build context to Docker daemon  7.931MBSending build context to Docker daemon  38.21MBSending build context to Docker daemon  38.76MBStep 1/10 : FROM eclipse-temurin:21-jre AS base
+Sending build context to Docker daemon  54.83MB ---> ccbad9e7cb84
 Step 2/10 : RUN groupadd --system app && useradd --system --gid app --home-dir /app app
-Sending build context to Docker daemon  7.931MBSending build context to Docker daemon  59.06MBSending build context to Docker daemon  42.13MBSending build context to Docker daemon  42.65MBSending build context to Docker daemon  43.74MBSending build context to Docker daemon   8.98MBSending build context to Docker daemon  64.96MBSending build context to Docker daemon  48.53MBSending build context to Docker daemon  48.53MBSending build context to Docker daemon  49.06MBSending build context to Docker daemon  76.57MBSending build context to Docker daemon  10.55MBSending build context to Docker daemon  52.21MBSending build context to Docker daemon  52.21MBSending build context to Docker daemon  52.21MBSending build context to Docker daemon   85.1MBSending build context to Docker daemon  57.54MBSending build context to Docker daemon  57.54MBSending build context to Docker daemon  57.54MBSending build context to Docker daemon  12.13MBSending build context to Docker daemon  88.22MB
-Step 1/9 : FROM eclipse-temurin:21-jre-alpine
+Sending build context to Docker daemon  42.49MBSending build context to Docker daemon   8.98MBSending build context to Docker daemon  43.56MBSending build context to Docker daemon  43.04MBSending build context to Docker daemon  62.83MBSending build context to Docker daemon  48.89MBSending build context to Docker daemon  48.89MBSending build context to Docker daemon  49.42MBSending build context to Docker daemon   70.8MBSending build context to Docker daemon  10.55MBSending build context to Docker daemon  52.59MBSending build context to Docker daemon  52.59MBSending build context to Docker daemon  53.12MBSending build context to Docker daemon  84.04MBSending build context to Docker daemon   11.6MBSending build context to Docker daemon  57.42MBSending build context to Docker daemon  57.42MBSending build context to Docker daemon  58.49MBSending build context to Docker daemon   87.2MBSending build context to Docker daemon  88.22MB
+Sending build context to Docker daemon  12.65MBStep 1/9 : FROM eclipse-temurin:21-jre-alpine
  ---> 51ab5e3302e7
 Step 2/9 : WORKDIR /app
-Sending build context to Docker daemon  61.82MBSending build context to Docker daemon  61.82MBSending build context to Docker daemon  61.82MB ---> Using cache
+Sending build context to Docker daemon  62.25MBSending build context to Docker daemon  61.69MB ---> Using cache
  ---> 4c20ce9ae12f
 Step 3/10 : WORKDIR /app
- ---> Using cache
+Sending build context to Docker daemon  64.89MB ---> Using cache
  ---> 38451f641778
 Step 4/10 : ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=70 -XX:+ExitOnOutOfMemoryError"
-Sending build context to Docker daemon  13.18MB ---> Using cache
+Sending build context to Docker daemon   13.7MB ---> Using cache
  ---> 59ad250725ec
 Step 5/10 : USER app
-Sending build context to Docker daemon  74.54MBSending build context to Docker daemon  74.54MBSending build context to Docker daemon  74.54MB ---> Using cache
+Sending build context to Docker daemon  74.42MBSending build context to Docker daemon  73.87MB ---> Using cache
  ---> 018cc73d2c6c
 Step 6/10 : FROM base AS auth-service
-Sending build context to Docker daemon  14.22MB ---> 018cc73d2c6c
+Sending build context to Docker daemon  75.46MB ---> 018cc73d2c6c
 Step 7/10 : COPY --chown=app:app auth-service/target/auth-service-1.0.0.jar app.jar
-Sending build context to Docker daemon  78.84MBSending build context to Docker daemon  79.38MBSending build context to Docker daemon  79.38MBSending build context to Docker daemon   15.8MBSending build context to Docker daemon  84.72MBSending build context to Docker daemon  84.72MBSending build context to Docker daemon  84.72MBSending build context to Docker daemon  91.66MBSending build context to Docker daemon  16.85MBSending build context to Docker daemon  91.66MBSending build context to Docker daemon  92.21MBSending build context to Docker daemon  96.48MBSending build context to Docker daemon  96.48MBSending build context to Docker daemon  97.03MBSending build context to Docker daemon  18.42MBSending build context to Docker daemon  103.9MBSending build context to Docker daemon  103.9MBSending build context to Docker daemon  103.9MB ---> Using cache
+Sending build context to Docker daemon  14.75MBSending build context to Docker daemon  78.66MBSending build context to Docker daemon  78.66MBSending build context to Docker daemon  80.26MBSending build context to Docker daemon   15.8MBSending build context to Docker daemon  82.92MBSending build context to Docker daemon  82.92MBSending build context to Docker daemon  84.49MBSending build context to Docker daemon  16.85MBSending build context to Docker daemon  87.71MBSending build context to Docker daemon  87.71MBSending build context to Docker daemon  90.36MBSending build context to Docker daemon  94.68MBSending build context to Docker daemon  18.42MBSending build context to Docker daemon  94.68MBSending build context to Docker daemon  95.74MBSending build context to Docker daemon    100MBSending build context to Docker daemon    100MBSending build context to Docker daemon  19.99MBSending build context to Docker daemon  102.7MB ---> Using cache
  ---> 587d0f9ac428
 Step 3/9 : RUN addgroup -S appgroup && adduser -S appuser -G appgroup
-Sending build context to Docker daemon  19.99MB ---> Using cache
+ ---> Using cache
  ---> 4e17dc032213
 Step 4/9 : RUN mkdir -p /app/logs && chown -R appuser:appgroup /app/logs
-Sending build context to Docker daemon  117.8MBSending build context to Docker daemon  118.3MBSending build context to Docker daemon  117.8MBSending build context to Docker daemon  21.04MBSending build context to Docker daemon  122.6MBSending build context to Docker daemon  123.1MBSending build context to Docker daemon  123.1MBSending build context to Docker daemon  22.09MB ---> Using cache
+Sending build context to Docker daemon  112.7MBSending build context to Docker daemon  111.6MBSending build context to Docker daemon  116.9MBSending build context to Docker daemon  21.57MBSending build context to Docker daemon  120.7MBSending build context to Docker daemon  120.7MBSending build context to Docker daemon  122.3MBSending build context to Docker daemon  23.14MBSending build context to Docker daemon  124.9MBSending build context to Docker daemon  124.9MB ---> Using cache
  ---> 6e9b81305228
 Step 5/9 : USER appuser
-Sending build context to Docker daemon  127.9MB ---> Using cache
+Sending build context to Docker daemon  127.1MB ---> Using cache
+ ---> ad7d7df0cb6d
+Step 8/10 : EXPOSE 8090
+ ---> Using cache
  ---> 369c4da08f63
 Step 6/9 : COPY target/fd-calculator-*.jar app.jar
-Sending build context to Docker daemon  128.4MBSending build context to Docker daemon  128.4MBSending build context to Docker daemon  133.3MBSending build context to Docker daemon  133.8MBSending build context to Docker daemon  134.3MBSending build context to Docker daemon  139.6MBSending build context to Docker daemon  140.2MBSending build context to Docker daemon  140.7MBSending build context to Docker daemon  143.4MBSending build context to Docker daemon  144.5MBSending build context to Docker daemon    145MBSending build context to Docker daemon    153MBSending build context to Docker daemon  158.8MBSending build context to Docker daemon    162MBSending build context to Docker daemon  167.8MBSending build context to Docker daemon  168.3MBSending build context to Docker daemon  168.9MBSending build context to Docker daemon  173.1MBSending build context to Docker daemon  23.67MBSending build context to Docker daemon  174.2MBSending build context to Docker daemon  175.8MBSending build context to Docker daemon  181.7MBSending build context to Docker daemon  182.7MBSending build context to Docker daemon  183.3MBSending build context to Docker daemon  24.71MBSending build context to Docker daemon  188.6MBSending build context to Docker daemon  189.7MBSending build context to Docker daemon  189.7MBSending build context to Docker daemon  26.29MBSending build context to Docker daemon  190.7MBSending build context to Docker daemon  191.2MBSending build context to Docker daemon  191.2MBSending build context to Docker daemon  27.86MBSending build context to Docker daemon  192.3MBSending build context to Docker daemon  192.8MBSending build context to Docker daemon  192.8MBSending build context to Docker daemon  28.91MBSending build context to Docker daemon  193.9MBSending build context to Docker daemon  193.9MBSending build context to Docker daemon  194.4MBSending build context to Docker daemon  195.4MBSending build context to Docker daemon  29.96MBSending build context to Docker daemon  195.4MBSending build context to Docker daemon    196MBSending build context to Docker daemon  30.48MBSending build context to Docker daemon    197MBSending build context to Docker daemon    197MBSending build context to Docker daemon  197.5MBSending build context to Docker daemon  198.6MBSending build context to Docker daemon  198.6MBSending build context to Docker daemon  31.01MBSending build context to Docker daemon  199.1MBSending build context to Docker daemon  199.6MBSending build context to Docker daemon  200.2MBSending build context to Docker daemon  200.2MBSending build context to Docker daemon  31.53MBSending build context to Docker daemon  201.2MBSending build context to Docker daemon  201.7MBSending build context to Docker daemon  201.7MBSending build context to Docker daemon  32.58MBSending build context to Docker daemon  202.8MBSending build context to Docker daemon  203.3MBSending build context to Docker daemon  203.3MBSending build context to Docker daemon  34.15MBSending build context to Docker daemon  204.4MBSending build context to Docker daemon  204.9MBSending build context to Docker daemon  204.9MBSending build context to Docker daemon  35.73MBSending build context to Docker daemon  206.5MBSending build context to Docker daemon  205.9MBSending build context to Docker daemon  206.5MBSending build context to Docker daemon    208MBSending build context to Docker daemon  207.5MBSending build context to Docker daemon    208MBSending build context to Docker daemon  36.25MBSending build context to Docker daemon  209.6MBSending build context to Docker daemon  209.1MBSending build context to Docker daemon  209.6MBSending build context to Docker daemon  211.2MBSending build context to Docker daemon  210.6MBSending build context to Docker daemon  211.2MBSending build context to Docker daemon  213.3MBSending build context to Docker daemon   37.3MBSending build context to Docker daemon  212.7MBSending build context to Docker daemon  213.3MBSending build context to Docker daemon  214.3MBSending build context to Docker daemon  214.8MBSending build context to Docker daemon  215.4MBSending build context to Docker daemon  215.9MBSending build context to Docker daemon  215.9MBSending build context to Docker daemon  216.9MBSending build context to Docker daemon  216.9MBSending build context to Docker daemon  37.83MBSending build context to Docker daemon    218MBSending build context to Docker daemon  217.5MBSending build context to Docker daemon    218MBSending build context to Docker daemon  218.5MBSending build context to Docker daemon  219.6MBSending build context to Docker daemon  219.6MBSending build context to Docker daemon  220.1MBSending build context to Docker daemon  221.1MBSending build context to Docker daemon  221.7MBSending build context to Docker daemon  220.1MBSending build context to Docker daemon  220.6MBSending build context to Docker daemon  223.2MBSending build context to Docker daemon  221.7MBSending build context to Docker daemon  222.2MBSending build context to Docker daemon  38.35MBSending build context to Docker daemon  223.2MBSending build context to Docker daemon  223.8MBSending build context to Docker daemon  224.8MBSending build context to Docker daemon  224.8MBSending build context to Docker daemon  225.3MBSending build context to Docker daemon  38.87MBSending build context to Docker daemon  224.8MBSending build context to Docker daemon  225.9MBSending build context to Docker daemon  225.3MBSending build context to Docker daemon  39.92MBSending build context to Docker daemon  226.4MBSending build context to Docker daemon  226.9MBSending build context to Docker daemon  226.9MBSending build context to Docker daemon  40.97MBSending build context to Docker daemon  227.4MBSending build context to Docker daemon    228MBSending build context to Docker daemon    228MBSending build context to Docker daemon  42.02MBSending build context to Docker daemon  228.5MBSending build context to Docker daemon  229.5MBSending build context to Docker daemon  229.5MBSending build context to Docker daemon   43.6MBSending build context to Docker daemon  230.1MBSending build context to Docker daemon  230.1MBSending build context to Docker daemon  230.6MBSending build context to Docker daemon  44.64MBSending build context to Docker daemon  231.6MBSending build context to Docker daemon  231.6MBSending build context to Docker daemon  232.1MBSending build context to Docker daemon  46.22MBSending build context to Docker daemon  233.2MBSending build context to Docker daemon  233.2MBSending build context to Docker daemon  233.2MBSending build context to Docker daemon  47.27MBSending build context to Docker daemon  234.2MBSending build context to Docker daemon  234.8MBSending build context to Docker daemon  234.8MBSending build context to Docker daemon  48.84MBSending build context to Docker daemon  235.8MBSending build context to Docker daemon  236.3MBSending build context to Docker daemon  236.3MBSending build context to Docker daemon  50.41MBSending build context to Docker daemon  237.4MBSending build context to Docker daemon  237.9MBSending build context to Docker daemon  237.9MBSending build context to Docker daemon  51.99MBSending build context to Docker daemon    239MBSending build context to Docker daemon  53.04MBSending build context to Docker daemon  239.5MBSending build context to Docker daemon  239.5MBSending build context to Docker daemon    240MBSending build context to Docker daemon  54.61MBSending build context to Docker daemon  241.1MBSending build context to Docker daemon  241.1MBSending build context to Docker daemon  241.6MBSending build context to Docker daemon  56.18MBSending build context to Docker daemon  242.6MBSending build context to Docker daemon  242.6MBSending build context to Docker daemon  243.2MBSending build context to Docker daemon  57.23MBSending build context to Docker daemon  243.7MBSending build context to Docker daemon  243.7MBSending build context to Docker daemon  244.7MBSending build context to Docker daemon   58.8MBSending build context to Docker daemon  245.3MBSending build context to Docker daemon  245.3MBSending build context to Docker daemon  59.33MBSending build context to Docker daemon  245.8MBSending build context to Docker daemon  245.8MBSending build context to Docker daemon  245.8MBSending build context to Docker daemon  60.38MBSending build context to Docker daemon  247.4MBSending build context to Docker daemon  247.4MBSending build context to Docker daemon  247.4MBSending build context to Docker daemon  61.43MBSending build context to Docker daemon  62.48MBSending build context to Docker daemon  248.9MBSending build context to Docker daemon  248.9MBSending build context to Docker daemon  248.9MBSending build context to Docker daemon    250MBSending build context to Docker daemon    250MBSending build context to Docker daemon  63.53MBSending build context to Docker daemon    250MBSending build context to Docker daemon  64.57MBSending build context to Docker daemon    251MBSending build context to Docker daemon    251MBSending build context to Docker daemon    251MBSending build context to Docker daemon   65.1MBSending build context to Docker daemon  251.6MBSending build context to Docker daemon  251.6MBSending build context to Docker daemon  251.6MBSending build context to Docker daemon  65.62MBSending build context to Docker daemon  252.1MBSending build context to Docker daemon  252.1MBSending build context to Docker daemon  252.1MBSending build context to Docker daemon  66.15MBSending build context to Docker daemon  252.6MBSending build context to Docker daemon  252.6MBSending build context to Docker daemon  252.6MBSending build context to Docker daemon  66.67MBSending build context to Docker daemon  253.1MBSending build context to Docker daemon  253.1MBSending build context to Docker daemon  253.1MBSending build context to Docker daemon   67.2MBSending build context to Docker daemon  253.7MBSending build context to Docker daemon  253.7MBSending build context to Docker daemon  253.7MBSending build context to Docker daemon  254.2MBSending build context to Docker daemon  254.2MBSending build context to Docker daemon  254.2MBSending build context to Docker daemon  68.25MBSending build context to Docker daemon  254.7MBSending build context to Docker daemon  254.7MBSending build context to Docker daemon  254.7MBSending build context to Docker daemon  68.77MBSending build context to Docker daemon  255.2MBSending build context to Docker daemon  255.2MBSending build context to Docker daemon  255.2MBSending build context to Docker daemon  69.82MBSending build context to Docker daemon  256.3MBSending build context to Docker daemon  256.3MBSending build context to Docker daemon  256.3MBSending build context to Docker daemon  257.3MBSending build context to Docker daemon  257.3MBSending build context to Docker daemon  70.87MBSending build context to Docker daemon  257.3MBSending build context to Docker daemon  258.4MBSending build context to Docker daemon  71.92MBSending build context to Docker daemon  258.4MBSending build context to Docker daemon  258.4MBSending build context to Docker daemon  72.97MBSending build context to Docker daemon  259.4MBSending build context to Docker daemon  259.4MBSending build context to Docker daemon  259.4MBSending build context to Docker daemon  74.01MBSending build context to Docker daemon  260.5MBSending build context to Docker daemon  260.5MBSending build context to Docker daemon  260.5MBSending build context to Docker daemon    262MBSending build context to Docker daemon  76.11MBSending build context to Docker daemon  262.6MBSending build context to Docker daemon  262.6MBSending build context to Docker daemon  77.69MBSending build context to Docker daemon  264.1MBSending build context to Docker daemon  264.1MBSending build context to Docker daemon  264.1MBSending build context to Docker daemon  78.73MBSending build context to Docker daemon  265.2MBSending build context to Docker daemon  265.2MBSending build context to Docker daemon  265.2MBSending build context to Docker daemon  79.78MBSending build context to Docker daemon  266.2MBSending build context to Docker daemon  266.2MBSending build context to Docker daemon  266.2MBSending build context to Docker daemon  80.31MBSending build context to Docker daemon  266.8MBSending build context to Docker daemon  266.8MBSending build context to Docker daemon  266.8MBSending build context to Docker daemon  80.83MBSending build context to Docker daemon  267.8MBSending build context to Docker daemon  267.8MBSending build context to Docker daemon  267.8MB ---> c627979206ea
-Step 7/9 : EXPOSE 8084
- ---> dd640f377212
-Step 8/10 : EXPOSE 8090
-Sending build context to Docker daemon  82.41MBSending build context to Docker daemon  268.9MBSending build context to Docker daemon  268.9MBSending build context to Docker daemon  268.9MBSending build context to Docker daemon  82.93MBSending build context to Docker daemon  269.4MBSending build context to Docker daemon  269.4MBSending build context to Docker daemon  269.4MBSending build context to Docker daemon  83.45MBSending build context to Docker daemon  269.9MBSending build context to Docker daemon  269.9MBSending build context to Docker daemon  269.9MBSending build context to Docker daemon  83.98MBSending build context to Docker daemon  270.4MBSending build context to Docker daemon  270.4MBSending build context to Docker daemon  270.4MBSending build context to Docker daemon  85.57MBSending build context to Docker daemon    272MBSending build context to Docker daemon    272MBSending build context to Docker daemon    272MBSending build context to Docker daemon  86.09MBSending build context to Docker daemon  272.5MBSending build context to Docker daemon  272.5MBSending build context to Docker daemon  272.5MBSending build context to Docker daemon  86.62MBSending build context to Docker daemon  273.1MBSending build context to Docker daemon  273.1MBSending build context to Docker daemon  273.1MBSending build context to Docker daemon  274.1MBSending build context to Docker daemon  274.1MBSending build context to Docker daemon  274.1MBSending build context to Docker daemon  283.2MBSending build context to Docker daemon  283.2MBSending build context to Docker daemon  283.2MBSending build context to Docker daemon  87.67MBSending build context to Docker daemon  298.1MBSending build context to Docker daemon  298.6MBSending build context to Docker daemon  298.6MBSending build context to Docker daemon  303.4MBSending build context to Docker daemon  303.9MBSending build context to Docker daemon  304.4MBSending build context to Docker daemon  88.19MBSending build context to Docker daemon  311.4MBSending build context to Docker daemon  311.9MBSending build context to Docker daemon  311.9MBSending build context to Docker daemon  89.24MBSending build context to Docker daemon  317.3MBSending build context to Docker daemon  317.8MBSending build context to Docker daemon  318.3MBSending build context to Docker daemon  320.5MB
-Sending build context to Docker daemon  320.5MB
-Sending build context to Docker daemon  320.5MB
-Sending build context to Docker daemon  90.29MBStep 1/31 : FROM eclipse-temurin:21-jre AS base
-Step 1/23 : FROM eclipse-temurin:21-jre AS base
-Step 1/19 : FROM eclipse-temurin:21-jre AS base
-Sending build context to Docker daemon  91.34MBSending build context to Docker daemon  92.39MBSending build context to Docker daemon  93.43MBSending build context to Docker daemon  94.48MBSending build context to Docker daemon  95.01MBSending build context to Docker daemon  95.19MB
-Step 1/15 : FROM maven:3.9-eclipse-temurin-21 AS build
- ---> ccbad9e7cb84
-Step 2/31 : RUN groupadd --system app && useradd --system --gid app --home-dir /app app
- ---> ccbad9e7cb84
-Step 2/19 : RUN groupadd --system app && useradd --system --gid app --home-dir /app app
- ---> ccbad9e7cb84
-Step 2/23 : RUN groupadd --system app && useradd --system --gid app --home-dir /app app
- ---> 99e61abcff91
-Step 2/15 : WORKDIR /build
- ---> Running in 30699677b226
- ---> Running in 79c9b872fd9b
  ---> Using cache
+ ---> 82e7ddd91d1c
+Step 9/10 : ENTRYPOINT ["java", "-jar", "app.jar"]
+Sending build context to Docker daemon  131.4MBSending build context to Docker daemon  131.4MBSending build context to Docker daemon  24.71MB ---> Using cache
+ ---> 811013145cac
+Step 10/10 : LABEL com.docker.compose.image.builder=classic
+Sending build context to Docker daemon    133MB ---> Using cache
+ ---> dfdd01eb6a7f
+Successfully built dfdd01eb6a7f
+Sending build context to Docker daemon  136.7MBSuccessfully tagged bt_lab-fd-auth-service:latest
+ Image bt_lab-fd-auth-service Built 
+ Image bt_lab-fd-auth-service Built 
+Sending build context to Docker daemon  136.7MBSending build context to Docker daemon  26.29MBSending build context to Docker daemon  138.3MBSending build context to Docker daemon    142MBSending build context to Docker daemon    142MBSending build context to Docker daemon  27.86MBSending build context to Docker daemon  142.6MB ---> Using cache
+ ---> c627979206ea
+Step 7/9 : EXPOSE 8084
+ ---> Using cache
+ ---> a3c42e73b62b
+Step 8/9 : ENTRYPOINT ["java", "-XX:+UseContainerSupport", "-XX:MaxRAMPercentage=75.0", "-Djava.security.egd=file:/dev/./urandom", "-jar", "/app/app.jar"]
+Sending build context to Docker daemon  149.5MBSending build context to Docker daemon  148.9MB ---> Using cache
+ ---> b8e287942c56
+Step 9/9 : LABEL com.docker.compose.image.builder=classic
+Sending build context to Docker daemon    150MB ---> Using cache
+ ---> a17be36ab021
+Sending build context to Docker daemon  29.43MBSuccessfully built a17be36ab021
+Successfully tagged bt_lab-fd-calculator:latest
+ Image bt_lab-fd-calculator Built 
+ Image bt_lab-fd-calculator Built 
+Sending build context to Docker daemon  164.3MBSending build context to Docker daemon  163.7MBSending build context to Docker daemon  164.3MBSending build context to Docker daemon  30.48MBSending build context to Docker daemon  168.5MBSending build context to Docker daemon    168MBSending build context to Docker daemon  169.1MBSending build context to Docker daemon  32.06MBSending build context to Docker daemon  173.3MBSending build context to Docker daemon  172.8MBSending build context to Docker daemon  173.9MBSending build context to Docker daemon  181.3MBSending build context to Docker daemon  33.63MBSending build context to Docker daemon  180.8MBSending build context to Docker daemon  181.3MBSending build context to Docker daemon  189.3MBSending build context to Docker daemon  189.3MBSending build context to Docker daemon   35.2MBSending build context to Docker daemon  189.3MBSending build context to Docker daemon  190.9MBSending build context to Docker daemon  36.25MBSending build context to Docker daemon  190.9MBSending build context to Docker daemon  190.9MBSending build context to Docker daemon  192.4MBSending build context to Docker daemon  37.83MBSending build context to Docker daemon  192.4MBSending build context to Docker daemon  192.4MBSending build context to Docker daemon    194MBSending build context to Docker daemon    194MBSending build context to Docker daemon    194MBSending build context to Docker daemon  38.88MBSending build context to Docker daemon  195.1MBSending build context to Docker daemon  195.1MBSending build context to Docker daemon  195.1MBSending build context to Docker daemon  39.92MBSending build context to Docker daemon  196.6MBSending build context to Docker daemon  196.6MBSending build context to Docker daemon  196.6MBSending build context to Docker daemon   41.5MBSending build context to Docker daemon  197.7MBSending build context to Docker daemon  197.7MBSending build context to Docker daemon  197.7MBSending build context to Docker daemon  43.07MBSending build context to Docker daemon  198.7MBSending build context to Docker daemon  198.7MBSending build context to Docker daemon  198.7MBSending build context to Docker daemon  44.12MBSending build context to Docker daemon  200.3MBSending build context to Docker daemon  200.3MBSending build context to Docker daemon  200.3MBSending build context to Docker daemon  45.69MBSending build context to Docker daemon  201.9MBSending build context to Docker daemon  201.9MBSending build context to Docker daemon  201.9MBSending build context to Docker daemon  202.9MBSending build context to Docker daemon  47.27MBSending build context to Docker daemon  202.9MBSending build context to Docker daemon  202.9MBSending build context to Docker daemon  204.5MBSending build context to Docker daemon  48.84MBSending build context to Docker daemon  204.5MBSending build context to Docker daemon  204.5MBSending build context to Docker daemon  206.1MBSending build context to Docker daemon  50.41MBSending build context to Docker daemon  206.1MBSending build context to Docker daemon  206.1MBSending build context to Docker daemon  51.99MBSending build context to Docker daemon  207.6MBSending build context to Docker daemon  207.6MBSending build context to Docker daemon  207.6MBSending build context to Docker daemon  209.2MBSending build context to Docker daemon  53.56MBSending build context to Docker daemon  209.2MBSending build context to Docker daemon  209.2MBSending build context to Docker daemon  210.8MBSending build context to Docker daemon  210.8MBSending build context to Docker daemon  55.13MBSending build context to Docker daemon  210.8MBSending build context to Docker daemon  212.9MBSending build context to Docker daemon  56.71MBSending build context to Docker daemon  212.9MBSending build context to Docker daemon  212.9MBSending build context to Docker daemon  58.28MBSending build context to Docker daemon    215MBSending build context to Docker daemon    215MBSending build context to Docker daemon  214.5MBSending build context to Docker daemon  59.85MBSending build context to Docker daemon    216MBSending build context to Docker daemon  216.6MBSending build context to Docker daemon  216.6MBSending build context to Docker daemon  217.6MBSending build context to Docker daemon  217.6MBSending build context to Docker daemon  61.43MBSending build context to Docker daemon  217.6MBSending build context to Docker daemon  218.7MBSending build context to Docker daemon  62.48MBSending build context to Docker daemon  218.7MBSending build context to Docker daemon  219.2MBSending build context to Docker daemon  220.2MBSending build context to Docker daemon  64.05MBSending build context to Docker daemon  220.2MBSending build context to Docker daemon  220.8MBSending build context to Docker daemon  221.8MBSending build context to Docker daemon  221.8MBSending build context to Docker daemon  65.62MBSending build context to Docker daemon  222.3MBSending build context to Docker daemon  222.9MBSending build context to Docker daemon  222.9MBSending build context to Docker daemon  66.67MBSending build context to Docker daemon  223.9MBSending build context to Docker daemon  224.4MBSending build context to Docker daemon  224.4MBSending build context to Docker daemon  68.25MBSending build context to Docker daemon    225MBSending build context to Docker daemon  225.5MBSending build context to Docker daemon  225.5MBSending build context to Docker daemon  69.29MBSending build context to Docker daemon    226MBSending build context to Docker daemon  226.5MBSending build context to Docker daemon  227.1MBSending build context to Docker daemon  70.87MBSending build context to Docker daemon  227.6MBSending build context to Docker daemon  227.6MBSending build context to Docker daemon  228.6MBSending build context to Docker daemon  72.44MBSending build context to Docker daemon  229.2MBSending build context to Docker daemon  229.2MBSending build context to Docker daemon  230.2MBSending build context to Docker daemon  73.49MBSending build context to Docker daemon  230.2MBSending build context to Docker daemon  230.2MBSending build context to Docker daemon  231.8MBSending build context to Docker daemon  75.06MBSending build context to Docker daemon  231.8MBSending build context to Docker daemon  231.8MBSending build context to Docker daemon  233.3MBSending build context to Docker daemon  233.3MBSending build context to Docker daemon  233.3MBSending build context to Docker daemon  77.16MBSending build context to Docker daemon  234.9MBSending build context to Docker daemon  234.9MBSending build context to Docker daemon  78.74MBSending build context to Docker daemon  234.9MBSending build context to Docker daemon  236.5MBSending build context to Docker daemon  236.5MBSending build context to Docker daemon  236.5MBSending build context to Docker daemon  80.31MBSending build context to Docker daemon  238.1MBSending build context to Docker daemon  238.1MBSending build context to Docker daemon  238.1MBSending build context to Docker daemon  81.88MBSending build context to Docker daemon  239.6MBSending build context to Docker daemon  239.6MBSending build context to Docker daemon  239.6MBSending build context to Docker daemon  83.46MBSending build context to Docker daemon  241.2MBSending build context to Docker daemon  241.2MBSending build context to Docker daemon  241.2MBSending build context to Docker daemon  85.58MBSending build context to Docker daemon  242.8MBSending build context to Docker daemon  242.8MBSending build context to Docker daemon  242.8MBSending build context to Docker daemon  87.16MBSending build context to Docker daemon  244.4MBSending build context to Docker daemon  244.4MBSending build context to Docker daemon  244.4MBSending build context to Docker daemon   88.2MBSending build context to Docker daemon  245.9MBSending build context to Docker daemon  245.9MBSending build context to Docker daemon  245.9MBSending build context to Docker daemon  89.25MBSending build context to Docker daemon  247.5MBSending build context to Docker daemon  90.83MBSending build context to Docker daemon  247.5MBSending build context to Docker daemon  247.5MBSending build context to Docker daemon  249.1MBSending build context to Docker daemon   92.4MBSending build context to Docker daemon  249.1MBSending build context to Docker daemon  249.1MBSending build context to Docker daemon  250.1MBSending build context to Docker daemon  250.1MBSending build context to Docker daemon  93.45MBSending build context to Docker daemon  250.1MBSending build context to Docker daemon  251.2MBSending build context to Docker daemon  251.2MBSending build context to Docker daemon  251.2MBSending build context to Docker daemon   94.5MBSending build context to Docker daemon  251.7MBSending build context to Docker daemon  252.2MBSending build context to Docker daemon  252.2MBSending build context to Docker daemon  95.55MBSending build context to Docker daemon  253.3MBSending build context to Docker daemon  253.3MBSending build context to Docker daemon  252.8MBSending build context to Docker daemon  97.12MBSending build context to Docker daemon  254.3MBSending build context to Docker daemon  254.3MBSending build context to Docker daemon  253.8MBSending build context to Docker daemon  98.17MBSending build context to Docker daemon  254.9MBSending build context to Docker daemon  255.4MBSending build context to Docker daemon  99.22MBSending build context to Docker daemon  255.4MBSending build context to Docker daemon  256.4MBSending build context to Docker daemon  255.9MBSending build context to Docker daemon  256.4MBSending build context to Docker daemon  100.8MBSending build context to Docker daemon  257.5MBSending build context to Docker daemon  257.5MBSending build context to Docker daemon    258MBSending build context to Docker daemon  102.4MBSending build context to Docker daemon    259MBSending build context to Docker daemon  258.5MBSending build context to Docker daemon    259MBSending build context to Docker daemon  103.4MBSending build context to Docker daemon  260.1MBSending build context to Docker daemon  259.6MBSending build context to Docker daemon  104.5MBSending build context to Docker daemon  260.1MBSending build context to Docker daemon  260.6MBSending build context to Docker daemon  261.7MBSending build context to Docker daemon  105.5MBSending build context to Docker daemon  261.7MBSending build context to Docker daemon  262.2MBSending build context to Docker daemon  263.2MBSending build context to Docker daemon  107.1MBSending build context to Docker daemon  263.2MBSending build context to Docker daemon  263.8MBSending build context to Docker daemon  264.8MBSending build context to Docker daemon  108.1MBSending build context to Docker daemon  264.8MBSending build context to Docker daemon  265.3MBSending build context to Docker daemon  266.4MBSending build context to Docker daemon  109.7MBSending build context to Docker daemon  266.4MBSending build context to Docker daemon  266.9MBSending build context to Docker daemon  267.4MBSending build context to Docker daemon  267.4MBSending build context to Docker daemon  111.3MBSending build context to Docker daemon  268.5MBSending build context to Docker daemon    269MBSending build context to Docker daemon  268.5MBSending build context to Docker daemon  112.3MBSending build context to Docker daemon  112.6MB
+Step 1/15 : FROM maven:3.9-eclipse-temurin-21 AS build
+Sending build context to Docker daemon  269.5MBSending build context to Docker daemon  269.5MBSending build context to Docker daemon  270.1MBSending build context to Docker daemon  270.6MBSending build context to Docker daemon  271.1MBSending build context to Docker daemon  272.2MB ---> 99e61abcff91
+Step 2/15 : WORKDIR /build
+Sending build context to Docker daemon  272.7MBSending build context to Docker daemon  273.2MBSending build context to Docker daemon  272.7MB ---> Using cache
  ---> 092061df12c7
 Step 3/15 : COPY Auth_Sec/pom.xml Auth_Sec/pom.xml
- ---> Using cache
+Sending build context to Docker daemon  274.3MBSending build context to Docker daemon  276.4MBSending build context to Docker daemon  274.3MB ---> Using cache
  ---> 4463272588a6
 Step 4/15 : COPY Auth_Sec/security-common Auth_Sec/security-common
  ---> Using cache
- ---> 63091d376983
+ ---> 137755b07845
 Step 5/15 : RUN mvn -B -f Auth_Sec/pom.xml -N install && mvn -B -f Auth_Sec/security-common/pom.xml install -DskipTests
- ---> Using cache
- ---> 9c0f917a5e2e
+Sending build context to Docker daemon  282.2MBSending build context to Docker daemon  284.9MB ---> Using cache
+ ---> 07b57d2d88a7
 Step 6/15 : COPY banking-product-backend banking-product-backend
- ---> Using cache
- ---> 4c20ce9ae12f
-Step 3/31 : WORKDIR /app
- ---> Using cache
- ---> 38451f641778
-Step 4/31 : ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=70 -XX:+ExitOnOutOfMemoryError"
- ---> Using cache
- ---> 59ad250725ec
-Step 5/31 : USER app
- ---> Using cache
- ---> 018cc73d2c6c
-Step 6/31 : FROM base AS java-python-base
- ---> Using cache
- ---> f9694d272d36
+Sending build context to Docker daemon  282.8MB ---> Using cache
+ ---> 861393e8a796
 Step 7/15 : RUN mvn -B -f banking-product-backend/pom.xml clean package -DskipTests
- ---> Using cache
- ---> 4c20ce9ae12f
-Step 3/19 : WORKDIR /app
- ---> Using cache
- ---> 4c20ce9ae12f
-Step 3/23 : WORKDIR /app
- ---> Using cache
- ---> d974b1d7ac1e
+Sending build context to Docker daemon  298.7MBSending build context to Docker daemon  297.1MB ---> Using cache
+ ---> b7f6dd63b730
 Step 8/15 : FROM eclipse-temurin:21-jre-alpine
- ---> Using cache
- ---> 38451f641778
-Step 4/23 : ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=70 -XX:+ExitOnOutOfMemoryError"
- ---> Using cache
- ---> 38451f641778
-Step 4/19 : ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=70 -XX:+ExitOnOutOfMemoryError"
- ---> Using cache
- ---> 59ad250725ec
-Step 5/23 : USER app
- ---> Using cache
- ---> 59ad250725ec
-Step 5/19 : USER app
- ---> Using cache
- ---> 018cc73d2c6c
-Step 6/23 : FROM base AS java-python-base
- ---> Using cache
- ---> 018cc73d2c6c
-Step 6/19 : FROM base AS java-python-base
- ---> 018cc73d2c6c
-Step 7/31 : USER root
- ---> 018cc73d2c6c
-Step 7/23 : USER root
- ---> 51ab5e3302e7
+Sending build context to Docker daemon  297.6MB ---> 51ab5e3302e7
 Step 9/15 : WORKDIR /app
- ---> 018cc73d2c6c
-Step 7/19 : USER root
- ---> Removed intermediate container 79c9b872fd9b
- ---> a3c42e73b62b
-Step 8/9 : ENTRYPOINT ["java", "-XX:+UseContainerSupport", "-XX:MaxRAMPercentage=75.0", "-Djava.security.egd=file:/dev/./urandom", "-jar", "/app/app.jar"]
- ---> Running in b5930537d384
- ---> Removed intermediate container 30699677b226
- ---> faaae60c83e3
-Step 9/10 : ENTRYPOINT ["java", "-jar", "app.jar"]
- ---> Running in a044691ce09d
+Sending build context to Docker daemon  302.9MBSending build context to Docker daemon  301.9MBSending build context to Docker daemon  301.9MBSending build context to Docker daemon  307.7MBSending build context to Docker daemon  309.9MBSending build context to Docker daemon  308.3MBSending build context to Docker daemon  315.8MBSending build context to Docker daemon  314.7MBSending build context to Docker daemon  314.7MBSending build context to Docker daemon  320.5MB
+Step 1/19 : FROM eclipse-temurin:21-jre AS base
+Sending build context to Docker daemon  320.5MB
+Step 1/31 : FROM eclipse-temurin:21-jre AS base
+Sending build context to Docker daemon  320.5MB
+ ---> ccbad9e7cb84
+Step 2/19 : RUN groupadd --system app && useradd --system --gid app --home-dir /app app
+ ---> ccbad9e7cb84
+Step 2/31 : RUN groupadd --system app && useradd --system --gid app --home-dir /app app
+Step 1/23 : FROM eclipse-temurin:21-jre AS base
+ ---> ccbad9e7cb84
+Step 2/23 : RUN groupadd --system app && useradd --system --gid app --home-dir /app app
  ---> Using cache
  ---> 587d0f9ac428
 Step 10/15 : RUN addgroup -S appgroup && adduser -S appuser -G appgroup
  ---> Using cache
  ---> 4e17dc032213
 Step 11/15 : COPY --from=build /build/banking-product-backend/target/product-0.0.1-SNAPSHOT.jar app.jar
+ ---> Using cache
+ ---> 4c20ce9ae12f
+Step 3/19 : WORKDIR /app
+ ---> Using cache
+ ---> 4c20ce9ae12f
+Step 3/31 : WORKDIR /app
+ ---> Using cache
+ ---> 4c20ce9ae12f
+Step 3/23 : WORKDIR /app
+ ---> Using cache
+ ---> 38451f641778
+Step 4/19 : ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=70 -XX:+ExitOnOutOfMemoryError"
+ ---> Using cache
+ ---> 38451f641778
+Step 4/31 : ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=70 -XX:+ExitOnOutOfMemoryError"
+ ---> Using cache
+ ---> 38451f641778
+Step 4/23 : ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=70 -XX:+ExitOnOutOfMemoryError"
+ ---> Using cache
+ ---> 59ad250725ec
+Step 5/19 : USER app
+ ---> Using cache
+ ---> Using cache
+ ---> 59ad250725ec
+Step 5/31 : USER app
+ ---> Using cache
+ ---> 59ad250725ec
+Step 5/23 : USER app
+ ---> Using cache
+ ---> 018cc73d2c6c
+Step 6/19 : FROM base AS java-python-base
+ ---> Using cache
+ ---> 018cc73d2c6c
+Step 6/31 : FROM base AS java-python-base
+ ---> 018cc73d2c6c
+Step 7/19 : USER root
+ ---> Using cache
+ ---> 018cc73d2c6c
+Step 6/23 : FROM base AS java-python-base
+ ---> 018cc73d2c6c
+Step 7/31 : USER root
+ ---> 018cc73d2c6c
+Step 7/23 : USER root
+ ---> 24f3f907c2cf
+Step 12/15 : USER appuser
+ ---> Using cache
+ ---> 88b11dd3f6e8
+Step 13/15 : EXPOSE 8080
+ ---> Using cache
+ ---> dafd1cd2f654
+Step 14/15 : ENTRYPOINT ["java", "-jar", "app.jar"]
+ ---> Using cache
+ ---> 9ae911e1ecee
+Step 15/15 : LABEL com.docker.compose.image.builder=classic
+ ---> Using cache
+ ---> af59de3cf964
+Successfully built af59de3cf964
+Successfully tagged bt_lab-product-service:latest
+ Image bt_lab-product-service Built 
+ Image bt_lab-product-service Built 
  ---> Using cache
  ---> 0c0f0185b744
 Step 8/19 : RUN apt-get update && apt-get install -y --no-install-recommends     python3     python3-pip     && rm -rf /var/lib/apt/lists/*
@@ -436,78 +477,55 @@ Step 9/31 : COPY --chown=app:app reports/python/requirements.txt /tmp/requiremen
 Step 9/23 : COPY --chown=app:app reports/python/requirements.txt /tmp/requirements.txt
  ---> Using cache
  ---> 5beb0f82f215
-Step 10/19 : RUN pip3 install --break-system-packages --no-cache-dir -r /tmp/requirements.txt && rm /tmp/requirements.txt
+Step 10/31 : RUN pip3 install --break-system-packages --no-cache-dir -r /tmp/requirements.txt && rm /tmp/requirements.txt
  ---> Using cache
  ---> 5beb0f82f215
-Step 10/31 : RUN pip3 install --break-system-packages --no-cache-dir -r /tmp/requirements.txt && rm /tmp/requirements.txt
+Step 10/19 : RUN pip3 install --break-system-packages --no-cache-dir -r /tmp/requirements.txt && rm /tmp/requirements.txt
  ---> Using cache
  ---> 5beb0f82f215
 Step 10/23 : RUN pip3 install --break-system-packages --no-cache-dir -r /tmp/requirements.txt && rm /tmp/requirements.txt
  ---> Using cache
  ---> d12b423af4f7
-Step 11/19 : USER app
+Step 11/31 : USER app
  ---> Using cache
  ---> d12b423af4f7
-Step 11/31 : USER app
+Step 11/19 : USER app
  ---> Using cache
  ---> d12b423af4f7
 Step 11/23 : USER app
  ---> Using cache
  ---> 5af0df866e62
-Step 12/23 : FROM java-python-base AS fd-account-service
+Step 12/31 : FROM java-python-base AS fd-account-service
  ---> Using cache
  ---> 5af0df866e62
 Step 12/19 : FROM java-python-base AS fd-account-service
- ---> Using cache
- ---> 5af0df866e62
-Step 12/31 : FROM java-python-base AS fd-account-service
- ---> 5af0df866e62
-Step 13/23 : USER app
  ---> 5af0df866e62
 Step 13/31 : USER app
+ ---> Using cache
+ ---> 5af0df866e62
+Step 12/23 : FROM java-python-base AS fd-account-service
  ---> 5af0df866e62
 Step 13/19 : USER app
- ---> Using cache
- ---> 4160daadec99
-Step 14/23 : ENV APP_PYTHON_EXECUTABLE=python3
+ ---> 5af0df866e62
+Step 13/23 : USER app
  ---> Using cache
  ---> 4160daadec99
 Step 14/31 : ENV APP_PYTHON_EXECUTABLE=python3
  ---> Using cache
  ---> 4160daadec99
 Step 14/19 : ENV APP_PYTHON_EXECUTABLE=python3
- ---> Removed intermediate container b5930537d384
- ---> b8e287942c56
-Step 9/9 : LABEL com.docker.compose.image.builder=classic
+ ---> Using cache
+ ---> 4160daadec99
+Step 14/23 : ENV APP_PYTHON_EXECUTABLE=python3
  ---> Using cache
  ---> d68089ca4068
-Step 15/23 : COPY --chown=app:app reports /app/reports
+Step 15/19 : COPY --chown=app:app reports /app/reports
  ---> Using cache
  ---> d68089ca4068
 Step 15/31 : COPY --chown=app:app reports /app/reports
  ---> Using cache
  ---> d68089ca4068
-Step 15/19 : COPY --chown=app:app reports /app/reports
- ---> Running in c580a1574944
- ---> Removed intermediate container a044691ce09d
- ---> b1e187a628fc
-Step 10/10 : LABEL com.docker.compose.image.builder=classic
- ---> Using cache
- ---> a08ab5704d91
-Step 12/15 : USER appuser
- ---> Running in 4cd8788e0912
- ---> Using cache
- ---> 2020d5a9e048
-Step 13/15 : EXPOSE 8080
- ---> Using cache
- ---> 9bea059f6a46
-Step 14/15 : ENTRYPOINT ["java", "-jar", "app.jar"]
- ---> Using cache
- ---> 74b2ac2d010c
-Step 15/15 : LABEL com.docker.compose.image.builder=classic
- ---> Using cache
- ---> 991123c02b5a
-Step 16/31 : COPY --chown=app:app fd-account-service/target/fd-account-service-1.0.0.jar app.jar
+Step 15/23 : COPY --chown=app:app reports /app/reports
  ---> Using cache
  ---> 991123c02b5a
 Step 16/19 : COPY --chown=app:app fd-account-service/target/fd-account-service-1.0.0.jar app.jar
@@ -515,58 +533,48 @@ Step 16/19 : COPY --chown=app:app fd-account-service/target/fd-account-service-1
  ---> 991123c02b5a
 Step 16/23 : COPY --chown=app:app fd-account-service/target/fd-account-service-1.0.0.jar app.jar
  ---> Using cache
- ---> 563e73e80d4e
- ---> Removed intermediate container c580a1574944
- ---> a17be36ab021
-Successfully built a17be36ab021
-Successfully built 563e73e80d4e
-Successfully tagged bt_lab-product-service:latest
- Image bt_lab-product-service Built 
- Image bt_lab-product-service Built 
-Successfully tagged bt_lab-fd-calculator:latest
- Image bt_lab-fd-calculator Built 
- Image bt_lab-fd-calculator Built 
- ---> Removed intermediate container 4cd8788e0912
- ---> a78b18c61a0d
-Successfully built a78b18c61a0d
-Successfully tagged bt_lab-fd-auth-service:latest
- Image bt_lab-fd-auth-service Built 
- Image bt_lab-fd-auth-service Built 
- ---> 0bb12c78728c
-Step 17/23 : EXPOSE 8086
- ---> 16586d541842
-Step 17/31 : EXPOSE 8086
- ---> 26b8d37f7e0c
+ ---> 991123c02b5a
+Step 16/31 : COPY --chown=app:app fd-account-service/target/fd-account-service-1.0.0.jar app.jar
+ ---> Using cache
+ ---> 4f6fdc42199a
 Step 17/19 : EXPOSE 8086
- ---> Running in 21e88d235ee1
- ---> Running in a3c454e6b0fb
- ---> Running in a9c3eade62ca
- ---> Removed intermediate container 21e88d235ee1
- ---> ff1ebac9d309
-Step 18/31 : ENTRYPOINT ["java", "-jar", "app.jar"]
- ---> Running in f81f09f5d27e
- ---> Removed intermediate container a9c3eade62ca
- ---> aa63dd3afe77
+ ---> Using cache
+ ---> 4f6fdc42199a
+Step 17/23 : EXPOSE 8086
+ ---> Using cache
+ ---> 4f6fdc42199a
+Step 17/31 : EXPOSE 8086
+ ---> Using cache
+ ---> e23c950c1b8d
 Step 18/23 : ENTRYPOINT ["java", "-jar", "app.jar"]
- ---> Removed intermediate container a3c454e6b0fb
- ---> 53df2671cfc9
+ ---> Using cache
+ ---> e23c950c1b8d
 Step 18/19 : ENTRYPOINT ["java", "-jar", "app.jar"]
- ---> Running in e7aec8efbd3d
- ---> Running in 3f151d1757e9
- ---> Removed intermediate container f81f09f5d27e
- ---> 35adfbcf1b3c
-Step 19/31 : FROM base AS interest-batch-service
- ---> 018cc73d2c6c
-Step 20/31 : COPY --chown=app:app interest-batch-service/target/interest-batch-service-1.0.0.jar app.jar
- ---> Removed intermediate container e7aec8efbd3d
- ---> 97a83b9ee219
+ ---> Using cache
+ ---> e23c950c1b8d
+Step 18/31 : ENTRYPOINT ["java", "-jar", "app.jar"]
+ ---> Using cache
+ ---> e70429e5facf
+Step 19/19 : LABEL com.docker.compose.image.builder=classic
+ ---> Using cache
+ ---> e70429e5facf
 Step 19/23 : FROM base AS interest-batch-service
  ---> 018cc73d2c6c
 Step 20/23 : COPY --chown=app:app interest-batch-service/target/interest-batch-service-1.0.0.jar app.jar
- ---> Removed intermediate container 3f151d1757e9
- ---> 9095dbbabd7f
-Step 19/19 : LABEL com.docker.compose.image.builder=classic
- ---> Running in faf854cb80de
+ ---> Using cache
+ ---> e70429e5facf
+Step 19/31 : FROM base AS interest-batch-service
+ ---> 018cc73d2c6c
+Step 20/31 : COPY --chown=app:app interest-batch-service/target/interest-batch-service-1.0.0.jar app.jar
+ ---> Using cache
+ ---> 0e49b7a91d1e
+Successfully built 0e49b7a91d1e
+Successfully tagged bt_lab-fd-account-service:latest
+ Image bt_lab-fd-account-service Built 
+ Image bt_lab-fd-account-service Built 
+ ---> Using cache
+ ---> ac74650ca065
+Step 21/23 : EXPOSE 8081
  ---> Using cache
  ---> ac74650ca065
 Step 21/31 : EXPOSE 8081
@@ -574,16 +582,13 @@ Step 21/31 : EXPOSE 8081
  ---> 4b99cc7d62b4
 Step 22/31 : ENTRYPOINT ["java", "-jar", "app.jar"]
  ---> Using cache
+ ---> 4b99cc7d62b4
+Step 22/23 : ENTRYPOINT ["java", "-jar", "app.jar"]
+ ---> Using cache
  ---> ea2e1d24fa4a
 Step 23/31 : FROM base AS statement-service
  ---> 018cc73d2c6c
 Step 24/31 : COPY --chown=app:app statement-service/target/statement-service-1.0.0.jar app.jar
- ---> Using cache
- ---> ac74650ca065
-Step 21/23 : EXPOSE 8081
- ---> Using cache
- ---> 4b99cc7d62b4
-Step 22/23 : ENTRYPOINT ["java", "-jar", "app.jar"]
  ---> Using cache
  ---> ea2e1d24fa4a
 Step 23/23 : LABEL com.docker.compose.image.builder=classic
@@ -604,82 +609,62 @@ Step 26/31 : ENTRYPOINT ["java", "-jar", "app.jar"]
 Step 27/31 : FROM base AS notification-service
  ---> 018cc73d2c6c
 Step 28/31 : COPY --chown=app:app notification-service/target/notification-service-1.0.0.jar app.jar
- ---> Removed intermediate container faf854cb80de
- ---> f922490d1b7a
-Successfully built f922490d1b7a
-Successfully tagged bt_lab-fd-account-service:latest
- Image bt_lab-fd-account-service Built 
- Image bt_lab-fd-account-service Built 
+ ---> Using cache
  ---> f707684111a5
 Step 29/31 : EXPOSE 8083
- ---> Running in a37d4779c56e
- ---> Removed intermediate container a37d4779c56e
+ ---> Using cache
  ---> e65229b3a150
 Step 30/31 : ENTRYPOINT ["java", "-jar", "app.jar"]
- ---> Running in 8b09c764cd27
- ---> Removed intermediate container 8b09c764cd27
+ ---> Using cache
  ---> 6cf8184de85b
 Step 31/31 : LABEL com.docker.compose.image.builder=classic
- ---> Running in 21310015f209
- ---> Removed intermediate container 21310015f209
+ ---> Using cache
  ---> 103eab054fa7
 Successfully built 103eab054fa7
 Successfully tagged bt_lab-notification-service:latest
  Image bt_lab-notification-service Built 
  Image bt_lab-notification-service Built 
- Container zookeeper Running 
- Container kafka Running 
  Container fd-group9-mysql Running 
- Container auth-mysql Running 
+ Container notification-service Running 
+ Container product-mysql Running 
+ Container kafka Running 
+ Container fd-calculator Running 
+ Container product-service Running 
  Container mailpit Running 
  Container fd-mysql Running 
- Container product-service Running 
- Container product-mysql Running 
+ Container fd-auth-service Running 
+ Container auth-mysql Running 
  Container interest-batch-service Running 
- Container fd-auth-service Recreate 
- Container fd-calculator Recreate 
- Container fd-account-service Recreate 
- Container notification-service Recreate 
- Container fd-auth-service Recreated 
- Container fd-calculator Recreated 
- Container fd-account-service Recreated 
- Container notification-service Recreated 
- Container fd-group9-mysql Waiting 
+ Container zookeeper Running 
+ Container fd-account-service Running 
+ Container product-mysql Waiting 
+ Container auth-mysql Waiting 
  Container fd-group9-mysql Waiting 
  Container fd-group9-mysql Waiting 
  Container fd-mysql Waiting 
- Container product-mysql Waiting 
- Container auth-mysql Waiting 
- Container fd-mysql Healthy 
+ Container fd-group9-mysql Waiting 
  Container product-mysql Healthy 
- Container fd-group9-mysql Healthy 
- Container fd-group9-mysql Healthy 
- Container fd-calculator Starting 
  Container auth-mysql Healthy 
- Container fd-auth-service Starting 
  Container fd-group9-mysql Healthy 
- Container notification-service Starting 
- Container fd-account-service Starting 
- Container fd-calculator Started 
- Container fd-auth-service Started 
- Container notification-service Started 
- Container fd-account-service Started 
+ Container fd-mysql Healthy 
+ Container fd-group9-mysql Healthy 
+ Container fd-group9-mysql Healthy 
 [0;32m[SUCCESS][0m Containers built and started
 [0;34m[INFO][0m Running containers:
-NAME                     IMAGE                             COMMAND                  SERVICE                  CREATED             STATUS                                     PORTS
-auth-mysql               mysql:8.0                         "docker-entrypoint.s…"   auth-mysql               2 hours ago         Up 2 hours (healthy)                       33060/tcp, 0.0.0.0:3309->3306/tcp, [::]:3309->3306/tcp
-fd-account-service       bt_lab-fd-account-service         "java -jar app.jar"      fd-account-service       3 seconds ago       Up Less than a second (health: starting)   0.0.0.0:8086->8086/tcp, [::]:8086->8086/tcp
-fd-auth-service          bt_lab-fd-auth-service            "java -jar app.jar"      fd-auth-service          3 seconds ago       Up Less than a second (health: starting)   0.0.0.0:8090->8090/tcp, [::]:8090->8090/tcp
-fd-calculator            bt_lab-fd-calculator              "java -XX:+UseContai…"   fd-calculator            3 seconds ago       Up Less than a second (health: starting)   0.0.0.0:8084->8084/tcp, [::]:8084->8084/tcp
-fd-group9-mysql          mysql:8.0                         "docker-entrypoint.s…"   fd-group9-mysql          About an hour ago   Up About an hour (healthy)                 33060/tcp, 0.0.0.0:3310->3306/tcp, [::]:3310->3306/tcp
-fd-mysql                 mysql:8.0                         "docker-entrypoint.s…"   fd-mysql                 2 hours ago         Up 2 hours (healthy)                       33060/tcp, 0.0.0.0:3307->3306/tcp, [::]:3307->3306/tcp
-interest-batch-service   bt_lab-interest-batch-service     "java -jar app.jar"      interest-batch-service   2 hours ago         Up 2 hours                                 0.0.0.0:8081->8081/tcp, [::]:8081->8081/tcp
-kafka                    confluentinc/cp-kafka:7.5.0       "/etc/confluent/dock…"   kafka                    2 hours ago         Up 2 hours                                 0.0.0.0:9092->9092/tcp, [::]:9092->9092/tcp, 0.0.0.0:19092->19092/tcp, [::]:19092->19092/tcp
-mailpit                  axllent/mailpit:latest            "/mailpit"               mailpit                  2 hours ago         Up 2 hours (healthy)                       0.0.0.0:1025->1025/tcp, [::]:1025->1025/tcp, 0.0.0.0:8025->8025/tcp, [::]:8025->8025/tcp, 1110/tcp
-notification-service     bt_lab-notification-service       "java -jar app.jar"      notification-service     3 seconds ago       Up Less than a second                      0.0.0.0:8083->8083/tcp, [::]:8083->8083/tcp
-product-mysql            mysql:8.0                         "docker-entrypoint.s…"   product-mysql            2 hours ago         Up 2 hours (healthy)                       33060/tcp, 0.0.0.0:3308->3306/tcp, [::]:3308->3306/tcp
-product-service          bt_lab-product-service            "java -jar app.jar"      product-service          2 hours ago         Up 2 hours (healthy)                       0.0.0.0:8080->8080/tcp, [::]:8080->8080/tcp
-zookeeper                confluentinc/cp-zookeeper:7.5.0   "/etc/confluent/dock…"   zookeeper                2 hours ago         Up 2 hours                                 2888/tcp, 0.0.0.0:2181->2181/tcp, [::]:2181->2181/tcp, 3888/tcp
+NAME                     IMAGE                             COMMAND                  SERVICE                  CREATED          STATUS                    PORTS
+auth-mysql               mysql:8.0                         "docker-entrypoint.s…"   auth-mysql               10 minutes ago   Up 10 minutes (healthy)   33060/tcp, 0.0.0.0:3309->3306/tcp, [::]:3309->3306/tcp
+fd-account-service       bt_lab-fd-account-service         "java -jar app.jar"      fd-account-service       10 minutes ago   Up 2 minutes (healthy)    0.0.0.0:8086->8086/tcp, [::]:8086->8086/tcp
+fd-auth-service          bt_lab-fd-auth-service            "java -jar app.jar"      fd-auth-service          10 minutes ago   Up 9 minutes (healthy)    0.0.0.0:8090->8090/tcp, [::]:8090->8090/tcp
+fd-calculator            bt_lab-fd-calculator              "java -XX:+UseContai…"   fd-calculator            10 minutes ago   Up 9 minutes (healthy)    0.0.0.0:8084->8084/tcp, [::]:8084->8084/tcp
+fd-group9-mysql          mysql:8.0                         "docker-entrypoint.s…"   fd-group9-mysql          10 minutes ago   Up 9 minutes (healthy)    33060/tcp, 0.0.0.0:3310->3306/tcp, [::]:3310->3306/tcp
+fd-mysql                 mysql:8.0                         "docker-entrypoint.s…"   fd-mysql                 10 minutes ago   Up 10 minutes (healthy)   33060/tcp, 0.0.0.0:3307->3306/tcp, [::]:3307->3306/tcp
+interest-batch-service   bt_lab-interest-batch-service     "java -jar app.jar"      interest-batch-service   10 minutes ago   Up 9 minutes              0.0.0.0:8081->8081/tcp, [::]:8081->8081/tcp
+kafka                    confluentinc/cp-kafka:7.5.0       "/etc/confluent/dock…"   kafka                    10 minutes ago   Up 10 minutes             0.0.0.0:9092->9092/tcp, [::]:9092->9092/tcp, 0.0.0.0:19092->19092/tcp, [::]:19092->19092/tcp
+mailpit                  axllent/mailpit:latest            "/mailpit"               mailpit                  10 minutes ago   Up 10 minutes (healthy)   0.0.0.0:1025->1025/tcp, [::]:1025->1025/tcp, 0.0.0.0:8025->8025/tcp, [::]:8025->8025/tcp, 1110/tcp
+notification-service     bt_lab-notification-service       "java -jar app.jar"      notification-service     10 minutes ago   Up 9 minutes              0.0.0.0:8083->8083/tcp, [::]:8083->8083/tcp
+product-mysql            mysql:8.0                         "docker-entrypoint.s…"   product-mysql            10 minutes ago   Up 10 minutes (healthy)   33060/tcp, 0.0.0.0:3308->3306/tcp, [::]:3308->3306/tcp
+product-service          bt_lab-product-service            "java -jar app.jar"      product-service          10 minutes ago   Up 9 minutes (healthy)    0.0.0.0:8080->8080/tcp, [::]:8080->8080/tcp
+zookeeper                confluentinc/cp-zookeeper:7.5.0   "/etc/confluent/dock…"   zookeeper                10 minutes ago   Up 10 minutes             2888/tcp, 0.0.0.0:2181->2181/tcp, [::]:2181->2181/tcp, 3888/tcp
 [0;34m[INFO][0m Waiting for all services to be ready...
 [0;34m[INFO][0m Checking health of container: fd-mysql (max attempts: 60)
 [0;32m[SUCCESS][0m fd-mysql is healthy
@@ -695,7 +680,7 @@ zookeeper                confluentinc/cp-zookeeper:7.5.0   "/etc/confluent/dock�
 [0;34m[INFO][0m Checking health of container: mailpit (max attempts: 60)
 [0;32m[SUCCESS][0m mailpit is healthy
 [0;34m[INFO][0m Checking health of container: fd-calculator (max attempts: 60)
-.....[0;32m[SUCCESS][0m fd-calculator is healthy
+[0;32m[SUCCESS][0m fd-calculator is healthy
 [0;34m[INFO][0m Checking health of container: product-service (max attempts: 60)
 [0;32m[SUCCESS][0m product-service is healthy
 [0;34m[INFO][0m Checking health of container: fd-account-service (max attempts: 60)

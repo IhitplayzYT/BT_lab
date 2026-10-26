@@ -504,6 +504,9 @@ FD Module is running
   "applicantPan": "string (pattern: ^[A-Z]{5}[0-9]{4}[A-Z]$, required)",
   "applicantAccountNumber": "string (9-18 digits, required)",
   "applicantIfsc": "string (pattern: ^[A-Z]{4}0[A-Z0-9]{6}$, required)",
+  "customerCategory": "string (GENERAL, SENIOR_CITIZEN, EMPLOYEE, STUDENT, or CORPORATE)",
+  "accountHolderRoles": ["OWNER", "CO-OWNER"],
+  "coOwnerName": "string (required when CO-OWNER is selected)",
   "nominees": [
     {
       "name": "string (max 255 chars, required)",
@@ -550,9 +553,22 @@ FD Module is running
   "accruedInterest": "string",
   "maturityAmount": "string",
   "nomineeName": "string",
-  "nomineeRelation": "string"
+  "nomineeRelation": "string",
+  "customerCategory": "string",
+  "accountHolderRoles": "OWNER,CO-OWNER",
+  "coOwnerName": "string"
 }
 ```
+
+#### `PUT /api/fd/account/profile/category`
+
+**Purpose:** Save the signed-in customer's default FD pricing category.
+
+**Authentication:** Required (CUSTOMER role)
+
+**Request:** `{ "customerCategory": "SENIOR_CITIZEN" }`
+
+The category is stored on the customer profile and used by product rate calculations.
 
 ---
 

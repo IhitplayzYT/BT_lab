@@ -13,7 +13,8 @@
           <input
             type="number"
             id="principal"
-            [(ngModel)]="principal"
+            [ngModel]="principal()"
+            (ngModelChange)="principal.set(+$event)"
             (blur)="validatePrincipal()"
             [min]="minPrincipal()"
             [max]="maxPrincipal()"
@@ -26,7 +27,8 @@
           <div class="slider-container">
             <input
               type="range"
-              [(ngModel)]="principal"
+              [ngModel]="principal()"
+              (ngModelChange)="principal.set(+$event)"
               [min]="minPrincipal()"
               [max]="maxPrincipal()"
               step="5000"
@@ -41,22 +43,27 @@
           <input
             type="number"
             id="term"
-            [(ngModel)]="termMonths"
+            [ngModel]="termMonths()"
+            (ngModelChange)="termMonths.set(+$event)"
             (blur)="validateTermMonths()"
             [min]="minTerm()"
             [max]="maxTerm()"
+            [disabled]="minTerm() === maxTerm()"
             [class.error]="termMonthsError"
           />
           @if (termMonthsError) {
             <div class="validation-error">{{ termMonthsError }}</div>
           }
+          @if (minTerm() === maxTerm()) { <small class="fixed-value-note">Fixed tenure</small> }
           <div class="slider-container">
             <input
               type="range"
-              [(ngModel)]="termMonths"
+              [ngModel]="termMonths()"
+              (ngModelChange)="termMonths.set(+$event)"
               [min]="minTerm()"
               [max]="maxTerm()"
-              step="6"
+              step="1"
+              [disabled]="minTerm() === maxTerm()"
               class="slider"
             />
           </div>
@@ -65,9 +72,19 @@
 
         <div class="input-group">
           <label for="product">{{ 'Product' | translate }}</label>
-          <select id="product" [(ngModel)]="productCode" (change)="onProductChange()">
+          <select id="product" [ngModel]="productCode()" (ngModelChange)="productCode.set($event); onProductChange()">
             @for (product of products(); track product.productCode) {
               <option [value]="product.productCode">{{ product.productName }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="input-group">
+          <label for="customerCategory">{{ 'Customer Category' | translate }}</label>
+          <select id="customerCategory" [ngModel]="customerCategory()" (ngModelChange)="customerCategory.set($event); calculate()">
+            <option value="GENERAL">{{ 'General' | translate }}</option>
+            @for (variation of selectedProduct()?.rateVariations || []; track variation.customerCategory) {
+              <option [value]="variation.customerCategory">{{ variation.customerCategory }} (+{{ variation.rateModifier }}%)</option>
             }
           </select>
         </div>
@@ -77,10 +94,12 @@
           <input
             type="number"
             id="interestRate"
-            [(ngModel)]="interestRate"
+            [ngModel]="interestRate()"
+            (ngModelChange)="interestRate.set(+$event)"
             (blur)="validateInterestRate()"
             [min]="minInterestRate()"
             [max]="maxInterestRate()"
+            [disabled]="minInterestRate() === maxInterestRate()"
             step="0.1"
             [class.error]="interestRateError"
           />
@@ -90,19 +109,22 @@
           <div class="slider-container">
             <input
               type="range"
-              [(ngModel)]="interestRate"
+              [ngModel]="interestRate()"
+              (ngModelChange)="interestRate.set(+$event)"
               [min]="minInterestRate()"
               [max]="maxInterestRate()"
               step="0.1"
+              [disabled]="minInterestRate() === maxInterestRate()"
               class="slider"
             />
           </div>
+          @if (minInterestRate() === maxInterestRate()) { <small class="fixed-value-note">Fixed interest rate</small> }
           <span class="input-value">{{ interestRate() }}%</span>
         </div>
 
         <div class="input-group">
           <label for="interestType">{{ 'Interest Type' | translate }}</label>
-          <select id="interestType" [(ngModel)]="interestType">
+          <select id="interestType" [ngModel]="interestType()" (ngModelChange)="interestType.set($event)">
             <option value="COMPOUND">{{ 'Compound Interest' | translate }}</option>
             <option value="SIMPLE">{{ 'Simple Interest' | translate }}</option>
           </select>
@@ -143,7 +165,7 @@
             
             <div class="result-item">
               <span class="result-label">{{ 'Interest Rate' | translate }}</span>
-              <span class="result-value">{{ '{0}% p.a.' | translate:[interestRate()] }}</span>
+              <span class="result-value">{{ '{0}% p.a.' | translate:[displayInterestRate()] }}</span>
             </div>
             
             <div class="result-item">

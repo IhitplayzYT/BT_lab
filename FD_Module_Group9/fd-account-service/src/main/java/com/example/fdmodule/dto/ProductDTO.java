@@ -2,6 +2,7 @@ package com.example.fdmodule.dto;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 /**
  * Simple DTO to hold product data from the external Product & Pricing service.
@@ -24,6 +25,7 @@ public class ProductDTO {
     private BigDecimal preMaturityPenaltyPct;
     private String compoundingFrequency;
     private String status;
+    private List<String> allowedRoles;
 
     public ProductDTO() {}
 
@@ -59,4 +61,6 @@ public class ProductDTO {
     public void setCompoundingFrequency(String compoundingFrequency) { this.compoundingFrequency = compoundingFrequency; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+    public List<String> getAllowedRoles() { return allowedRoles; }
+    public void setAllowedRoles(List<String> allowedRoles) { this.allowedRoles = allowedRoles; }
 }

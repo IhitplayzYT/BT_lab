@@ -7,11 +7,37 @@
 
 USE banking_technology_lab;
 
--- Add bundle fields to fd_accounts table
-ALTER TABLE fd_accounts
-ADD COLUMN bundle_id VARCHAR(50) NULL AFTER customer_id,
-ADD COLUMN bundle_name VARCHAR(255) NULL AFTER bundle_id,
-ADD INDEX idx_fd_accounts_bundle (bundle_id);
+-- Add bundle fields to fd_accounts table. These checks let the migration run
+-- both on databases created from the current base schema and on older volumes.
+SET @add_bundle_id = IF(
+    (SELECT COUNT(*) FROM information_schema.columns
+     WHERE table_schema = DATABASE() AND table_name = 'fd_accounts' AND column_name = 'bundle_id') = 0,
+    'ALTER TABLE fd_accounts ADD COLUMN bundle_id VARCHAR(50) NULL AFTER customer_id',
+    'SELECT 1'
+);
+PREPARE stmt FROM @add_bundle_id;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @add_bundle_name = IF(
+    (SELECT COUNT(*) FROM information_schema.columns
+     WHERE table_schema = DATABASE() AND table_name = 'fd_accounts' AND column_name = 'bundle_name') = 0,
+    'ALTER TABLE fd_accounts ADD COLUMN bundle_name VARCHAR(255) NULL AFTER bundle_id',
+    'SELECT 1'
+);
+PREPARE stmt FROM @add_bundle_name;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @add_bundle_index = IF(
+    (SELECT COUNT(*) FROM information_schema.statistics
+     WHERE table_schema = DATABASE() AND table_name = 'fd_accounts' AND index_name = 'idx_fd_accounts_bundle') = 0,
+    'CREATE INDEX idx_fd_accounts_bundle ON fd_accounts (bundle_id)',
+    'SELECT 1'
+);
+PREPARE stmt FROM @add_bundle_index;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
 -- Create bundle_applications table to track bundle-level status
 CREATE TABLE IF NOT EXISTS bundle_applications (

@@ -104,6 +104,7 @@ CREATE TABLE IF NOT EXISTS product_rate_variations (
     product_id        INT NOT NULL,
     customer_category VARCHAR(50) NOT NULL,  -- 'SENIOR_CITIZEN', 'EMPLOYEE', 'GENERAL'
     rate_modifier     DECIMAL(5,2) NOT NULL, -- e.g. 1.00, 0.50
+    CONSTRAINT uk_product_category UNIQUE (product_id, customer_category),
     CONSTRAINT fk_rate_variations_product
         FOREIGN KEY (product_id) REFERENCES products(product_id)
         ON DELETE CASCADE

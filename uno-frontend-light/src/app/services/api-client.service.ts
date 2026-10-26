@@ -401,6 +401,13 @@ export class ApiClientService {
     });
   }
 
+  updateCustomerCategory(customerCategory: string): Observable<any> {
+    return this.request(':8086/api/fd/account/profile/category', {
+      method: 'PUT',
+      body: { customerCategory }
+    });
+  }
+
   getMyApplications(): Observable<any[]> {
     return this.request(':8086/api/fd/account/my-applications').pipe(
       map((response: any) => {

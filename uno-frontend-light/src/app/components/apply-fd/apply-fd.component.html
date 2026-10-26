@@ -12,6 +12,10 @@
 
     @if (!submitSuccess) {
       <div class="apply-fd-container">
+        <button type="button" class="btn btn-secondary apply-exit" (click)="exitApplication()" aria-label="Exit FD application" title="Back to dashboard">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5m0 0 7-7m-7 7 7 7" /></svg>
+          <span>Back to dashboard</span>
+        </button>
         <!-- Progress Steps -->
         <div class="progress-steps">
           @for (step of [1, 2, 3]; track step) {
@@ -34,7 +38,7 @@
         </div>
 
         <!-- Form -->
-        <form class="apply-fd-form" autocomplete="off" (submit)="submitApplication()">
+        <form class="apply-fd-form" autocomplete="off" novalidate (ngSubmit)="submitApplication()">
           
           <!-- Bundle Info Banner -->
           @if (isBundleMode()) {
@@ -387,11 +391,15 @@
                       [(ngModel)]="formData.tenureMonths" 
                       (input)="validateTenureMonths()"
                       name="tenureMonths"
-                      min="6"
-                      max="120"
+                      [min]="selectedProduct()?.termLimit?.min ?? 6"
+                      [max]="selectedProduct()?.termLimit?.max ?? 120"
+                      [disabled]="!!selectedProduct() && selectedProduct().termLimit?.min === selectedProduct().termLimit?.max"
                       required
                       [class.error]="tenureMonthsError"
                     />
+                    @if (selectedProduct() && selectedProduct().termLimit?.min === selectedProduct().termLimit?.max) {
+                      <small class="fixed-value-note">Fixed tenure</small>
+                    }
                     @if (tenureMonthsError) {
                       <div class="validation-error">{{ tenureMonthsError }}</div>
                     }
@@ -435,7 +443,7 @@
                         <button type="button" class="btn btn-secondary btn-sm" (click)="loadProducts()">{{ 'Retry' | translate }}</button>
                       </div>
                     } @else {
-                      <select id="product" [(ngModel)]="formData.productCode" name="productCode" (change)="selectedProduct.set(products().find(p => p.productCode === formData.productCode)); calculateBilling(); validateProductCode(); validatePrincipalAmount(); validateTenureMonths()" (blur)="validateProductCode()" required [class.error]="productCodeError">
+                      <select id="product" [(ngModel)]="formData.productCode" name="productCode" (ngModelChange)="onProductSelected($event)" (blur)="validateProductCode()" required [class.error]="productCodeError || ageError">
                         <option value="">{{ '-- Select a Product --' | translate }}</option>
                         @for (product of products(); track product.productCode) {
                           <option [value]="product.productCode">{{ product.productName }} ({{ product.productCode }})</option>
@@ -443,6 +451,9 @@
                       </select>
                       @if (productCodeError) {
                         <div class="validation-error">{{ productCodeError }}</div>
+                      }
+                      @if (ageError && requiresSeniorEligibility()) {
+                        <div class="validation-error">{{ ageError }}</div>
                       }
                       @if (selectedProduct()) {
                         <div class="product-info">
@@ -461,6 +472,36 @@
                     }
                   </div>
 
+                  @if (selectedProduct()) {
+                    <div class="form-group">
+                      <label for="customerCategory">{{ 'Customer Category' | translate }}</label>
+                      <select id="customerCategory" [(ngModel)]="formData.customerCategory" name="customerCategory" (ngModelChange)="formData.customerCategory = $event.toUpperCase().replaceAll(' ', '_'); calculateBilling()">
+                        <option value="GENERAL">{{ 'General' | translate }}</option>
+                        @for (variation of selectedProduct().rateVariations || []; track variation.customerCategory) {
+                          <option [value]="variation.customerCategory">{{ variation.customerCategory }} (+{{ variation.rateModifier }}%)</option>
+                        }
+                      </select>
+                      <small>{{ 'Rate bonus is applied from this product’s configured category variations.' | translate }}</small>
+                    </div>
+                  }
+
+                  <div class="form-group full-width">
+                    <label>{{ 'Account Holder Roles' | translate }}</label>
+                    <div class="product-role-options">
+                      @for (role of ['OWNER', 'CO-OWNER']; track role) {
+                        <label class="product-role-option">
+                          <input type="checkbox" [checked]="hasApplicationRole(role)" [disabled]="role === 'OWNER' || !isProductRoleAllowed(role)" (change)="toggleApplicationRole(role, $any($event.target).checked)">
+                          <span>{{ role === 'OWNER' ? 'Owner' : 'Co-Owner' | translate }}</span>
+                        </label>
+                      }
+                    </div>
+                    @if (hasApplicationRole('CO-OWNER')) {
+                      <input type="text" [(ngModel)]="formData.coOwnerName" name="coOwnerName" (blur)="validateCoOwnerName()" [attr.placeholder]="'Co-owner full name' | translate" required>
+                      @if (coOwnerNameError) { <div class="validation-error">{{ coOwnerNameError }}</div> }
+                    }
+                  </div>
+
+                  @if (isProductRoleAllowed('NOMINEE')) {
                   <div class="form-group full-width">
                     <label>{{ 'Nominees (Optional)' | translate }}</label>
                     <div class="nominees-container">
@@ -490,6 +531,7 @@
                       </button>
                     </div>
                   </div>
+                  }
                 </div>
               }
             </div>

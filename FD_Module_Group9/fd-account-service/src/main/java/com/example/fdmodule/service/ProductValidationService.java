@@ -7,6 +7,8 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 public class ProductValidationService {
@@ -91,6 +93,12 @@ public class ProductValidationService {
         product.setMaxDeposit(json.hasNonNull("maxDeposit") ? new BigDecimal(json.get("maxDeposit").asText()) : new BigDecimal("10000000"));
         product.setCompoundingFrequency(json.has("compoundingFrequency") ? json.get("compoundingFrequency").asText() : "QUARTERLY");
         product.setStatus(json.has("status") ? json.get("status").asText() : "ACTIVE");
+        List<String> allowedRoles = new ArrayList<>();
+        if (json.path("allowedRoles").isArray()) {
+            json.path("allowedRoles").forEach(role -> allowedRoles.add(role.asText().toUpperCase()));
+        }
+        if (allowedRoles.isEmpty()) allowedRoles.add("OWNER");
+        product.setAllowedRoles(allowedRoles);
         
         // Parse effective date if present
         if (json.has("effectiveDate") && !json.get("effectiveDate").isNull()) {

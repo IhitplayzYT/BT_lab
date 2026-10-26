@@ -1,7 +1,21 @@
 import { Component, inject, OnInit, AfterViewInit, ElementRef, signal, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { timeout } from 'rxjs';
 import { ApiClientService } from '../../services/api-client.service';
+
+interface RiskGroup {
+  id: string;
+  score: number;
+  tier: 'Low' | 'Review' | 'High';
+  customerCount: number;
+  relationshipCount: number;
+  longestChain: number;
+  sharedNominees: number;
+  hasCycle: boolean;
+  reasons: string[];
+}
 
 @Component({
   selector: 'app-relation-nets',
@@ -12,8 +26,10 @@ import { ApiClientService } from '../../services/api-client.service';
 })
 export class RelationNetsComponent implements OnInit, AfterViewInit {
   private apiClient = inject(ApiClientService);
+  private http = inject(HttpClient);
   private elementRef = inject(ElementRef);
   private cdr = inject(ChangeDetectorRef);
+  private readonly assistantEndpoint = 'http://127.0.0.1:8091';
 
   searchQuery = '';
   searchType = 'name'; // 'name' or 'id'
@@ -24,6 +40,10 @@ export class RelationNetsComponent implements OnInit, AfterViewInit {
   // Graph data
   nodes: any[] = [];
   links: any[] = [];
+  riskGroups: RiskGroup[] = [];
+  aiInsights: Record<string, string> = {};
+  aiInsightErrors: Record<string, string> = {};
+  aiInsightLoading: Record<string, boolean> = {};
   highlightedNodes: Set<string> = new Set();
   highlightedLinks: Set<string> = new Set();
 
@@ -51,31 +71,19 @@ export class RelationNetsComponent implements OnInit, AfterViewInit {
       console.log('Relation Nets: Applications loaded:', applications?.length || 0);
       console.log('Relation Nets: Sample application:', applications?.[0]);
 
-      // Build nodes and links from applications
+      // Build customer nodes from account owners, then add only declared nominee edges.
       const customerMap = new Map<string, any>();
       const links: any[] = [];
-
-      console.log('Relation Nets: Processing applications to build customer map');
-      const processedCustomerIds = new Set<string>();
-
-      (applications || []).forEach((app: any, index: number) => {
+      const applicationRows = applications || [];
+      applicationRows.forEach((app: any) => {
         const customerId = app.customerId || app.fdAccountNo;
         const customerName = app.applicantFullName || `${app.applicantFirstName || ''} ${app.applicantLastName || ''}`.trim() || 'Unknown';
+        if (!customerId) return;
 
-        if (!customerId) {
-          console.warn(`Relation Nets: Application ${index} has no customerId or fdAccountNo`, app);
-          return;
-        }
-
-        processedCustomerIds.add(customerId);
-
-        // Add customer node if not exists
         if (!customerMap.has(customerId)) {
           customerMap.set(customerId, {
             id: customerId,
             name: customerName,
-            email: app.applicantEmail,
-            phone: app.applicantPhone,
             group: 'customer',
             fdCount: 0,
             totalInvestment: 0,
@@ -88,56 +96,61 @@ export class RelationNetsComponent implements OnInit, AfterViewInit {
         customer.totalInvestment += parseFloat(app.principalAmount) || 0;
       });
 
-      console.log('Relation Nets: Processed unique customer IDs:', processedCustomerIds.size);
-      console.log('Relation Nets: Customer IDs:', Array.from(processedCustomerIds));
-
-      // Create links based on shared attributes (e.g., same phone, same email, similar names)
       const customers = Array.from(customerMap.values());
-      console.log('Relation Nets: Total customers:', customers.length);
+      const customersByName = new Map<string, any[]>();
+      customers.forEach(customer => {
+        const key = this.normalizeName(customer.name);
+        if (!key) return;
+        customersByName.set(key, [...(customersByName.get(key) || []), customer]);
+      });
 
-      for (let i = 0; i < customers.length; i++) {
-        for (let j = i + 1; j < customers.length; j++) {
-          const c1 = customers[i];
-          const c2 = customers[j];
+      const nomineeNodes = new Map<string, any>();
+      applicationRows.forEach((app: any) => {
+        const sourceId = app.customerId || app.fdAccountNo;
+        if (!sourceId || !customerMap.has(sourceId)) return;
+        const declarations = Array.isArray(app.nominees) && app.nominees.length
+          ? app.nominees
+          : (app.nomineeName ? [{ name: app.nomineeName, relation: app.nomineeRelation }] : []);
 
-          // Link if same phone
-          if (c1.phone && c2.phone && c1.phone === c2.phone) {
-            links.push({
-              source: c1.id,
-              target: c2.id,
-              type: 'phone',
-              strength: 0.9
-            });
+        declarations.forEach((nominee: any) => {
+          const nomineeName = String(nominee?.name || nominee?.nomineeName || '').trim();
+          const normalized = this.normalizeName(nomineeName);
+          if (!normalized) return;
+
+          // Link to an existing customer only on an exact, unique name match.
+          // Ambiguous names remain separate nominee nodes rather than being guessed.
+          const matches = customersByName.get(normalized) || [];
+          let targetId: string;
+          if (matches.length === 1) {
+            targetId = matches[0].id;
+          } else {
+            targetId = `nominee:${normalized}`;
+            if (!nomineeNodes.has(targetId)) {
+              nomineeNodes.set(targetId, {
+                id: targetId,
+                name: nomineeName,
+                group: 'nominee',
+                fdCount: 0,
+                totalInvestment: 0,
+                color: '#c7d2fe',
+                identityMatch: matches.length > 1 ? 'ambiguous' : 'unmatched',
+              });
+            }
           }
 
-          // Link if same email
-          if (c1.email && c2.email && c1.email === c2.email) {
-            links.push({
-              source: c1.id,
-              target: c2.id,
-              type: 'email',
-              strength: 0.95
-            });
-          }
+          links.push({
+            source: sourceId,
+            target: targetId,
+            type: 'nominee',
+            relation: String(nominee?.relation || nominee?.nomineeRelation || 'Unspecified'),
+            fdAccountNo: app.fdAccountNo,
+          });
+        });
+      });
 
-          // Link if similar names (Levenshtein distance)
-          if (this.areNamesSimilar(c1.name, c2.name)) {
-            links.push({
-              source: c1.id,
-              target: c2.id,
-              type: 'name',
-              strength: 0.7
-            });
-          }
-        }
-      }
-
-      this.nodes = customers;
+      this.nodes = [...customers, ...nomineeNodes.values()];
       this.links = links;
-      console.log('Relation Nets: Nodes created:', this.nodes.length);
-      console.log('Relation Nets: Links created:', this.links.length);
-      console.log('Relation Nets: Sample nodes:', this.nodes.slice(0, 3));
-      console.log('Relation Nets: Sample links:', this.links.slice(0, 3));
+      this.riskGroups = this.assessGraphRisk();
 
       // Set loading to false first so the container renders
       this.isLoading = false;
@@ -167,19 +180,134 @@ export class RelationNetsComponent implements OnInit, AfterViewInit {
     }
   }
 
-  private areNamesSimilar(name1: string, name2: string): boolean {
-    // Simple similarity check based on common words
-    const words1 = name1.toLowerCase().split(' ');
-    const words2 = name2.toLowerCase().split(' ');
-    
-    let commonWords = 0;
-    words1.forEach(w1 => {
-      if (words2.includes(w1) && w1.length > 2) {
-        commonWords++;
-      }
+  private normalizeName(value: string): string {
+    return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  }
+
+  private assessGraphRisk(): RiskGroup[] {
+    const nodeById = new Map<string, any>(this.nodes.map(node => [node.id, node]));
+    const undirected = new Map<string, Set<string>>();
+    const outgoing = new Map<string, Set<string>>();
+    const incoming = new Map<string, Set<string>>();
+    this.nodes.forEach(node => {
+      undirected.set(node.id, new Set());
+      outgoing.set(node.id, new Set());
+      incoming.set(node.id, new Set());
     });
-    
-    return commonWords >= 2;
+    this.links.forEach(link => {
+      const source = String(typeof link.source === 'object' ? link.source.id : link.source);
+      const target = String(typeof link.target === 'object' ? link.target.id : link.target);
+      if (!nodeById.has(source) || !nodeById.has(target)) return;
+      undirected.get(source)!.add(target);
+      undirected.get(target)!.add(source);
+      outgoing.get(source)!.add(target);
+      incoming.get(target)!.add(source);
+    });
+
+    const seen = new Set<string>();
+    const groups: RiskGroup[] = [];
+    for (const node of this.nodes) {
+      if (seen.has(node.id) || !undirected.get(node.id)!.size) continue;
+      const component = new Set<string>();
+      const queue = [node.id];
+      while (queue.length) {
+        const current = queue.pop()!;
+        if (component.has(current)) continue;
+        component.add(current);
+        seen.add(current);
+        undirected.get(current)!.forEach(neighbor => { if (!component.has(neighbor)) queue.push(neighbor); });
+      }
+
+      const customerIds = [...component].filter(id => nodeById.get(id)?.group === 'customer');
+      const edges = this.links.filter(link => {
+        const source = String(typeof link.source === 'object' ? link.source.id : link.source);
+        const target = String(typeof link.target === 'object' ? link.target.id : link.target);
+        return component.has(source) && component.has(target);
+      });
+      const indegree = new Map([...component].map(id => [id, 0]));
+      component.forEach(id => incoming.get(id)!.forEach(source => {
+        if (component.has(source)) indegree.set(id, indegree.get(id)! + 1);
+      }));
+      const ready = [...component].filter(id => indegree.get(id) === 0);
+      const depth = new Map([...component].map(id => [id, 0]));
+      let processed = 0;
+      while (ready.length) {
+        const current = ready.shift()!;
+        processed++;
+        outgoing.get(current)!.forEach(next => {
+          if (!component.has(next)) return;
+          depth.set(next, Math.max(depth.get(next)!, depth.get(current)! + 1));
+          indegree.set(next, indegree.get(next)! - 1);
+          if (indegree.get(next) === 0) ready.push(next);
+        });
+      }
+      const hasCycle = processed < component.size;
+      const longestChain = Math.max(0, ...depth.values());
+      const sharedNominees = [...component].filter(id =>
+        nodeById.get(id)?.group === 'nominee' && incoming.get(id)!.size > 1
+      ).length;
+
+      const reasons: string[] = [];
+      let score = 0;
+      if (longestChain >= 3) { score += 30; reasons.push(`A nominee chain spans ${longestChain} recorded links`); }
+      else if (longestChain >= 2) { score += 15; reasons.push(`A nominee chain spans ${longestChain} recorded links`); }
+      if (sharedNominees) { score += Math.min(30, sharedNominees * 15); reasons.push(`${sharedNominees} nominee node(s) are linked from multiple customers`); }
+      if (hasCycle) { score += 35; reasons.push('The directed nominee links contain a cycle'); }
+      if (customerIds.length >= 5) { score += 10; reasons.push(`The connected group contains ${customerIds.length} customer nodes`); }
+      score = Math.min(100, score);
+
+      const group: RiskGroup = {
+        id: `Network ${groups.length + 1}`,
+        score,
+        tier: score >= 60 ? 'High' : score >= 30 ? 'Review' : 'Low',
+        customerCount: customerIds.length,
+        relationshipCount: edges.length,
+        longestChain,
+        sharedNominees,
+        hasCycle,
+        reasons: reasons.length ? reasons : ['No elevated structural signal found in the recorded nominee links'],
+      };
+      groups.push(group);
+      component.forEach(id => {
+        nodeById.get(id).riskGroup = group;
+      });
+    }
+    return groups.sort((a, b) => b.score - a.score);
+  }
+
+  generateRiskInsight(group: RiskGroup): void {
+    if (this.aiInsightLoading[group.id]) return;
+    this.apiClient.loadToken();
+    const token = this.apiClient.getToken();
+    if (!token) {
+      this.aiInsightErrors[group.id] = 'Please sign in with an authorized staff account to request an AI insight.';
+      return;
+    }
+
+    this.aiInsightLoading[group.id] = true;
+    delete this.aiInsightErrors[group.id];
+    this.http.post<{ insight: string }>(
+      `${this.assistantEndpoint}/api/assistant/risk-insight`,
+      {
+        score: group.score,
+        tier: group.tier.toLowerCase(),
+        customer_count: group.customerCount,
+        relationship_count: group.relationshipCount,
+        longest_chain: group.longestChain,
+        shared_nominees: group.sharedNominees,
+        has_cycle: group.hasCycle,
+      },
+      { headers: new HttpHeaders({ Authorization: `Bearer ${token}` }) },
+    ).pipe(timeout(35000)).subscribe({
+      next: result => {
+        this.aiInsights[group.id] = result.insight;
+        this.aiInsightLoading[group.id] = false;
+      },
+      error: () => {
+        this.aiInsightErrors[group.id] = 'AI insight is unavailable right now. The deterministic graph score is still available.';
+        this.aiInsightLoading[group.id] = false;
+      },
+    });
   }
 
   private initializeGraph(): void {
@@ -302,9 +430,10 @@ export class RelationNetsComponent implements OnInit, AfterViewInit {
       .selectAll('line')
       .data(this.links)
       .enter().append('line')
+      .attr('marker-end', 'url(#end)')
       .attr('stroke', (d: any) => {
         const linkId = `${d.source.id}-${d.target.id}`;
-        return this.highlightedLinks.has(linkId) ? '#2be0cc' : '#cbd5e1';
+        return this.highlightedLinks.has(linkId) ? '#2be0cc' : '#64748b';
       })
       .attr('stroke-opacity', (d: any) => {
         const linkId = `${d.source.id}-${d.target.id}`;
@@ -401,6 +530,8 @@ export class RelationNetsComponent implements OnInit, AfterViewInit {
       .attr('font-weight', '600')
       .style('pointer-events', 'none');
 
+    node.append('title').text((d: any) => `${d.group === 'customer' ? 'Customer' : 'Nominee'}: ${d.name}`);
+
     // Node details (FD count below circle)
     node.append('text')
       .attr('text-anchor', 'middle')
@@ -496,6 +627,17 @@ export class RelationNetsComponent implements OnInit, AfterViewInit {
   }
 
   selectCustomer(customer: any): void {
+    const selectedId = String(customer.id);
+    customer.relationshipSummary = this.links.flatMap(link => {
+      const sourceId = String(typeof link.source === 'object' ? link.source.id : link.source);
+      const targetId = String(typeof link.target === 'object' ? link.target.id : link.target);
+      if (sourceId !== selectedId && targetId !== selectedId) return [];
+      const otherId = sourceId === selectedId ? targetId : sourceId;
+      const otherName = this.nodes.find(node => node.id === otherId)?.name || 'Unknown';
+      return [sourceId === selectedId
+        ? `Named ${otherName} as nominee (${link.relation})`
+        : `${otherName} named this node as nominee (${link.relation})`];
+    });
     this.selectedCustomer = customer;
   }
 

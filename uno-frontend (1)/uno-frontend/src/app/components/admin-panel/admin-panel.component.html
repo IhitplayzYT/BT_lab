@@ -35,6 +35,12 @@
         <button class="tab-btn" [class.active]="activeTab === 'relation-nets'" (click)="activeTab = 'relation-nets'">{{ 'Relation Nets' | translate }}</button>
         <button class="tab-btn" [class.active]="activeTab === 'logs'" (click)="activeTab = 'logs'">{{ 'Logs' | translate }}</button>
       </div>
+      <section class="api-doc-links" aria-label="Module API documentation">
+        <strong>Module API documentation</strong>
+        <a class="btn btn-secondary" href="http://localhost:8080/swagger-ui/index.html" target="_blank" rel="noopener noreferrer">Products API</a>
+        <a class="btn btn-secondary" href="http://localhost:8084/swagger-ui/index.html" target="_blank" rel="noopener noreferrer">FD Calculator API</a>
+        <a class="btn btn-secondary" href="http://localhost:8086/swagger-ui/index.html" target="_blank" rel="noopener noreferrer">FD Accounts API</a>
+      </section>
     </div>
 
     @if (activeTab === 'products') {

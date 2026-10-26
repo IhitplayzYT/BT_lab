@@ -179,6 +179,56 @@ stop_existing_containers() {
 }
 
 # Build and start containers
+prepare_account_database() {
+    log_info "Starting the account database before application services..."
+
+    cd "$PROJECT_ROOT"
+    if ! docker compose -f "$COMPOSE_FILE" up -d fd-group9-mysql >> "$LOG_FILE" 2>&1; then
+        log_error "Failed to start fd-group9-mysql"
+        return 1
+    fi
+
+    check_container_health "fd-group9-mysql"
+
+    log_info "Applying the bundle schema migration before fd-account-service starts..."
+    if ! docker exec -i fd-group9-mysql sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD"' \
+        < "$PROJECT_ROOT/FD_Module_Group9/fd-account-service/sql/migration_add_bundle_support.sql" \
+        >> "$LOG_FILE" 2>&1; then
+        log_error "Failed to prepare the account database bundle schema"
+        return 1
+    fi
+    log_success "Account database bundle schema is ready"
+
+    # Existing MySQL volumes do not rerun docker-entrypoint-initdb.d. The
+    # account service uses ddl-auto=validate, so create the transaction table
+    # before Compose starts the service (initialize_data runs too late).
+    log_info "Ensuring the FD transaction schema exists before account service startup..."
+    if ! docker exec -i fd-group9-mysql sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD"' \
+        < "$PROJECT_ROOT/FD_Module_Group9/fd-account-service/sql/l16_fd_transactions.sql" \
+        >> "$LOG_FILE" 2>&1; then
+        log_error "Failed to prepare the FD transaction schema"
+        return 1
+    fi
+    log_success "FD transaction schema is ready"
+
+    # These JDBC-managed tables also live in initdb scripts, which are skipped
+    # for an existing volume. Use idempotent migrations before scheduled and
+    # Kafka-driven account-service work can touch them.
+    local migration
+    for migration in \
+        migration_add_event_outbox.sql \
+        migration_add_interest_tables.sql \
+        migration_add_admin_operation_logs.sql; do
+        if ! docker exec -i fd-group9-mysql sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD"' \
+            < "$PROJECT_ROOT/FD_Module_Group9/fd-account-service/sql/$migration" \
+            >> "$LOG_FILE" 2>&1; then
+            log_error "Failed to apply account database migration: $migration"
+            return 1
+        fi
+    done
+    log_success "Account service support schemas are ready"
+}
+
 build_and_start() {
     log_info "Building and starting all containers..."
     
@@ -189,6 +239,12 @@ build_and_start() {
     mvn -B -f banking-product-backend/pom.xml package -DskipTests >> "$LOG_FILE" 2>&1
     mvn -B -f FD_Module_Group9/pom.xml -pl fd-account-service,notification-service -am package -DskipTests >> "$LOG_FILE" 2>&1
     mvn -B -f "fd_calc/mod 4 backend/pom.xml" package -DskipTests >> "$LOG_FILE" 2>&1
+
+    # The account service validates its schema during startup. Prepare this
+    # migration before Compose starts the service, or an older DB volume can
+    # make the service exit before initialize_data gets a chance to migrate it.
+    prepare_account_database
+
     # Build and start services
     if docker compose -f "$COMPOSE_FILE" up -d --build &>> "$LOG_FILE"; then
         log_success "Containers built and started"

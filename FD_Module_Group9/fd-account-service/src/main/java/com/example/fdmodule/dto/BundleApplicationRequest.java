@@ -19,6 +19,10 @@ public class BundleApplicationRequest {
 
     private BigDecimal estimatedReturn;
 
+    private String customerCategory;
+    private List<String> accountHolderRoles;
+    private String coOwnerName;
+
     @NotNull(message = "FD items are required")
     @Valid
     private List<BundleFDItem> fdItems;
@@ -117,6 +121,12 @@ public class BundleApplicationRequest {
     public void setTotalAmount(BigDecimal totalAmount) { this.totalAmount = totalAmount; }
     public BigDecimal getEstimatedReturn() { return estimatedReturn; }
     public void setEstimatedReturn(BigDecimal estimatedReturn) { this.estimatedReturn = estimatedReturn; }
+    public String getCustomerCategory() { return customerCategory; }
+    public void setCustomerCategory(String customerCategory) { this.customerCategory = customerCategory; }
+    public List<String> getAccountHolderRoles() { return accountHolderRoles; }
+    public void setAccountHolderRoles(List<String> accountHolderRoles) { this.accountHolderRoles = accountHolderRoles; }
+    public String getCoOwnerName() { return coOwnerName; }
+    public void setCoOwnerName(String coOwnerName) { this.coOwnerName = coOwnerName; }
     public List<BundleFDItem> getFdItems() { return fdItems; }
     public void setFdItems(List<BundleFDItem> fdItems) { this.fdItems = fdItems; }
 }

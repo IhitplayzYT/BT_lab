@@ -58,8 +58,14 @@ public class FdCalculatorServiceImpl implements FdCalculatorService {
             try {
                 fetchedProduct = productClient.getProduct(dto.getProductCode());
                 // Fallback to minimum base rate from product limits
-                baseRate = (fetchedProduct.getRateLimit() != null && fetchedProduct.getRateLimit().getMin() != null) 
+                double minimumRate = (fetchedProduct.getRateLimit() != null && fetchedProduct.getRateLimit().getMin() != null)
                         ? fetchedProduct.getRateLimit().getMin() : 0.0;
+                double maximumRate = (fetchedProduct.getRateLimit() != null && fetchedProduct.getRateLimit().getMax() != null)
+                        ? fetchedProduct.getRateLimit().getMax() : minimumRate;
+                baseRate = dto.getBaseRate() == null ? minimumRate : dto.getBaseRate();
+                if (baseRate < minimumRate || baseRate > maximumRate) {
+                    throw new InvalidCalculationInputException("Base rate must be within the product rate limits");
+                }
             } catch (Exception e) {
                 log.error("Failed to retrieve product details for productCode: {}. Error: {}", dto.getProductCode(), e.getMessage());
                 if (dto.getBaseRate() == null) {
@@ -87,6 +93,11 @@ public class FdCalculatorServiceImpl implements FdCalculatorService {
                             .map(v -> v.getRateModifier())
                             .findFirst()
                             .orElse(null);
+                    if (modifier == null && !"GENERAL".equals(normalized)
+                            && !fetchedProduct.getRateVariations().isEmpty()) {
+                        throw new UnknownCategoryException("Customer category " + category
+                                + " is not configured for product " + dto.getProductCode());
+                    }
                 }
 
                 // Fallback to default static rate matrix
@@ -105,6 +116,14 @@ public class FdCalculatorServiceImpl implements FdCalculatorService {
         // Apply clamping cap to stacked categories
         double clampedAdditions = Math.min(categoryAdditions, CATEGORY_ADDITION_CAP);
         double effectiveRate = baseRate + clampedAdditions;
+        if (fetchedProduct != null && fetchedProduct.getRateLimit() != null) {
+            if (fetchedProduct.getRateLimit().getMin() != null) {
+                effectiveRate = Math.max(effectiveRate, fetchedProduct.getRateLimit().getMin());
+            }
+            if (fetchedProduct.getRateLimit().getMax() != null) {
+                effectiveRate = Math.min(effectiveRate, fetchedProduct.getRateLimit().getMax());
+            }
+        }
 
         // 4. Term conversion to years (t)
         double termYears = convertTermToYears(dto.getTerm().getValue(), dto.getTerm().getUnit());

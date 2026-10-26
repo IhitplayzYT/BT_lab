@@ -1,5 +1,7 @@
 package com.example.fdmodule.dto;
 
+import java.util.List;
+
 public class FDApplicationResponse {
     private String fdAccountNo;
     private String customerId;
@@ -38,6 +40,10 @@ public class FDApplicationResponse {
     // Nominee details
     private String nomineeName;
     private String nomineeRelation;
+    private List<FDApplicationRequest.NomineeDTO> nominees;
+    private String customerCategory;
+    private String accountHolderRoles;
+    private String coOwnerName;
 
     public FDApplicationResponse(String fdAccountNo, String customerId, String productCode,
                                  String principalAmount, String interestRate, Integer tenureMonths,
@@ -110,4 +116,12 @@ public class FDApplicationResponse {
     public void setNomineeName(String nomineeName) { this.nomineeName = nomineeName; }
     public String getNomineeRelation() { return nomineeRelation; }
     public void setNomineeRelation(String nomineeRelation) { this.nomineeRelation = nomineeRelation; }
+    public List<FDApplicationRequest.NomineeDTO> getNominees() { return nominees; }
+    public void setNominees(List<FDApplicationRequest.NomineeDTO> nominees) { this.nominees = nominees; }
+    public String getCustomerCategory() { return customerCategory; }
+    public void setCustomerCategory(String customerCategory) { this.customerCategory = customerCategory; }
+    public String getAccountHolderRoles() { return accountHolderRoles; }
+    public void setAccountHolderRoles(String accountHolderRoles) { this.accountHolderRoles = accountHolderRoles; }
+    public String getCoOwnerName() { return coOwnerName; }
+    public void setCoOwnerName(String coOwnerName) { this.coOwnerName = coOwnerName; }
 }

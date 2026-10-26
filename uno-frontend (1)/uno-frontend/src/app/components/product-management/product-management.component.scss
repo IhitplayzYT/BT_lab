@@ -1,1 +1,7 @@
 :host { display: block; }
+.product-options-section { margin: 1.5rem 0; }
+.product-options-section h4 { margin-bottom: 0.75rem; }
+.product-role-options { display: flex; flex-wrap: wrap; gap: 1rem; }
+.product-role-option { display: inline-flex; align-items: center; gap: 0.5rem; }
+.rate-variation-row { display: grid; grid-template-columns: minmax(8rem, 1fr) minmax(6rem, 0.7fr) auto; gap: 0.75rem; align-items: center; margin: 0.65rem 0; }
+@media (max-width: 640px) { .rate-variation-row { grid-template-columns: 1fr; } }

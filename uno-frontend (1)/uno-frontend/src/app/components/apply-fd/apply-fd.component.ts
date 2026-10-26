@@ -27,6 +27,10 @@ export class ApplyFdComponent implements AfterViewInit {
 
   readonly isLoggedIn = this.authService.isLoggedIn;
 
+  exitApplication(): void {
+    this.router.navigate(['/dashboard']);
+  }
+
   formData = {
     firstName: '',
     middleName: '',
@@ -48,6 +52,9 @@ export class ApplyFdComponent implements AfterViewInit {
     tenureMonths: 12,
     interestType: 'COMPOUND',
     productCode: '',
+    customerCategory: 'GENERAL',
+    accountHolderRoles: ['OWNER'] as string[],
+    coOwnerName: '',
     nominees: [] as Array<{ name: string; relation: string }>,
     accountNumber: '',
     ifscCode: '',
@@ -125,6 +132,7 @@ export class ApplyFdComponent implements AfterViewInit {
   accountNumberError = '';
   ifscCodeError = '';
   productCodeError = '';
+  coOwnerNameError = '';
 
   ngAfterViewInit(): void {
     const formSections = this.elementRef.nativeElement.querySelectorAll('.form-section');
@@ -171,8 +179,7 @@ export class ApplyFdComponent implements AfterViewInit {
       }
       // Auto-select first product if available
       if (productData && productData.length > 0 && !this.formData.productCode) {
-        this.formData.productCode = productData[0].productCode;
-        this.selectedProduct.set(productData[0]);
+        this.onProductSelected(productData[0].productCode);
         // Trigger validation to apply product-specific constraints
         this.validatePrincipalAmount();
         this.validateTenureMonths();
@@ -210,9 +217,17 @@ export class ApplyFdComponent implements AfterViewInit {
     const age = parseInt(this.formData.age);
     if (!this.formData.age || isNaN(age) || age < 18 || age > 120) {
       this.ageError = 'Age must be between 18 and 120';
+    } else if (age < 60 && this.requiresSeniorEligibility()) {
+      this.ageError = 'The Senior Citizen FD is available only to applicants aged 60 or above';
     } else {
       this.ageError = '';
     }
+  }
+
+  requiresSeniorEligibility(): boolean {
+    return this.isBundleMode()
+      ? this.bundleFDItems().some((item: any) => item.productCode === 'FD_SENIOR')
+      : this.formData.productCode === 'FD_SENIOR';
   }
 
   validateGender(): void {
@@ -416,10 +431,12 @@ export class ApplyFdComponent implements AfterViewInit {
     }
     
     if (this.currentStep === 2) {
+      this.validateAge();
       this.validatePrincipalAmount();
       this.validateTenureMonths();
       this.validateProductCode();
-      if (this.principalAmountError || this.tenureMonthsError || this.productCodeError) {
+      this.validateCoOwnerName();
+      if (this.ageError || this.principalAmountError || this.tenureMonthsError || this.productCodeError || this.coOwnerNameError) {
         return;
       }
     }
@@ -491,12 +508,13 @@ export class ApplyFdComponent implements AfterViewInit {
     this.validateAccountNumber();
     this.validateIfscCode();
     this.validateProductCode();
+    this.validateCoOwnerName();
 
     if (this.firstNameError || this.lastNameError || this.emailError || this.phoneError ||
         this.panNumberError || this.ageError || this.genderError || this.annualIncomeError ||
         this.addressError || this.cityError || this.stateError || this.pincodeError ||
         this.principalAmountError || this.tenureMonthsError ||
-        this.accountNumberError || this.ifscCodeError || this.productCodeError) {
+        this.accountNumberError || this.ifscCodeError || this.productCodeError || this.coOwnerNameError) {
       this.errorMessage = 'Please fix the errors above';
       return;
     }
@@ -532,7 +550,10 @@ export class ApplyFdComponent implements AfterViewInit {
       applicantMaritalStatus: this.formData.maritalStatus,
       applicantAccountNumber: this.formData.accountNumber,
       applicantIfsc: this.formData.ifscCode,
-      nominees: this.formData.nominees.length > 0 ? this.formData.nominees : null
+      nominees: this.formData.nominees.length > 0 ? this.formData.nominees : null,
+      customerCategory: this.formData.customerCategory,
+      accountHolderRoles: this.formData.accountHolderRoles,
+      coOwnerName: this.formData.coOwnerName
     };
 
     console.log('Submitting FD application with payload:', requestPayload);
@@ -637,6 +658,9 @@ export class ApplyFdComponent implements AfterViewInit {
       bundleDescription: this.bundleDescription(),
       totalAmount: this.bundleTotalAmount(),
       estimatedReturn: this.bundleEstimatedReturn(),
+      customerCategory: this.formData.customerCategory,
+      accountHolderRoles: this.formData.accountHolderRoles,
+      coOwnerName: this.formData.coOwnerName,
       fdItems: fdItems
     };
 
@@ -698,7 +722,10 @@ export class ApplyFdComponent implements AfterViewInit {
       maritalStatus: this.formData.maritalStatus,
       accountNumber: this.formData.accountNumber,
       ifscCode: this.formData.ifscCode,
-      nominees: this.formData.nominees
+      nominees: this.formData.nominees,
+      customerCategory: this.formData.customerCategory,
+      accountHolderRoles: this.formData.accountHolderRoles,
+      coOwnerName: this.formData.coOwnerName
     };
     localStorage.setItem(this.apiClient.getUserStorageKey('default_fd_details'), JSON.stringify(defaultDetails));
   }
@@ -729,10 +756,58 @@ export class ApplyFdComponent implements AfterViewInit {
         this.formData.accountNumber = details.accountNumber || '';
         this.formData.ifscCode = details.ifscCode || '';
         this.formData.nominees = details.nominees || [];
+        this.formData.customerCategory = details.customerCategory || 'GENERAL';
+        this.formData.accountHolderRoles = details.accountHolderRoles || ['OWNER'];
+        this.formData.coOwnerName = details.coOwnerName || '';
       } catch (e) {
         console.error('Error loading default details:', e);
       }
     }
+  }
+
+  onProductSelected(productCode: string): void {
+    const product = this.products().find(item => item.productCode === productCode) || null;
+    this.formData.productCode = productCode;
+    this.selectedProduct.set(product);
+    if (product?.termLimit) {
+      const minTerm = Number(product.termLimit.min ?? 6);
+      const maxTerm = Number(product.termLimit.max ?? 120);
+      this.formData.tenureMonths = Math.min(maxTerm, Math.max(minTerm, Number(this.formData.tenureMonths) || minTerm));
+    }
+    const allowedRoles = product?.allowedRoles?.map((role: string) => role.toUpperCase()) || ['OWNER'];
+    this.formData.accountHolderRoles = ['OWNER', ...(this.formData.accountHolderRoles.includes('CO-OWNER') && allowedRoles.includes('CO-OWNER') ? ['CO-OWNER'] : [])];
+    const categories = (product?.rateVariations || []).map((variation: any) => String(variation.customerCategory).toUpperCase().replace(/\s+/g, '_'));
+    if (this.formData.customerCategory !== 'GENERAL' && !categories.includes(this.formData.customerCategory)) {
+      this.formData.customerCategory = 'GENERAL';
+    }
+    if (!allowedRoles.includes('NOMINEE')) this.formData.nominees = [];
+    this.calculateBilling();
+    this.validateProductCode();
+    this.validateAge();
+    this.validatePrincipalAmount();
+    this.validateTenureMonths();
+  }
+
+  isProductRoleAllowed(role: string): boolean {
+    const roles = this.selectedProduct()?.allowedRoles?.map((value: string) => value.toUpperCase()) || ['OWNER'];
+    return roles.includes(role);
+  }
+
+  hasApplicationRole(role: string): boolean {
+    return this.formData.accountHolderRoles.includes(role);
+  }
+
+  toggleApplicationRole(role: string, checked: boolean): void {
+    if (role === 'OWNER' || !this.isProductRoleAllowed(role)) return;
+    this.formData.accountHolderRoles = ['OWNER', ...(checked ? ['CO-OWNER'] : [])];
+    if (!checked) this.formData.coOwnerName = '';
+    this.validateCoOwnerName();
+  }
+
+  validateCoOwnerName(): void {
+    this.coOwnerNameError = this.formData.accountHolderRoles.includes('CO-OWNER') && !this.formData.coOwnerName.trim()
+      ? 'Enter the co-owner full name'
+      : '';
   }
 
   private loadQuickPurchasePackage(): void {
@@ -801,40 +876,17 @@ export class ApplyFdComponent implements AfterViewInit {
       return;
     }
 
-    // Get rate from selected product with product-specific logic
+    // Use the same configured base rate and category bonus as the product rate API.
     let interestRate = 7.5; // Default fallback
     const product = this.selectedProduct();
 
     if (product && product.rateLimit) {
-      // Use product-specific rate calculation based on tenure
-      const parsedMinRate = Number(product.rateLimit.min);
-      const parsedMaxRate = Number(product.rateLimit.max);
-      const minRate = Number.isFinite(parsedMinRate) ? parsedMinRate : 7.0;
-      const maxRate = Number.isFinite(parsedMaxRate) ? parsedMaxRate : 7.5;
-
-      // Calculate rate based on tenure (longer tenure = higher rate)
-      if (product.termLimit) {
-        const minTenure = Number(product.termLimit.min) || 6;
-        const maxTenure = Number(product.termLimit.max) || 120;
-        const tenureRatio = maxTenure > minTenure
-          ? Math.max(0, Math.min(1, (tenure - minTenure) / (maxTenure - minTenure)))
-          : 1;
-        interestRate = minRate + (maxRate - minRate) * tenureRatio;
-      } else {
-        interestRate = maxRate;
-      }
-
-      // Apply product-specific adjustments
-      if (product.productCode === 'FD_SENIOR') {
-        // Senior Citizen FD: +0.5% extra
-        interestRate += 0.5;
-      } else if (product.productCode === 'FD_TAX_SAVER') {
-        // Tax Saver FD: slightly lower rate due to tax benefits
-        interestRate -= 0.25;
-      } else if (product.productCode === 'FD_FLEXI') {
-        // Flexible FD: lower rate due to flexibility
-        interestRate -= 0.5;
-      }
+      const minRate = Number(product.rateLimit.min ?? 7.0);
+      const maxRate = Number(product.rateLimit.max ?? 7.5);
+      const variation = (product.rateVariations || []).find((item: any) =>
+        String(item.customerCategory).toUpperCase().replaceAll(' ', '_') === this.formData.customerCategory
+      );
+      interestRate = Math.min(maxRate, Math.max(minRate, minRate + Number(variation?.rateModifier || 0)));
     }
 
     // Calculate interest based on interest type
@@ -955,6 +1007,9 @@ export class ApplyFdComponent implements AfterViewInit {
       tenureMonths: 12,
       interestType: 'COMPOUND',
       productCode: '',
+      customerCategory: 'GENERAL',
+      accountHolderRoles: ['OWNER'],
+      coOwnerName: '',
       nominees: [],
       accountNumber: '',
       ifscCode: '',

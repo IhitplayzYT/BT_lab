@@ -63,6 +63,7 @@ com/example/fdmodule/entity/FixedDepositAccount.class
 com/example/fdmodule/interest/InterestCommandListener.class
 com/example/fdmodule/report/ExtractService$ExtractResult.class
 com/example/fdmodule/interest/InterestEngine.class
+com/example/fdmodule/report/ReportRenderer$1.class
 com/example/fdmodule/client/OutboundServiceAuth$Target.class
 com/example/fdmodule/dto/BundleApplicationRequest.class
 com/example/fdmodule/controller/AdminOperationLogController.class

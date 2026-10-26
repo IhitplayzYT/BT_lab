@@ -107,6 +107,29 @@ function Start-Backend {
     }
 }
 
+# Optional local Python service: catch setup/start errors and continue normal application startup.
+function Start-OptionalAiAssistant {
+    Log-Info "Attempting to start the optional local Python AI assistant..."
+    try {
+        $assistantLauncher = Join-Path $PROJECT_ROOT "ai-assistant\start_local.py"
+        if (Get-Command py -ErrorAction SilentlyContinue) {
+            & py -3 $assistantLauncher
+        } elseif (Get-Command python -ErrorAction SilentlyContinue) {
+            & python $assistantLauncher
+        } else {
+            Log-Warning "Python is unavailable; banking services and frontend will continue. Customer AI tabs will show Service unavailable."
+            return
+        }
+        if ($LASTEXITCODE -eq 0) {
+            Log-Success "Local AI assistant startup completed"
+        } else {
+            Log-Warning "AI assistant could not start; banking services and frontend will continue. Customer AI tabs will show Service unavailable."
+        }
+    } catch {
+        Log-Warning "AI assistant could not start; banking services and frontend will continue. Customer AI tabs will show Service unavailable."
+    }
+}
+
 # Check/build fd-python-base image
 function Test-PythonBaseImage {
     Log-Info "Checking fd-python-base Docker image..."
@@ -211,15 +234,18 @@ function Print-Urls {
     Write-Host "  Product Service:    http://localhost:8080" -ForegroundColor Green
     Write-Host "  Calculator Service: http://localhost:8084" -ForegroundColor Green
     Write-Host "  Account Service:    http://localhost:8086" -ForegroundColor Green
+    Write-Host "  AI Assistant (optional): http://localhost:8091" -ForegroundColor Green
     Write-Host "  Notification Service: http://localhost:8083" -ForegroundColor Green
     Write-Host "  Mailpit Web UI:     http://localhost:8025" -ForegroundColor Green
     Write-Host ""
     Log-Info "To stop all services:"
     Write-Host "  docker compose -f $PROJECT_ROOT\docker-compose.yml down" -ForegroundColor Green
     Write-Host "  Stop-Process -Id $FRONTEND_PID  (to stop frontend)" -ForegroundColor Green
+    Write-Host "  AI assistant PID is printed at startup; stop it with Stop-Process -Id <PID>" -ForegroundColor Green
     Write-Host ""
     Log-Info "To view backend logs:"
     Write-Host "  docker compose -f $PROJECT_ROOT\docker-compose.yml logs -f" -ForegroundColor Green
+    Write-Host "  Get-Content $env:TEMP\uno-ai-assistant.log -Wait" -ForegroundColor Green
     Write-Host ""
 }
 
@@ -238,6 +264,10 @@ function Main {
     
     # Start backend services
     Start-Backend
+    Write-Host ""
+
+    # Non-critical: this function handles its own errors and never exits startup.
+    Start-OptionalAiAssistant
     Write-Host ""
     
     # Check and install frontend dependencies

@@ -268,7 +268,8 @@ public class ProductServiceImpl implements ProductService {
 
         double baseRate = minRate;
         double rateModifier = 0.0;
-        String category = request.getCustomerCategory() != null ? request.getCustomerCategory().trim().toUpperCase() : "GENERAL";
+        String category = request.getCustomerCategory() != null
+                ? request.getCustomerCategory().trim().toUpperCase().replace(' ', '_') : "GENERAL";
 
         // Auto-detect Senior Citizen by age if age >= 60 and category is GENERAL
         if (request.getAge() != null && request.getAge() >= 60 && "GENERAL".equals(category)) {
@@ -295,6 +296,13 @@ public class ProductServiceImpl implements ProductService {
         }
 
         double calculatedRate = baseRate + rateModifier;
+        final String resolvedCategory = category;
+        if (product.getRateVariations() != null && !product.getRateVariations().isEmpty()
+                && !"GENERAL".equals(resolvedCategory)
+                && product.getRateVariations().stream().noneMatch(v -> v.getCustomerCategory() != null
+                    && v.getCustomerCategory().trim().equalsIgnoreCase(resolvedCategory))) {
+            throw new InvalidProductException("Customer category " + resolvedCategory + " is not configured for product " + productCode);
+        }
         // Clamp within product rate limits
         double finalRate = Math.max(minRate, Math.min(calculatedRate, maxRate));
 
@@ -400,6 +408,26 @@ public class ProductServiceImpl implements ProductService {
         if (dto.getRateLimit() == null || dto.getRateLimit().getMin() == null || dto.getRateLimit().getMax() == null || !Double.isFinite(dto.getRateLimit().getMin()) || !Double.isFinite(dto.getRateLimit().getMax()) || dto.getRateLimit().getMin() < 0) throw new InvalidProductException("Invalid rate limits");
         if (dto.getMinDeposit() != null && dto.getMinDeposit() < 0 || dto.getMaxDeposit() != null && dto.getMaxDeposit() < 0 || dto.getMinDeposit() != null && dto.getMaxDeposit() != null && dto.getMinDeposit() > dto.getMaxDeposit()) throw new InvalidProductException("Invalid deposit limits");
         if (dto.getRateVariations() != null && dto.getRateVariations().stream().anyMatch(v -> v == null || v.getCustomerCategory() == null || v.getRateModifier() == null || !Double.isFinite(v.getRateModifier()))) throw new InvalidProductException("Invalid rate variation");
+        if (dto.getAllowedRoles() != null) {
+            java.util.Set<String> validRoles = java.util.Set.of("OWNER", "CO-OWNER", "NOMINEE");
+            java.util.Set<String> configuredRoles = dto.getAllowedRoles().stream()
+                    .filter(java.util.Objects::nonNull).map(String::trim).map(String::toUpperCase)
+                    .collect(java.util.stream.Collectors.toSet());
+            if (configuredRoles.size() != dto.getAllowedRoles().size()
+                    || !validRoles.containsAll(configuredRoles)
+                    || !configuredRoles.contains("OWNER")) {
+                throw new InvalidProductException("Allowed roles must contain OWNER and may contain CO-OWNER or NOMINEE");
+            }
+        }
+        if (dto.getRateVariations() != null) {
+            java.util.Set<String> categories = new java.util.HashSet<>();
+            for (RateVariationDTO variation : dto.getRateVariations()) {
+                String category = variation.getCustomerCategory().trim().toUpperCase().replace(' ', '_');
+                if (category.isEmpty() || !categories.add(category)) {
+                    throw new InvalidProductException("Customer categories must be non-empty and unique");
+                }
+            }
+        }
 
         if (dto.getCurrency() == null || dto.getCurrency().trim().isEmpty()) {
             throw new InvalidProductException("Currency is mandatory");

@@ -9,5 +9,6 @@ import java.util.List;
 @Repository
 public interface NomineeRepository extends JpaRepository<Nominee, Long> {
     List<Nominee> findByFdAccountNo(String fdAccountNo);
+    List<Nominee> findByFdAccountNoIn(List<String> fdAccountNos);
     void deleteByFdAccountNo(String fdAccountNo);
 }

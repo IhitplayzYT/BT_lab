@@ -61,6 +61,15 @@ public class FixedDepositAccount {
     @Column(name = "nominee_relation", length = 50)
     private String nomineeRelation;
 
+    @Column(name = "customer_category", length = 50)
+    private String customerCategory;
+
+    @Column(name = "account_holder_roles", length = 100)
+    private String accountHolderRoles;
+
+    @Column(name = "co_owner_name", length = 255)
+    private String coOwnerName;
+
     @Column(name = "applicant_full_name", length = 255)
     private String applicantFullName;
 
@@ -180,6 +189,12 @@ public class FixedDepositAccount {
     public void setNomineeName(String nomineeName) { this.nomineeName = nomineeName; }
     public String getNomineeRelation() { return nomineeRelation; }
     public void setNomineeRelation(String nomineeRelation) { this.nomineeRelation = nomineeRelation; }
+    public String getCustomerCategory() { return customerCategory; }
+    public void setCustomerCategory(String customerCategory) { this.customerCategory = customerCategory; }
+    public String getAccountHolderRoles() { return accountHolderRoles; }
+    public void setAccountHolderRoles(String accountHolderRoles) { this.accountHolderRoles = accountHolderRoles; }
+    public String getCoOwnerName() { return coOwnerName; }
+    public void setCoOwnerName(String coOwnerName) { this.coOwnerName = coOwnerName; }
     public String getApplicantFullName() { return applicantFullName; }
     public void setApplicantFullName(String applicantFullName) { this.applicantFullName = applicantFullName; }
     public String getApplicantEmail() { return applicantEmail; }

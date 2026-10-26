@@ -1,0 +1,68 @@
+<section class="advisor card" aria-labelledby="advisor-title">
+  <header class="advisor-heading">
+    <div>
+      <p class="eyebrow">UNO BANK · PERSONALIZED FD GUIDANCE</p>
+      <h2 id="advisor-title">FD portfolio advisor</h2>
+      <p>Compare your current FD portfolio with active UNO Bank products for your goal.</p>
+    </div>
+    <span class="privacy-note">One response at a time · No history saved</span>
+  </header>
+
+  @if (checking()) {
+    <p role="status" class="muted">Checking advisor availability…</p>
+  } @else if (!available()) {
+    <div class="unavailable" role="status">
+      <strong>Service unavailable</strong>
+      <p>The advisor is not available right now. Your banking dashboard and products remain available.</p>
+      @if (error()) { <p>{{ error() }}</p> }
+      <button class="btn btn-secondary" type="button" (click)="checkAvailability()" [disabled]="checking()">Try again</button>
+    </div>
+  } @else {
+    <form class="advisor-form" (ngSubmit)="requestAdvice()">
+      <div class="field-grid">
+        <label>What are you planning for?
+          <select name="goal" [(ngModel)]="goal">
+            <option value="growth">Grow savings</option>
+            <option value="regular_income">Regular income</option>
+            <option value="liquidity">Keep money accessible</option>
+            <option value="capital_preservation">Preserve capital</option>
+            <option value="compare">Compare the available products</option>
+          </select>
+        </label>
+        <label>Amount you may invest (INR)
+          <input name="amount" type="number" min="0" max="100000000000" step="1000" required [(ngModel)]="amount" placeholder="e.g. 100000">
+        </label>
+        <label>Time horizon
+          <select name="horizon" [(ngModel)]="horizonMonths">
+            <option [ngValue]="3">3 months</option><option [ngValue]="6">6 months</option>
+            <option [ngValue]="12">1 year</option><option [ngValue]="24">2 years</option>
+            <option [ngValue]="36">3 years</option><option [ngValue]="60">5 years</option>
+          </select>
+        </label>
+        <label>Access to your money
+          <select name="liquidity" [(ngModel)]="liquidityPreference">
+            <option value="easy_access">I may need access sooner</option>
+            <option value="some_lock_in">Some lock-in is okay</option>
+            <option value="no_preference">No preference</option>
+          </select>
+        </label>
+        <label class="full-width">Anything else to consider? <span>(optional)</span>
+          <textarea name="requirements" maxlength="500" rows="3" [(ngModel)]="requirements" placeholder="For example, saving for a home purchase in about two years"></textarea>
+        </label>
+      </div>
+      <button class="btn btn-primary" type="submit" [disabled]="asking() || amount === null">
+        {{ asking() ? 'Reviewing your options…' : 'Get my recommendations' }}
+      </button>
+    </form>
+
+    <p class="privacy-note data-note">For this response, the local model receives your goal, planned INR amount and horizon, access preference, active product codes, pending application count, and matching product terms. Account identifiers, names, and holding balances are excluded; the request is not saved as chat history.</p>
+    @if (error()) { <p class="unavailable" role="status">{{ error() }}</p> }
+    @if (recommendation()) {
+      <section class="recommendation" aria-live="polite">
+        <h3>Your product comparison</h3>
+        <p>{{ recommendation() }}</p>
+        <small>For planning only. Check current terms in the product details before investing; this does not place an order or guarantee returns.</small>
+      </section>
+    }
+  }
+</section>

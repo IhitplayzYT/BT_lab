@@ -41,6 +41,15 @@ public class FDAccountController {
         return ResponseEntity.ok(fdAccountService.applyForFD(request, authentication.getName()));
     }
 
+    @PutMapping("/profile/category")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public ResponseEntity<Map<String, String>> updateCustomerCategory(
+            @RequestBody Map<String, String> request,
+            Authentication authentication) {
+        String category = fdAccountService.updateCustomerCategory(authentication.getName(), request.get("customerCategory"));
+        return ResponseEntity.ok(Map.of("customerCategory", category));
+    }
+
     @PostMapping("/approve")
     @PreAuthorize("hasAnyRole('BANK_OFFICER','ADMIN')")
     public ResponseEntity<Map<String, String>> approveOrReject(
@@ -64,6 +73,9 @@ public class FDAccountController {
                             acc.getTenureMonths(), acc.getMaturityDate().toString(),
                             acc.getStatus(), acc.getApprovalStatus(), acc.getCreatedAt().toString());
                     response.setApplicantFullName(acc.getApplicantFullName());
+                    response.setCustomerCategory(acc.getCustomerCategory());
+                    response.setAccountHolderRoles(acc.getAccountHolderRoles());
+                    response.setCoOwnerName(acc.getCoOwnerName());
                     response.setApplicantFirstName(acc.getApplicantFirstName());
                     response.setApplicantMiddleName(acc.getApplicantMiddleName());
                     response.setApplicantLastName(acc.getApplicantLastName());
@@ -110,6 +122,9 @@ public class FDAccountController {
                             acc.getTenureMonths(), acc.getMaturityDate().toString(),
                             acc.getStatus(), acc.getApprovalStatus(), acc.getCreatedAt().toString());
                     response.setApplicantFullName(acc.getApplicantFullName());
+                    response.setCustomerCategory(acc.getCustomerCategory());
+                    response.setAccountHolderRoles(acc.getAccountHolderRoles());
+                    response.setCoOwnerName(acc.getCoOwnerName());
                     response.setApplicantFirstName(acc.getApplicantFirstName());
                     response.setApplicantMiddleName(acc.getApplicantMiddleName());
                     response.setApplicantLastName(acc.getApplicantLastName());
@@ -150,6 +165,13 @@ public class FDAccountController {
     @PreAuthorize("hasAnyRole('ADMIN','BANK_OFFICER')")
     public ResponseEntity<List<FDApplicationResponse>> getAllApplications() {
         List<FixedDepositAccount> accounts = fdAccountService.getAllApplications();
+        Map<String, List<FDApplicationRequest.NomineeDTO>> nomineesByAccount = new HashMap<>();
+        fdAccountService.getNomineesByAccountNos(accounts.stream()
+                        .map(FixedDepositAccount::getFdAccountNo)
+                        .toList())
+                .forEach(nominee -> nomineesByAccount
+                        .computeIfAbsent(nominee.getFdAccountNo(), ignored -> new java.util.ArrayList<>())
+                        .add(toNomineeDto(nominee)));
         List<FDApplicationResponse> responses = accounts.stream()
                 .map(acc -> {
                     FDApplicationResponse response = new FDApplicationResponse(
@@ -158,6 +180,9 @@ public class FDAccountController {
                             acc.getTenureMonths(), acc.getMaturityDate().toString(),
                             acc.getStatus(), acc.getApprovalStatus(), acc.getCreatedAt().toString());
                     response.setApplicantFullName(acc.getApplicantFullName());
+                    response.setCustomerCategory(acc.getCustomerCategory());
+                    response.setAccountHolderRoles(acc.getAccountHolderRoles());
+                    response.setCoOwnerName(acc.getCoOwnerName());
                     response.setApplicantFirstName(acc.getApplicantFirstName());
                     response.setApplicantMiddleName(acc.getApplicantMiddleName());
                     response.setApplicantLastName(acc.getApplicantLastName());
@@ -179,6 +204,7 @@ public class FDAccountController {
                     response.setAccruedInterest(acc.getAccruedInterest() != null ? acc.getAccruedInterest().toString() : "0");
                     response.setNomineeName(acc.getNomineeName());
                     response.setNomineeRelation(acc.getNomineeRelation());
+                    response.setNominees(nomineesByAccount.getOrDefault(acc.getFdAccountNo(), List.of()));
                     // Calculate maturity amount: principal + (principal * rate * tenure / 12 / 100)
                     java.math.BigDecimal principal = acc.getPrincipalAmount();
                     java.math.BigDecimal rate = acc.getInterestRate();
@@ -192,6 +218,13 @@ public class FDAccountController {
                 })
                 .toList();
         return ResponseEntity.ok(responses);
+    }
+
+    private FDApplicationRequest.NomineeDTO toNomineeDto(Nominee nominee) {
+        FDApplicationRequest.NomineeDTO dto = new FDApplicationRequest.NomineeDTO();
+        dto.setName(nominee.getNomineeName());
+        dto.setRelation(nominee.getNomineeRelation());
+        return dto;
     }
 
     @PostMapping("/bundle/apply")

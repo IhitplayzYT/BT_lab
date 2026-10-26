@@ -40,6 +40,12 @@ export class ProductManagementComponent implements OnInit {
     minAge: 18,
     interestType: 'COMPOUND',
     compoundingFrequency: 'QUARTERLY',
+    allowedRoles: ['OWNER', 'CO-OWNER', 'NOMINEE'],
+    rateVariations: [
+      { customerCategory: 'SENIOR_CITIZEN', rateModifier: 1.0 },
+      { customerCategory: 'EMPLOYEE', rateModifier: 0.5 },
+      { customerCategory: 'STUDENT', rateModifier: 0.5 }
+    ],
     status: 'ACTIVE'
   };
 
@@ -84,7 +90,17 @@ export class ProductManagementComponent implements OnInit {
     const savedFormData = localStorage.getItem('productFormData');
     if (savedFormData) {
       try {
-        this.productForm = JSON.parse(savedFormData);
+        const saved = JSON.parse(savedFormData);
+        this.productForm = {
+          ...this.productForm,
+          ...saved,
+          allowedRoles: saved.allowedRoles || ['OWNER', 'CO-OWNER', 'NOMINEE'],
+          rateVariations: saved.rateVariations || [
+            { customerCategory: 'SENIOR_CITIZEN', rateModifier: 1.0 },
+            { customerCategory: 'EMPLOYEE', rateModifier: 0.5 },
+            { customerCategory: 'STUDENT', rateModifier: 0.5 }
+          ]
+        };
       } catch (e) {
         console.error('Error loading saved form data:', e);
         this.resetForm();
@@ -114,6 +130,8 @@ export class ProductManagementComponent implements OnInit {
       minAge: product.minAge || 18,
       interestType: product.interestType || 'COMPOUND',
       compoundingFrequency: product.charges?.interestCreditFrequency || 'QUARTERLY',
+      allowedRoles: product.allowedRoles?.length ? [...product.allowedRoles] : ['OWNER'],
+      rateVariations: product.rateVariations?.map((variation: any) => ({ ...variation })) || [],
       status: product.status || 'ACTIVE'
     };
     this.showEditForm.set(true);
@@ -147,6 +165,12 @@ export class ProductManagementComponent implements OnInit {
       minAge: 18,
       interestType: 'COMPOUND',
       compoundingFrequency: 'QUARTERLY',
+      allowedRoles: ['OWNER', 'CO-OWNER', 'NOMINEE'],
+      rateVariations: [
+        { customerCategory: 'SENIOR_CITIZEN', rateModifier: 1.0 },
+        { customerCategory: 'EMPLOYEE', rateModifier: 0.5 },
+        { customerCategory: 'STUDENT', rateModifier: 0.5 }
+      ],
       status: 'ACTIVE'
     };
     // Clear saved form data from localStorage
@@ -193,6 +217,13 @@ export class ProductManagementComponent implements OnInit {
     }
     if (this.productForm.maxRate < this.productForm.minRate) {
       this.formErrors['maxRate'] = 'Maximum rate must be greater than minimum rate';
+    }
+    if (!this.productForm.allowedRoles.includes('OWNER')) {
+      this.formErrors['allowedRoles'] = 'Owner must be an allowed account holder';
+    }
+    const categories = this.productForm.rateVariations.map(v => v.customerCategory.trim().toUpperCase());
+    if (categories.some(category => !category) || new Set(categories).size !== categories.length) {
+      this.formErrors['rateVariations'] = 'Each customer category must be filled and unique';
     }
 
     // Deposit validation
@@ -254,11 +285,8 @@ export class ProductManagementComponent implements OnInit {
         taxDeduction: true,
         withdrawalFees: 1.0
       },
-      allowedRoles: ['OWNER', 'CO-OWNER', 'NOMINEE'],
-      rateVariations: [
-        { customerCategory: 'SENIOR_CITIZEN', rateModifier: 1.0 },
-        { customerCategory: 'EMPLOYEE', rateModifier: 0.5 }
-      ],
+      allowedRoles: [...this.productForm.allowedRoles],
+      rateVariations: this.productForm.rateVariations.map(v => ({ customerCategory: v.customerCategory.trim().toUpperCase(), rateModifier: Number(v.rateModifier) })),
       status: this.productForm.status
     };
 
@@ -308,11 +336,8 @@ export class ProductManagementComponent implements OnInit {
         taxDeduction: true,
         withdrawalFees: 1.0
       },
-      allowedRoles: ['OWNER', 'CO-OWNER', 'NOMINEE'],
-      rateVariations: [
-        { customerCategory: 'SENIOR_CITIZEN', rateModifier: 1.0 },
-        { customerCategory: 'EMPLOYEE', rateModifier: 0.5 }
-      ],
+      allowedRoles: [...this.productForm.allowedRoles],
+      rateVariations: this.productForm.rateVariations.map(v => ({ customerCategory: v.customerCategory.trim().toUpperCase(), rateModifier: Number(v.rateModifier) })),
       status: this.productForm.status
     };
 
@@ -419,6 +444,12 @@ export class ProductManagementComponent implements OnInit {
     return '₹' + value.toLocaleString();
   }
 
+  formatRateVariations(variations: any[] | null | undefined): string {
+    return variations?.length
+      ? variations.map(v => `${v.customerCategory} +${v.rateModifier}%`).join(', ')
+      : 'None';
+  }
+
   getStatusClass(status: string): string {
     switch (status) {
       case 'ACTIVE': return 'status-active';
@@ -427,5 +458,24 @@ export class ProductManagementComponent implements OnInit {
       case 'RETIRED': return 'status-retired';
       default: return 'status-unknown';
     }
+  }
+
+  toggleAllowedRole(role: string, checked: boolean): void {
+    if (role === 'OWNER') return;
+    const roles = new Set(this.productForm.allowedRoles);
+    checked ? roles.add(role) : roles.delete(role);
+    this.productForm.allowedRoles = ['OWNER', ...Array.from(roles).filter(value => value !== 'OWNER')];
+  }
+
+  isRoleAllowed(role: string): boolean {
+    return this.productForm.allowedRoles.includes(role);
+  }
+
+  addRateVariation(): void {
+    this.productForm.rateVariations.push({ customerCategory: '', rateModifier: 0 });
+  }
+
+  removeRateVariation(index: number): void {
+    this.productForm.rateVariations.splice(index, 1);
   }
 }

@@ -1,0 +1,44 @@
+<section class="assistant card" aria-labelledby="assistant-title">
+  <div class="assistant-heading">
+    <div>
+      <p class="eyebrow">UNO BANK · CUSTOMER SUPPORT</p>
+      <h2 id="assistant-title">AI banking assistant</h2>
+      <p>Ask about our customer offerings or get help using the banking app.</p>
+    </div>
+    <span class="privacy-note">Uses recent turns while this chat is open · Not saved after you leave</span>
+  </div>
+
+  @if (checking()) {
+    <p class="availability" role="status">Checking assistant availability…</p>
+  } @else if (!available()) {
+    <div class="unavailable" role="status">
+      <strong>Service unavailable</strong>
+      <p>The customer assistant is not available right now. You can still use the Help Center or contact customer support.</p>
+      <button class="btn btn-secondary" type="button" (click)="checkAvailability()" [disabled]="checking()">Try again</button>
+    </div>
+  } @else {
+    <div class="chat-messages" aria-live="polite">
+      @if (messages().length === 0) {
+        <p class="welcome">For your security, don’t share passwords, OTPs, PINs, or private account details here. For account-specific questions, use your secure dashboard.</p>
+      }
+      @for (message of messages(); track $index) {
+        <article class="message" [class.from-user]="message.role === 'user'">
+          <span>{{ message.role === 'user' ? 'You' : 'UNO Assistant' }}</span>
+          <p>{{ message.text }}</p>
+        </article>
+      }
+      @if (sending()) {
+        <article class="message typing-message" role="status" aria-label="UNO Assistant is responding">
+          <span>UNO Assistant</span>
+          <p class="typing-indicator" aria-hidden="true"><i></i><i></i><i></i></p>
+        </article>
+      }
+    </div>
+    <form class="chat-form" (ngSubmit)="send()">
+      <label class="sr-only" for="assistant-message">Ask a banking question</label>
+      <textarea id="assistant-message" name="assistantMessage" [(ngModel)]="draft" maxlength="1200" rows="2" placeholder="Ask about UNO products or using the app…" [disabled]="sending()"></textarea>
+      <button class="btn btn-primary" type="submit" [disabled]="sending() || !draft.trim()">Send</button>
+    </form>
+    <p class="scope-note">This assistant can help only with UNO Bank customer products and app support.</p>
+  }
+</section>

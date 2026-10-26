@@ -64,6 +64,35 @@ public class FDAccountService {
     }
 
     @Transactional
+    public String updateCustomerCategory(String username, String requestedCategory) {
+        if (requestedCategory == null || requestedCategory.isBlank()) {
+            throw new IllegalArgumentException("Customer category is required");
+        }
+        String category = requestedCategory.trim().toUpperCase().replace(' ', '_');
+        if (!List.of("GENERAL", "SENIOR_CITIZEN", "EMPLOYEE", "STUDENT", "CORPORATE").contains(category)) {
+            throw new IllegalArgumentException("Unsupported customer category: " + category);
+        }
+        Long userId = authServiceClient.getUserIdByUsername(username);
+        if (userId == null) throw new IllegalStateException("Customer profile could not be linked to the signed-in user");
+        CustomerProfile profile = customerRepository.findByUserId(userId).orElseGet(() -> {
+            String maxCustomerId = customerRepository.findMaxCustomerId();
+            int nextNum = 1;
+            if (maxCustomerId != null && maxCustomerId.startsWith("CUST")) {
+                try { nextNum = Integer.parseInt(maxCustomerId.substring(4)) + 1; }
+                catch (NumberFormatException ignored) { nextNum = 1; }
+            }
+            CustomerProfile created = new CustomerProfile();
+            created.setCustomerId(String.format("CUST%06d", nextNum));
+            created.setUserId(userId);
+            created.setCategory("GENERAL");
+            return created;
+        });
+        profile.setCategory(category);
+        customerRepository.save(profile);
+        return category;
+    }
+
+    @Transactional
     public FDAccountResponse create(FDAccountRequest request, String createdBy) {
         if (!customerRepository.existsById(request.getCustomerId())) {
             throw new IllegalArgumentException("Customer does not exist: " + request.getCustomerId());
@@ -85,6 +114,10 @@ public class FDAccountService {
         fd.setCurrency(product.getCurrency());
         fd.setPrincipalAmount(request.getPrincipalAmount());
         fd.setInterestRate(rate);
+        String customerCategory = customerRepository.findById(request.getCustomerId())
+                .map(CustomerProfile::getCategory).filter(category -> category != null && !category.isBlank()).orElse("GENERAL");
+        fd.setCustomerCategory(customerCategory);
+        fd.setAccountHolderRoles("OWNER");
         fd.setTenureMonths(request.getTermMonths());
         fd.setCompoundingFrequency(product.getCompoundingFrequency());
         fd.setStatus("ACTIVE");
@@ -100,11 +133,13 @@ public class FDAccountService {
         return new FDAccountResponse(
                 saved.getFdAccountNo(), saved.getCustomerId(), saved.getProductCode(),
                 saved.getPrincipalAmount(), saved.getInterestRate(), saved.getTenureMonths(),
-                saved.getMaturityDate(), saved.getStatus(), saved.getCreatedBy());
+                saved.getMaturityDate(), saved.getStatus(), saved.getCreatedBy(),
+                saved.getCustomerCategory(), saved.getAccountHolderRoles(), saved.getCoOwnerName());
     }
 
     @Transactional
     public FDApplicationResponse applyForFD(FDApplicationRequest request, String username) {
+        requireSeniorEligibility(request.getProductCode(), request.getApplicantAge());
         // Generate a proper customer_id (CUST + sequential number)
         // First, try to find existing customer profile by user_id with retry for timing issues
         Long userId = null;
@@ -173,6 +208,32 @@ public class FDAccountService {
         ProductDTO product = productValidationService.validate(
                 request.getProductCode(), termMonthsInt, request.getPrincipalAmount());
 
+        List<String> holderRoles = request.getAccountHolderRoles() == null || request.getAccountHolderRoles().isEmpty()
+                ? List.of("OWNER")
+                : request.getAccountHolderRoles().stream().map(role -> role == null ? "" : role.trim().toUpperCase()).distinct().toList();
+        if (!holderRoles.contains("OWNER") || holderRoles.stream().anyMatch(role -> !List.of("OWNER", "CO-OWNER").contains(role))) {
+            throw new IllegalArgumentException("FD account holder roles must include OWNER and may include CO-OWNER");
+        }
+        if (!product.getAllowedRoles().containsAll(holderRoles)) {
+            throw new IllegalArgumentException("Selected account holder roles are not allowed for this product");
+        }
+        if (holderRoles.contains("CO-OWNER") && (request.getCoOwnerName() == null || request.getCoOwnerName().isBlank())) {
+            throw new IllegalArgumentException("Co-owner name is required when CO-OWNER is selected");
+        }
+        if (request.getNominees() != null && !request.getNominees().isEmpty() && !product.getAllowedRoles().contains("NOMINEE")) {
+            throw new IllegalArgumentException("This product does not allow nominees");
+        }
+
+        String category = request.getCustomerCategory();
+        if (category == null || category.isBlank() || ("GENERAL".equalsIgnoreCase(category)
+                && request.getApplicantAge() != null && request.getApplicantAge() >= 60)) {
+            category = request.getApplicantAge() != null && request.getApplicantAge() >= 60
+                    ? "SENIOR_CITIZEN" : (profile.getCategory() == null ? "GENERAL" : profile.getCategory());
+        }
+        category = category.trim().toUpperCase().replace(' ', '_');
+        profile.setCategory(category);
+        customerRepository.save(profile);
+
         var rate = rateService.determineFinalRate(
                 request.getProductCode(), customerId,
                 termMonthsInt, request.getPrincipalAmount());
@@ -186,6 +247,9 @@ public class FDAccountService {
         fd.setCurrency(product.getCurrency());
         fd.setPrincipalAmount(request.getPrincipalAmount());
         fd.setInterestRate(rate);
+        fd.setCustomerCategory(category);
+        fd.setAccountHolderRoles(String.join(",", holderRoles));
+        fd.setCoOwnerName(request.getCoOwnerName());
         fd.setTenureMonths(termMonthsInt);
         fd.setCompoundingFrequency(product.getCompoundingFrequency());
         fd.setStatus("PENDING");
@@ -244,11 +308,15 @@ public class FDAccountService {
         FixedDepositAccount saved = fdRepository.save(fd);
         if (createdPublisher != null) createdPublisher.publishStatus(saved, username);
 
-        return new FDApplicationResponse(
+        FDApplicationResponse response = new FDApplicationResponse(
                 saved.getFdAccountNo(), saved.getCustomerId(), saved.getProductCode(),
                 saved.getPrincipalAmount().toString(), saved.getInterestRate().toString(),
                 saved.getTenureMonths(), saved.getMaturityDate().toString(),
                 saved.getStatus(), saved.getApprovalStatus(), saved.getCreatedAt().toString());
+        response.setCustomerCategory(saved.getCustomerCategory());
+        response.setAccountHolderRoles(saved.getAccountHolderRoles());
+        response.setCoOwnerName(saved.getCoOwnerName());
+        return response;
     }
 
     @Transactional
@@ -324,33 +392,31 @@ public class FDAccountService {
             throw new IllegalStateException("User session invalid. Please log out and log in again. User ID synchronization failed.");
         }
 
-        // Look up customerId from CustomerProfile using user_id
-        Optional<CustomerProfile> profileOpt = customerRepository.findByUserId(userId);
-        if (profileOpt.isEmpty()) {
+        // Resolve every profile owned by the authenticated auth user. Do not trust a
+        // customerId supplied by the browser or assume there is only one legacy profile.
+        List<CustomerProfile> profiles = customerRepository.findAllByUserId(userId);
+        if (profiles.isEmpty()) {
             System.err.println("getCustomerApplications - no profile found for userId: " + userId);
             // This is OK for new users who haven't applied for FD yet
             return List.of();
         }
 
-        String customerId = profileOpt.get().getCustomerId();
-        System.out.println("getCustomerApplications - found customerId: " + customerId);
-        List<FixedDepositAccount> accounts = fdRepository.findByCustomerId(customerId);
-        System.out.println("getCustomerApplications - found " + accounts.size() + " accounts for customerId: " + customerId);
-        
-        // Additional safety check: verify all accounts belong to this customer
-        for (FixedDepositAccount account : accounts) {
-            if (!customerId.equals(account.getCustomerId())) {
-                System.err.println("SECURITY WARNING: Account " + account.getFdAccountNo() + 
-                    " has customerId " + account.getCustomerId() + " but expected " + customerId);
-            }
-        }
-        
-        return accounts;
+        List<String> customerIds = profiles.stream().map(CustomerProfile::getCustomerId).distinct().toList();
+        java.util.Map<String, FixedDepositAccount> accountsByNumber = new java.util.LinkedHashMap<>();
+        fdRepository.findByCustomerIdIn(customerIds).forEach(account ->
+                accountsByNumber.putIfAbsent(account.getFdAccountNo(), account));
+        return List.copyOf(accountsByNumber.values());
     }
 
     @Transactional(readOnly = true)
     public List<FixedDepositAccount> getAllApplications() {
         return fdRepository.findAll();
+    }
+
+    @Transactional(readOnly = true)
+    public List<Nominee> getNomineesByAccountNos(List<String> accountNos) {
+        if (accountNos == null || accountNos.isEmpty()) return List.of();
+        return nomineeRepository.findByFdAccountNoIn(accountNos);
     }
 
     @Transactional(readOnly = true)
@@ -361,6 +427,11 @@ public class FDAccountService {
 
     @Transactional
     public BundleApplicationResponse applyForBundle(BundleApplicationRequest request, String username) {
+        if (request.getFdItems() == null || request.getFdItems().isEmpty()) {
+            throw new IllegalArgumentException("Bundle must contain at least one FD");
+        }
+        request.getFdItems().forEach(item ->
+                requireSeniorEligibility(item.getProductCode(), item.getApplicantAge()));
         // Get user_id from auth-service - NO FALLBACK to username
         Long userId = authServiceClient.getUserIdByUsername(username);
         if (userId == null) {
@@ -400,6 +471,20 @@ public class FDAccountService {
         }
 
         // Generate bundle ID
+        String bundleCategory = request.getCustomerCategory() == null || request.getCustomerCategory().isBlank()
+                ? "GENERAL" : request.getCustomerCategory().trim().toUpperCase().replace(' ', '_');
+        List<String> bundleRoles = request.getAccountHolderRoles() == null || request.getAccountHolderRoles().isEmpty()
+                ? List.of("OWNER")
+                : request.getAccountHolderRoles().stream().map(role -> role == null ? "" : role.trim().toUpperCase()).distinct().toList();
+        if (!bundleRoles.contains("OWNER") || bundleRoles.stream().anyMatch(role -> !List.of("OWNER", "CO-OWNER").contains(role))) {
+            throw new IllegalArgumentException("FD account holder roles must include OWNER and may include CO-OWNER");
+        }
+        customerRepository.findById(customerId).ifPresent(profile -> {
+            profile.setCategory(bundleCategory);
+            customerRepository.save(profile);
+        });
+
+        // Generate bundle ID
         String bundleId = "BNDL" + System.currentTimeMillis();
 
         // Create bundle application record
@@ -423,6 +508,12 @@ public class FDAccountService {
             int termMonthsInt = item.getTenureMonths();
             ProductDTO product = productValidationService.validate(
                     item.getProductCode(), termMonthsInt, item.getPrincipalAmount());
+            if (!product.getAllowedRoles().containsAll(bundleRoles)) {
+                throw new IllegalArgumentException("Selected account holder roles are not allowed for product " + item.getProductCode());
+            }
+            if (bundleRoles.contains("CO-OWNER") && (request.getCoOwnerName() == null || request.getCoOwnerName().isBlank())) {
+                throw new IllegalArgumentException("Co-owner name is required when CO-OWNER is selected");
+            }
 
             java.math.BigDecimal rate;
             try {
@@ -450,6 +541,9 @@ public class FDAccountService {
             fd.setCurrency(product.getCurrency());
             fd.setPrincipalAmount(item.getPrincipalAmount());
             fd.setInterestRate(new java.math.BigDecimal(rate.toString()));
+            fd.setCustomerCategory(bundleCategory);
+            fd.setAccountHolderRoles(String.join(",", bundleRoles));
+            fd.setCoOwnerName(request.getCoOwnerName());
             fd.setTenureMonths(termMonthsInt);
             fd.setCompoundingFrequency(product.getCompoundingFrequency());
             fd.setStatus("PENDING");
@@ -512,6 +606,13 @@ public class FDAccountService {
         response.setFdItems(fdSummaries);
 
         return response;
+    }
+
+    private void requireSeniorEligibility(String productCode, Integer applicantAge) {
+        if ("FD_SENIOR".equalsIgnoreCase(productCode)
+                && (applicantAge == null || applicantAge < 60)) {
+            throw new IllegalArgumentException("The Senior Citizen FD is available only to applicants aged 60 or above");
+        }
     }
 
     @Transactional
@@ -591,14 +692,17 @@ public class FDAccountService {
             throw new IllegalStateException("User session invalid. Please log out and log in again. User ID synchronization failed.");
         }
 
-        // Look up customerId from CustomerProfile using user_id
-        Optional<CustomerProfile> profileOpt = customerRepository.findByUserId(userId);
-        if (profileOpt.isEmpty()) {
+        List<CustomerProfile> profiles = customerRepository.findAllByUserId(userId);
+        if (profiles.isEmpty()) {
             // This is OK for new users who haven't applied for bundles yet
             return List.of();
         }
 
-        return bundleApplicationRepository.findByCustomerId(profileOpt.get().getCustomerId());
+        java.util.Map<String, BundleApplication> bundlesById = new java.util.LinkedHashMap<>();
+        profiles.stream().map(CustomerProfile::getCustomerId).distinct()
+                .flatMap(customerId -> bundleApplicationRepository.findByCustomerId(customerId).stream())
+                .forEach(bundle -> bundlesById.putIfAbsent(bundle.getBundleId(), bundle));
+        return List.copyOf(bundlesById.values());
     }
 
     @Transactional
@@ -606,7 +710,10 @@ public class FDAccountService {
         FixedDepositAccount fd = fdRepository.findById(fdAccountNo)
                 .orElseThrow(() -> new IllegalArgumentException("FD account not found: " + fdAccountNo));
 
-        if (!username.equals(fd.getCustomerId())) {
+        Long userId = authServiceClient.getUserIdByUsername(username);
+        boolean ownsAccount = userId != null && customerRepository.findAllByUserId(userId).stream()
+                .anyMatch(profile -> profile.getCustomerId().equals(fd.getCustomerId()));
+        if (!ownsAccount) {
             throw new IllegalArgumentException("You can only withdraw your own applications");
         }
 
@@ -614,8 +721,8 @@ public class FDAccountService {
             throw new IllegalArgumentException("Only pending applications can be withdrawn");
         }
 
-        fd.setStatus("REJECTED");
-        fd.setApprovalStatus("REJECTED");
+        fd.setStatus("WITHDRAWN");
+        fd.setApprovalStatus("WITHDRAWN");
         fd.setRejectionReason("Withdrawn by customer");
         if (createdPublisher != null) createdPublisher.publishStatus(fd, username);
         fdRepository.save(fd);

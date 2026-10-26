@@ -716,7 +716,7 @@
           <div class="filter-row">
             <div class="filter-group">
               <label>{{ 'Filter by Type' | translate }}</label>
-              <select [(ngModel)]="journalFilterType">
+              <select [(ngModel)]="journalFilterType" (change)="journalPage = 0; loadJournal()">
                 <option value="">{{ 'All Types' | translate }}</option>
                 <option value="DEPOSIT">{{ 'Deposit' | translate }}</option>
                 <option value="INTEREST">{{ 'Interest' | translate }}</option>
@@ -727,17 +727,30 @@
             </div>
             <div class="filter-group">
               <label>&nbsp;</label>
-              <button class="btn btn-secondary" (click)="loadJournal()">{{ 'Refresh' | translate }}</button>
+              <button class="btn btn-secondary" (click)="loadJournal()" [disabled]="journalLoading">
+                @if (journalLoading) { <span class="activity-spinner" aria-hidden="true"></span> {{ 'Loading...' | translate }} } @else { {{ 'Refresh' | translate }} }
+              </button>
             </div>
           </div>
         </div>
 
+        @if (journalLoading && journalTransactions.length > 0) {
+          <div class="async-status" role="status"><span class="activity-spinner" aria-hidden="true"></span>{{ 'Refreshing journal transactions…' | translate }}</div>
+        }
         <!-- Journal Transactions -->
-        @if (journalTransactions.length === 0) {
+        @if (journalLoading && journalTransactions.length === 0) {
+          <div class="async-status card" role="status"><span class="activity-spinner" aria-hidden="true"></span>{{ 'Loading journal transactions…' | translate }}</div>
+        } @else if (journalError && journalTransactions.length === 0) {
+          <div class="empty-state card" role="alert">
+            <p>{{ journalError | translate }}</p>
+            <button class="btn btn-secondary" (click)="loadJournal()">{{ 'Retry' | translate }}</button>
+          </div>
+        } @else if (journalTransactions.length === 0) {
           <div class="empty-state card">
             <p>{{ 'No transactions found in journal.' | translate }}</p>
           </div>
         } @else {
+          @if (journalError) { <p class="error-message" role="alert">{{ journalError | translate }}</p> }
           <div class="journal-table card">
             <table>
               <thead>
@@ -793,13 +806,18 @@
               </div>
               <div class="filter-group">
                 <label>&nbsp;</label>
-                <button class="btn btn-secondary" (click)="loadAllLedgerAccounts()" [disabled]="ledgerAccountsLoading">{{ 'Refresh Ledgers' | translate }}</button>
+                <button class="btn btn-secondary" (click)="loadAllLedgerAccounts()" [disabled]="ledgerAccountsLoading">
+                  @if (ledgerAccountsLoading) { <span class="activity-spinner" aria-hidden="true"></span> {{ 'Refreshing...' | translate }} } @else { {{ 'Refresh Ledgers' | translate }} }
+                </button>
               </div>
             </div>
           </div>
 
+          @if (ledgerAccountsLoading && ledgerAccounts.length > 0) {
+            <div class="async-status" role="status"><span class="activity-spinner" aria-hidden="true"></span>{{ 'Refreshing FD ledgers…' | translate }}</div>
+          }
           @if (ledgerAccountsLoading && ledgerAccounts.length === 0) {
-            <div class="empty-state card"><p>{{ 'Loading FD ledgers…' | translate }}</p></div>
+            <div class="async-status card" role="status"><span class="activity-spinner" aria-hidden="true"></span>{{ 'Loading FD ledgers…' | translate }}</div>
           } @else if (ledgerAccountsError) {
             <div class="empty-state card">
               <p>{{ ledgerAccountsError | translate }}</p>
@@ -850,6 +868,9 @@
             <div class="ledger-header card">
               <button class="btn btn-secondary" (click)="closeLedgerDetail()">{{ '← Back to Search' | translate }}</button>
               <h2 class="text-gradient">{{ 'Account Ledger: {0}' | translate:[selectedLedgerAccount.fdAccountNo] }}</h2>
+              <button class="btn btn-secondary" (click)="loadAccountLedger(selectedLedgerAccount.fdAccountNo)" [disabled]="ledgerHistoryLoading">
+                @if (ledgerHistoryLoading) { <span class="activity-spinner" aria-hidden="true"></span> {{ 'Loading...' | translate }} } @else { {{ 'Refresh History' | translate }} }
+              </button>
             </div>
 
             <!-- Account Details -->
@@ -894,13 +915,15 @@
             <!-- Transaction History -->
             <div class="ledger-transactions card">
               <h3>{{ 'Transaction History' | translate }}</h3>
-              @if (ledgerHistoryLoading) {
-                <p>{{ 'Loading transaction history…' | translate }}</p>
-              } @else if (ledgerHistoryError) {
+              @if (ledgerHistoryLoading && ledgerTransactions.length === 0) {
+                <div class="async-status" role="status"><span class="activity-spinner" aria-hidden="true"></span>{{ 'Loading transaction history…' | translate }}</div>
+              } @else if (ledgerHistoryError && ledgerTransactions.length === 0) {
                 <p class="error-message">{{ ledgerHistoryError | translate }}</p>
               } @else if (ledgerTransactions.length === 0) {
                 <p class="empty-state">{{ 'No transactions found for this account.' | translate }}</p>
               } @else {
+                @if (ledgerHistoryLoading) { <div class="async-status" role="status"><span class="activity-spinner" aria-hidden="true"></span>{{ 'Refreshing transaction history…' | translate }}</div> }
+                @if (ledgerHistoryError) { <p class="error-message" role="alert">{{ ledgerHistoryError | translate }}</p> }
                 <table>
                   <thead>
                     <tr>

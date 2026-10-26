@@ -714,7 +714,10 @@ curl -X POST http://localhost:8086/api/fd/account/create \
   "applicantAddress": "123 Main St",
   "applicantCity": "Mumbai",
   "applicantState": "MH",
-  "applicantPincode": "400001"
+  "applicantPincode": "400001",
+  "customerCategory": "GENERAL",
+  "accountHolderRoles": ["OWNER"],
+  "coOwnerName": ""
 }
 ```
 

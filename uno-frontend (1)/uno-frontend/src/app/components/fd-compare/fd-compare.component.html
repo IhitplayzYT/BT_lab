@@ -7,7 +7,7 @@
       <p>{{ 'Compare two FD products side by side to find the best option for your investment' | translate }}</p>
       <div class="currency-selector">
         <label for="currency">Currency:</label>
-        <select id="currency" [(ngModel)]="selectedCurrency" (change)="onCurrencyChange($event)">
+        <select id="currency" [ngModel]="selectedCurrency()" (change)="onCurrencyChange($event)">
           <option value="INR">INR (₹)</option>
           <option value="USD">USD ($)</option>
           <option value="EUR">EUR (€)</option>
@@ -27,7 +27,8 @@
           <input
             type="number"
             id="principal1"
-            [(ngModel)]="principal1"
+            [ngModel]="principal1()"
+            (ngModelChange)="principal1.set(+$event)"
             (blur)="validatePrincipal1()"
             [min]="minPrincipal1()"
             [max]="maxPrincipal1()"
@@ -40,7 +41,8 @@
           <div class="slider-container">
             <input
               type="range"
-              [(ngModel)]="principal1"
+              [ngModel]="principal1()"
+              (ngModelChange)="principal1.set(+$event)"
               [min]="minPrincipal1()"
               [max]="maxPrincipal1()"
               step="5000"
@@ -55,10 +57,12 @@
           <input
             type="number"
             id="term1"
-            [(ngModel)]="termMonths1"
+            [ngModel]="termMonths1()"
+            (ngModelChange)="termMonths1.set(+$event)"
             (blur)="validateTermMonths1()"
             [min]="minTerm1()"
             [max]="maxTerm1()"
+            [disabled]="minTerm1() === maxTerm1()"
             [class.error]="termMonthsError1"
           />
           @if (termMonthsError1) {
@@ -67,21 +71,36 @@
           <div class="slider-container">
             <input
               type="range"
-              [(ngModel)]="termMonths1"
+              [ngModel]="termMonths1()"
+              (ngModelChange)="termMonths1.set(+$event)"
               [min]="minTerm1()"
               [max]="maxTerm1()"
-              step="6"
+              step="1"
+              [disabled]="minTerm1() === maxTerm1()"
               class="slider"
             />
           </div>
+          @if (minTerm1() === maxTerm1()) {
+            <small class="fixed-value-note">Fixed tenure</small>
+          }
           <span class="input-value">{{ '{0} months' | translate:[termMonths1()] }}</span>
         </div>
 
         <div class="input-group">
           <label for="product1">{{ 'Product' | translate }}</label>
-          <select id="product1" [(ngModel)]="productCode1" (change)="onProductChange1()">
+          <select id="product1" [ngModel]="productCode1()" (ngModelChange)="productCode1.set($event); onProductChange1()">
             @for (product of products(); track product.productCode) {
               <option [value]="product.productCode">{{ product.productName }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="input-group">
+          <label for="category1">{{ 'Customer Category' | translate }}</label>
+          <select id="category1" [ngModel]="customerCategory1()" (ngModelChange)="customerCategory1.set($event.toUpperCase().replaceAll(' ', '_'))">
+            <option value="GENERAL">{{ 'General' | translate }}</option>
+            @for (variation of rateVariationsFor(productCode1()); track variation.customerCategory) {
+              <option [value]="variation.customerCategory">{{ variation.customerCategory }} (+{{ variation.rateModifier }}%)</option>
             }
           </select>
         </div>
@@ -91,10 +110,12 @@
           <input
             type="number"
             id="interestRate1"
-            [(ngModel)]="interestRate1"
+            [ngModel]="interestRate1()"
+            (ngModelChange)="interestRate1.set(+$event)"
             (blur)="validateInterestRate1()"
             [min]="minInterestRate1()"
             [max]="maxInterestRate1()"
+            [disabled]="minInterestRate1() === maxInterestRate1()"
             step="0.1"
             [class.error]="interestRateError1"
           />
@@ -104,19 +125,24 @@
           <div class="slider-container">
             <input
               type="range"
-              [(ngModel)]="interestRate1"
+              [ngModel]="interestRate1()"
+              (ngModelChange)="interestRate1.set(+$event)"
               [min]="minInterestRate1()"
               [max]="maxInterestRate1()"
               step="0.1"
+              [disabled]="minInterestRate1() === maxInterestRate1()"
               class="slider"
             />
           </div>
+          @if (minInterestRate1() === maxInterestRate1()) {
+            <small class="fixed-value-note">Fixed interest rate</small>
+          }
           <span class="input-value">{{ interestRate1() }}%</span>
         </div>
 
         <div class="input-group">
           <label for="interestType1">{{ 'Interest Type' | translate }}</label>
-          <select id="interestType1" [(ngModel)]="interestType1">
+          <select id="interestType1" [ngModel]="interestType1()" (ngModelChange)="interestType1.set($event)">
             <option value="COMPOUND">{{ 'Compound Interest' | translate }}</option>
             <option value="SIMPLE">{{ 'Simple Interest' | translate }}</option>
           </select>
@@ -132,7 +158,8 @@
           <input
             type="number"
             id="principal2"
-            [(ngModel)]="principal2"
+            [ngModel]="principal2()"
+            (ngModelChange)="principal2.set(+$event)"
             (blur)="validatePrincipal2()"
             [min]="minPrincipal2()"
             [max]="maxPrincipal2()"
@@ -145,7 +172,8 @@
           <div class="slider-container">
             <input
               type="range"
-              [(ngModel)]="principal2"
+              [ngModel]="principal2()"
+              (ngModelChange)="principal2.set(+$event)"
               [min]="minPrincipal2()"
               [max]="maxPrincipal2()"
               step="5000"
@@ -160,10 +188,12 @@
           <input
             type="number"
             id="term2"
-            [(ngModel)]="termMonths2"
+            [ngModel]="termMonths2()"
+            (ngModelChange)="termMonths2.set(+$event)"
             (blur)="validateTermMonths2()"
             [min]="minTerm2()"
             [max]="maxTerm2()"
+            [disabled]="minTerm2() === maxTerm2()"
             [class.error]="termMonthsError2"
           />
           @if (termMonthsError2) {
@@ -172,21 +202,36 @@
           <div class="slider-container">
             <input
               type="range"
-              [(ngModel)]="termMonths2"
+              [ngModel]="termMonths2()"
+              (ngModelChange)="termMonths2.set(+$event)"
               [min]="minTerm2()"
               [max]="maxTerm2()"
-              step="6"
+              step="1"
+              [disabled]="minTerm2() === maxTerm2()"
               class="slider"
             />
           </div>
+          @if (minTerm2() === maxTerm2()) {
+            <small class="fixed-value-note">Fixed tenure</small>
+          }
           <span class="input-value">{{ '{0} months' | translate:[termMonths2()] }}</span>
         </div>
 
         <div class="input-group">
           <label for="product2">{{ 'Product' | translate }}</label>
-          <select id="product2" [(ngModel)]="productCode2" (change)="onProductChange2()">
+          <select id="product2" [ngModel]="productCode2()" (ngModelChange)="productCode2.set($event); onProductChange2()">
             @for (product of products(); track product.productCode) {
               <option [value]="product.productCode">{{ product.productName }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="input-group">
+          <label for="category2">{{ 'Customer Category' | translate }}</label>
+          <select id="category2" [ngModel]="customerCategory2()" (ngModelChange)="customerCategory2.set($event.toUpperCase().replaceAll(' ', '_'))">
+            <option value="GENERAL">{{ 'General' | translate }}</option>
+            @for (variation of rateVariationsFor(productCode2()); track variation.customerCategory) {
+              <option [value]="variation.customerCategory">{{ variation.customerCategory }} (+{{ variation.rateModifier }}%)</option>
             }
           </select>
         </div>
@@ -196,10 +241,12 @@
           <input
             type="number"
             id="interestRate2"
-            [(ngModel)]="interestRate2"
+            [ngModel]="interestRate2()"
+            (ngModelChange)="interestRate2.set(+$event)"
             (blur)="validateInterestRate2()"
             [min]="minInterestRate2()"
             [max]="maxInterestRate2()"
+            [disabled]="minInterestRate2() === maxInterestRate2()"
             step="0.1"
             [class.error]="interestRateError2"
           />
@@ -209,19 +256,24 @@
           <div class="slider-container">
             <input
               type="range"
-              [(ngModel)]="interestRate2"
+              [ngModel]="interestRate2()"
+              (ngModelChange)="interestRate2.set(+$event)"
               [min]="minInterestRate2()"
               [max]="maxInterestRate2()"
               step="0.1"
+              [disabled]="minInterestRate2() === maxInterestRate2()"
               class="slider"
             />
           </div>
+          @if (minInterestRate2() === maxInterestRate2()) {
+            <small class="fixed-value-note">Fixed interest rate</small>
+          }
           <span class="input-value">{{ interestRate2() }}%</span>
         </div>
 
         <div class="input-group">
           <label for="interestType2">{{ 'Interest Type' | translate }}</label>
-          <select id="interestType2" [(ngModel)]="interestType2">
+          <select id="interestType2" [ngModel]="interestType2()" (ngModelChange)="interestType2.set($event)">
             <option value="COMPOUND">{{ 'Compound Interest' | translate }}</option>
             <option value="SIMPLE">{{ 'Simple Interest' | translate }}</option>
           </select>
@@ -236,7 +288,7 @@
         <div class="chart-section card">
           <h3 class="chart-title">Growth Comparison</h3>
           <div class="chart-wrapper">
-            <canvas id="growthChart"></canvas>
+            <canvas #growthChart id="growthChart"></canvas>
           </div>
         </div>
 
@@ -261,7 +313,7 @@
                 </div>
                 <div class="metric-item">
                   <span class="metric-label">{{ 'Interest Rate' | translate }}</span>
-                  <span class="metric-value">{{ interestRate1() }}% p.a.</span>
+                  <span class="metric-value">{{ calculationResult1().interestRate }}% p.a.</span>
                 </div>
                 <div class="metric-item">
                   <span class="metric-label">{{ 'Tenure' | translate }}</span>
@@ -304,7 +356,7 @@
                 </div>
                 <div class="metric-item">
                   <span class="metric-label">{{ 'Interest Rate' | translate }}</span>
-                  <span class="metric-value">{{ interestRate2() }}% p.a.</span>
+                  <span class="metric-value">{{ calculationResult2().interestRate }}% p.a.</span>
                 </div>
                 <div class="metric-item">
                   <span class="metric-label">{{ 'Tenure' | translate }}</span>
