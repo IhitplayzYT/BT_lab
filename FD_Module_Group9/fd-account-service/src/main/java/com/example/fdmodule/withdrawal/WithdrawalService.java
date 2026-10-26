@@ -109,17 +109,14 @@ public class WithdrawalService {
         BigDecimal unpaidInterest = ((BigDecimal) state.get("accrued_precise")).setScale(2, RoundingMode.HALF_UP);
         BigDecimal totalInterest = depositBalance.subtract(principal).add(unpaidInterest);
         
-        // Try to get product withdrawal fee, use default if product doesn't exist
-        BigDecimal pct = BigDecimal.ZERO;
-        try {
-            var product = products.getProductByCode((String) fd.get("product_code"));
-            var fee = product.path("charges").path("withdrawalFees");
-            pct = fee.isNumber() ? fee.decimalValue() : BigDecimal.ZERO;
-        } catch (Exception e) {
-            // Product may have been deleted; use default penalty of 1%
-            System.out.println("Product not found for account " + account + ", using default penalty rate: " + e.getMessage());
-            pct = new BigDecimal("1.0"); // Default 1% penalty
+        // A withdrawal must use the product's configured fee. Let upstream errors propagate so
+        // the transaction rolls back and the API reports the product service failure.
+        var product = products.getProductByCode((String) fd.get("product_code"));
+        if (product == null || product.isNull()) {
+            throw new IllegalStateException("Product service returned no product for FD account " + account);
         }
+        var fee = product.path("charges").path("withdrawalFees");
+        BigDecimal pct = fee.isNumber() ? fee.decimalValue() : BigDecimal.ZERO;
         
         BigDecimal penalty = pct == null ? BigDecimal.ZERO.setScale(2)
                 : totalInterest.multiply(pct).divide(HUNDRED, 2, RoundingMode.HALF_UP);

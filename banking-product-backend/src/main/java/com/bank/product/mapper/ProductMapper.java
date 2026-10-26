@@ -139,12 +139,17 @@ public class ProductMapper {
             String frequency = "ON_MATURITY";
             boolean taxDeduction = false;
             double withdrawalFees = 0.0;
+            boolean canonicalWithdrawalFeeFound = false;
             for (ProductCharge charge : entity.getCharges()) {
                 if ("interestCredit".equalsIgnoreCase(charge.getChargeType())) {
                     frequency = charge.getInterestCreditFrequency() != null ? charge.getInterestCreditFrequency() : "ON_MATURITY";
                 } else if ("tax".equalsIgnoreCase(charge.getChargeType())) {
                     taxDeduction = charge.getChargeValue() != null && charge.getChargeValue() > 0;
                 } else if ("withdrawalFee".equalsIgnoreCase(charge.getChargeType())) {
+                    withdrawalFees = charge.getChargeValue() != null ? charge.getChargeValue() : 0.0;
+                    canonicalWithdrawalFeeFound = true;
+                } else if (!canonicalWithdrawalFeeFound
+                        && "PREMATURE_WITHDRAWAL".equalsIgnoreCase(charge.getChargeType())) {
                     withdrawalFees = charge.getChargeValue() != null ? charge.getChargeValue() : 0.0;
                 }
             }
