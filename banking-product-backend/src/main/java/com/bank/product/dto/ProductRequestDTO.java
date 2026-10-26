@@ -61,6 +61,15 @@ public class ProductRequestDTO {
 
     private ChargesDTO charges;
 
+    private Double taxRate;
+    private Double serviceFeeRate;
+    private Double serviceFeeFlat;
+    private Double documentationFee;
+    private Double gstRate;
+    private Double prematurePenaltyRate;
+    private String compoundingFrequency;
+    private List<ProductChargeDTO> chargeDetails;
+
     private List<String> allowedRoles;
 
     private List<RateVariationDTO> rateVariations;

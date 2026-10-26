@@ -51,4 +51,24 @@ public class AuthServiceClient {
         }
         return null;
     }
+
+    public String getUsernameByUserId(Long userId) {
+        try {
+            String url = serviceProperties.getAuth().getBaseUrl() + "/api/auth/admin/users/by-id/" + userId;
+            ResponseEntity<String> response = restTemplate.exchange(
+                    url,
+                    org.springframework.http.HttpMethod.GET,
+                    ServiceClientSupport.getEntity(outboundAuth.headers(OutboundServiceAuth.Target.AUTH)),
+                    String.class);
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                JsonNode json = objectMapper.readTree(response.getBody());
+                if (json.path("enabled").asBoolean(false) && json.hasNonNull("username")) {
+                    return json.get("username").asText();
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to validate user ID with auth service: " + e.getMessage());
+        }
+        return null;
+    }
 }

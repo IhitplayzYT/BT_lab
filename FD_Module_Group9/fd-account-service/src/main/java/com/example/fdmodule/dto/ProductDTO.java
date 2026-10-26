@@ -24,6 +24,12 @@ public class ProductDTO {
     private BigDecimal rateCapAddon;
     private BigDecimal preMaturityPenaltyPct;
     private String compoundingFrequency;
+    private java.math.BigDecimal serviceFeeRate;
+    private java.math.BigDecimal serviceFeeFlat;
+    private java.math.BigDecimal documentationFee;
+    private java.math.BigDecimal gstRate;
+    private java.math.BigDecimal taxRate;
+    private java.math.BigDecimal prematurePenaltyRate;
     private String status;
     private List<String> allowedRoles;
 
@@ -59,6 +65,18 @@ public class ProductDTO {
     public void setPreMaturityPenaltyPct(BigDecimal preMaturityPenaltyPct) { this.preMaturityPenaltyPct = preMaturityPenaltyPct; }
     public String getCompoundingFrequency() { return compoundingFrequency; }
     public void setCompoundingFrequency(String compoundingFrequency) { this.compoundingFrequency = compoundingFrequency; }
+    public java.math.BigDecimal getServiceFeeRate() { return serviceFeeRate; }
+    public void setServiceFeeRate(java.math.BigDecimal value) { this.serviceFeeRate = value; }
+    public java.math.BigDecimal getServiceFeeFlat() { return serviceFeeFlat; }
+    public void setServiceFeeFlat(java.math.BigDecimal value) { this.serviceFeeFlat = value; }
+    public java.math.BigDecimal getDocumentationFee() { return documentationFee; }
+    public void setDocumentationFee(java.math.BigDecimal value) { this.documentationFee = value; }
+    public java.math.BigDecimal getGstRate() { return gstRate; }
+    public void setGstRate(java.math.BigDecimal value) { this.gstRate = value; }
+    public java.math.BigDecimal getTaxRate() { return taxRate; }
+    public void setTaxRate(java.math.BigDecimal value) { this.taxRate = value; }
+    public java.math.BigDecimal getPrematurePenaltyRate() { return prematurePenaltyRate; }
+    public void setPrematurePenaltyRate(java.math.BigDecimal value) { this.prematurePenaltyRate = value; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
     public List<String> getAllowedRoles() { return allowedRoles; }

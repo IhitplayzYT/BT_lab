@@ -27,8 +27,10 @@
       </div>
       <div class="tab-navigation">
         <button class="tab-btn" [class.active]="activeTab === 'applications'" (click)="activeTab = 'applications'">{{ 'Applications' | translate }}</button>
+        <button class="tab-btn" [class.active]="activeTab === 'create-fd'" (click)="activeTab = 'create-fd'">{{ 'Create FD Application' | translate }}</button>
+        <button class="tab-btn" [class.active]="activeTab === 'users'" (click)="activeTab = 'users'">{{ 'Users' | translate }}</button>
         <button class="tab-btn" [class.active]="activeTab === 'fds'" (click)="activeTab = 'fds'">{{ 'FDs' | translate }}</button>
-        <button class="tab-btn" [class.active]="activeTab === 'bundles'" (click)="activeTab = 'bundles'">{{ 'Bundles' | translate }}</button>
+        <button class="tab-btn" [class.active]="activeTab === 'bundles'" (click)="activeTab = 'bundles'; loadPendingBundles()">{{ 'Bundles' | translate }}</button>
         <button class="tab-btn" [class.active]="activeTab === 'journal'" (click)="activeTab = 'journal'">{{ 'Journal' | translate }}</button>
         <button class="tab-btn" [class.active]="activeTab === 'ledger'" (click)="activeTab = 'ledger'">{{ 'Ledger' | translate }}</button>
         <button class="tab-btn" [class.active]="activeTab === 'products'" (click)="activeTab = 'products'">{{ 'Product Management' | translate }}</button>
@@ -109,6 +111,7 @@
                 </div>
                 <div class="card-body">
                   <h3>{{ app.customer }}</h3>
+                  <p class="application-user-id">{{ 'User ID' | translate }}: {{ app.userId ?? '—' }}</p>
                   <div class="app-details">
                     <div class="detail-item">
                       <span class="detail-label">{{ 'Amount' | translate }}</span>
@@ -147,6 +150,10 @@
               <div class="detail-row">
                 <span class="detail-label">{{ 'Customer Name' | translate }}</span>
                 <span class="detail-value">{{ selectedApplication.customer }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">{{ 'User ID' | translate }}</span>
+                <span class="detail-value">{{ selectedApplication.userId ?? '—' }}</span>
               </div>
               <div class="detail-row">
                 <span class="detail-label">{{ 'Principal Amount' | translate }}</span>
@@ -227,7 +234,75 @@
     </div>
     </ng-template>
 
-    @if (activeTab === 'products') {
+    @if (activeTab === 'users') {
+      <div class="applications-section">
+        <h2 class="text-gradient">{{ 'User Directory' | translate }}</h2>
+        <p class="section-note">{{ 'All user IDs, usernames, email addresses, roles, and account status.' | translate }}</p>
+        <div class="filter-controls card">
+          <label for="staffUserSearch">{{ 'Search users' | translate }}</label>
+          <input id="staffUserSearch" type="search" [(ngModel)]="staffUserSearch" [attr.placeholder]="'Search by ID, username, email, or role' | translate">
+        </div>
+        @if (staffUsersLoading) { <div class="loading">{{ 'Loading users...' | translate }}</div> }
+        @if (staffUsersError) { <div class="error-message">{{ staffUsersError | translate }}</div> }
+        @if (!staffUsersLoading && !staffUsersError) {
+          <div class="users-table card">
+            <table>
+              <thead><tr><th>{{ 'User ID' | translate }}</th><th>{{ 'Username' | translate }}</th><th>{{ 'Email' | translate }}</th><th>{{ 'Roles' | translate }}</th><th>{{ 'Status' | translate }}</th><th>{{ 'Action' | translate }}</th></tr></thead>
+              <tbody>
+                @for (user of filteredStaffUsers; track user.id) {
+                  <tr>
+                    <td>{{ user.id }}</td><td>{{ user.username }}</td><td>{{ user.email }}</td>
+                    <td>@for (role of user.roles; track role) { <span class="role-badge">{{ role }}</span> }</td>
+                    <td>{{ user.enabled ? ('Active' | translate) : ('Disabled' | translate) }}</td>
+                    <td><button type="button" class="btn btn-sm btn-primary" [disabled]="!user.enabled" (click)="selectUserForApplication(user)">{{ 'Create FD Application' | translate }}</button></td>
+                  </tr>
+                } @empty { <tr><td colspan="6">{{ 'No users match your search.' | translate }}</td></tr> }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+    } @else if (activeTab === 'create-fd') {
+      <div class="applications-section">
+        @if (!selectedApplicationCustomer) {
+          <h2 class="text-gradient">{{ 'Create FD Application for a Customer' | translate }}</h2>
+          <p class="section-note">{{ 'Select an enabled user by ID, then enter application details. Applicant details are not loaded from or saved to this browser.' | translate }}</p>
+          <div class="filter-controls card">
+            <div class="filter-row">
+              <div class="filter-group">
+                <label for="applicationCustomerId">{{ 'User ID' | translate }}</label>
+                <input id="applicationCustomerId" type="text" autocomplete="off" [(ngModel)]="customerLookupId" [attr.placeholder]="'Enter user ID' | translate" (keyup.enter)="findCustomerForApplication()">
+              </div>
+              <div class="filter-group">
+                <label>&nbsp;</label>
+                <button type="button" class="btn btn-primary" (click)="findCustomerForApplication()" [disabled]="customerLookupLoading">
+                  {{ 'Find User' | translate }}
+                </button>
+              </div>
+            </div>
+            @if (customerLookupError) {
+              <div class="error-message">{{ customerLookupError | translate }}</div>
+            }
+          </div>
+        } @else {
+          <div class="filter-controls card">
+            <div class="filter-row">
+              <div>
+                <strong>{{ 'User' | translate }}:</strong> {{ selectedApplicationCustomer.username }}
+                <span class="detail-value">(ID {{ selectedApplicationCustomer.id }})</span>
+              </div>
+              <button type="button" class="btn btn-secondary" (click)="selectedApplicationCustomer = null">{{ 'Choose Another User' | translate }}</button>
+            </div>
+          </div>
+          <app-apply-fd
+            [officerMode]="true"
+            [officerCustomerId]="selectedApplicationCustomer.id"
+            [officerCustomerName]="selectedApplicationCustomer.username"
+            (applicationSubmitted)="onOfficerApplicationSubmitted()">
+          </app-apply-fd>
+        }
+      </div>
+    } @else if (activeTab === 'products') {
       <app-product-management></app-product-management>
     } @else if (activeTab === 'reports') {
       <div class="reports-section">
@@ -490,6 +565,7 @@
       <div class="bundles-section">
         <h2 class="text-gradient">{{ 'Pending Bundle Approvals ({0})' | translate:[pendingBundles.length] }}</h2>
         <p class="section-note">{{ 'Approve or reject entire FD packages as a single unit' | translate }}</p>
+        @if (pendingBundlesError) { <div class="error-message">{{ pendingBundlesError | translate }} <button class="btn btn-secondary" (click)="loadPendingBundles()">{{ 'Retry' | translate }}</button></div> }
 
         @if (!selectedBundle) {
           <!-- Search and Filter Controls -->
@@ -602,6 +678,10 @@
                   <span class="detail-value">{{ selectedBundle.customer }}</span>
                 </div>
                 <div class="detail-row">
+                  <span class="detail-label">{{ 'User ID' | translate }}</span>
+                  <span class="detail-value">{{ selectedBundle.userId ?? '—' }}</span>
+                </div>
+                <div class="detail-row">
                   <span class="detail-label">{{ 'Total Investment' | translate }}</span>
                   <span class="detail-value accent">{{ formatCurrency(selectedBundle.totalAmount) }}</span>
                 </div>
@@ -618,6 +698,15 @@
                   <span class="detail-value">{{ selectedBundle.date }}</span>
                 </div>
               </div>
+
+              @if (selectedBundle.fdItems?.length) {
+                <div class="applicant-section">
+                  <h3 class="section-title">{{ 'Fixed Deposits in This Bundle' | translate }}</h3>
+                  <div class="users-table card"><table><thead><tr><th>{{ 'FD Account' | translate }}</th><th>{{ 'Product' | translate }}</th><th>{{ 'Principal' | translate }}</th><th>{{ 'Tenure' | translate }}</th><th>{{ 'Rate' | translate }}</th><th>{{ 'Status' | translate }}</th></tr></thead><tbody>
+                    @for (item of selectedBundle.fdItems; track item.fdAccountNo) {<tr><td>{{ item.fdAccountNo }}</td><td>{{ item.productCode }}</td><td>{{ formatCurrency(item.principalAmount) }}</td><td>{{ '{0} months' | translate:[item.tenureMonths] }}</td><td>{{ item.interestRate }}%</td><td>{{ item.approvalStatus }}</td></tr>}
+                  </tbody></table></div>
+                </div>
+              }
 
               @if (selectedBundle.customerDetails) {
                 <div class="applicant-section">

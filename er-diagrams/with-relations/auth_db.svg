@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="822" height="384" viewBox="0 0 822 384">
+<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#596579"/></marker></defs>
+<rect width="100%" height="100%" fill="#f5f7fb"/>
+<text x="36" y="48" font-family="Arial,sans-serif" font-size="27" font-weight="700" fill="#17233b">auth_db — auth service</text>
+<text x="36" y="75" font-family="Arial,sans-serif" font-size="13" fill="#58677e">1:1 when child key is unique, otherwise 1:N · solid = declared FK · dashed = inferred logical ID/code reference</text>
+<path d="M 436.0 193.0 C 417.0 193.0, 405.0 215.0, 386.0 215.0" fill="none" stroke="#315d9b" stroke-width="2.2" marker-end="url(#arrow)" opacity=".9"><title>refresh_tokens.username references users.username; parent:child cardinality 1:N</title></path>
+<text x="416.0" y="186.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="#315d9b" stroke="#fff" stroke-width="4" paint-order="stroke">N</text>
+<text x="406.0" y="208.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="#315d9b" stroke="#fff" stroke-width="4" paint-order="stroke">1</text>
+<rect x="36" y="100" width="350" height="230" rx="8" fill="white" stroke="#8290a6" stroke-width="1.2"/>
+<path d="M44,100 h334 q8,0 8,8 v30 h-350 v-30 q0,-8 8,-8" fill="#e6edfa" stroke="none"/>
+<text x="49" y="123" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#182844">users</text>
+<text x="49" y="150" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#24334d">PK  id</text>
+<text x="374" y="150" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">BIGINT</text>
+<text x="49" y="172" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">username</text>
+<text x="374" y="172" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(100)</text>
+<text x="49" y="194" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">password_hash</text>
+<text x="374" y="194" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(255)</text>
+<text x="49" y="216" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">email</text>
+<text x="374" y="216" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(255)</text>
+<text x="49" y="238" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">roles</text>
+<text x="374" y="238" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(255)</text>
+<text x="49" y="260" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">enabled</text>
+<text x="374" y="260" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">BOOLEAN</text>
+<text x="49" y="282" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">created_at</text>
+<text x="374" y="282" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">TIMESTAMP</text>
+<text x="49" y="304" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">last_login_at</text>
+<text x="374" y="304" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">TIMESTAMP</text>
+<rect x="436" y="100" width="350" height="186" rx="8" fill="white" stroke="#8290a6" stroke-width="1.2"/>
+<path d="M444,100 h334 q8,0 8,8 v30 h-350 v-30 q0,-8 8,-8" fill="#e6edfa" stroke="none"/>
+<text x="449" y="123" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#182844">refresh_tokens</text>
+<text x="449" y="150" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#24334d">PK  id</text>
+<text x="774" y="150" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">BIGINT</text>
+<text x="449" y="172" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">token</text>
+<text x="774" y="172" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(255)</text>
+<text x="449" y="194" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">FK  username</text>
+<text x="774" y="194" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(100)</text>
+<text x="449" y="216" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">expiry_date</text>
+<text x="774" y="216" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">TIMESTAMP</text>
+<text x="449" y="238" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">created_at</text>
+<text x="774" y="238" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">TIMESTAMP</text>
+<text x="449" y="260" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">revoked</text>
+<text x="774" y="260" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">BOOLEAN</text>
+</svg>

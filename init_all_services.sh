@@ -237,7 +237,7 @@ build_and_start() {
     # The other service images consume local JARs; rebuild them from current source.
     mvn -B -f Auth_Sec/pom.xml install -DskipTests >> "$LOG_FILE" 2>&1
     mvn -B -f banking-product-backend/pom.xml package -DskipTests >> "$LOG_FILE" 2>&1
-    mvn -B -f FD_Module_Group9/pom.xml -pl fd-account-service,notification-service -am package -DskipTests >> "$LOG_FILE" 2>&1
+    mvn -B -f FD_Module_Group9/pom.xml -pl fd-account-service,interest-batch-service,notification-service,statement-service -am package -DskipTests >> "$LOG_FILE" 2>&1
     mvn -B -f "fd_calc/mod 4 backend/pom.xml" package -DskipTests >> "$LOG_FILE" 2>&1
 
     # The account service validates its schema during startup. Prepare this
@@ -279,6 +279,11 @@ wait_for_services() {
     check_container_health "product-service"
     check_container_health "fd-account-service"
     check_container_health "fd-auth-service"
+    if docker ps --format '{{.Names}}' | grep -q "^statement-service$"; then
+        log_success "statement-service is running"
+    else
+        log_warning "statement-service may not be running"
+    fi
     # notification-service has no healthcheck - just verify it's running
     if docker ps --format '{{.Names}}' | grep -q "^notification-service$"; then
         log_success "notification-service is running"

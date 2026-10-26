@@ -1,90 +1,56 @@
-# Banking Product & Pricing Backend Module
+# Product and Pricing Service
 
-This folder contains the complete, self-contained Spring Boot backend for the **Banking Product and Pricing Module** (Labs L5, L9, and L13).
+Java 21 / Spring Boot service on port **8080**. It owns the product catalog used by the FD account and calculator services. Product definitions, term/rate limits, category rate variations, charges, and customer/nominee roles are persisted in the product MySQL schema. The service also contains an older FD calculation endpoint for compatibility.
 
----
+## Responsibilities
 
-## 📁 Folder Contents
+- Create, update, retire, search and retrieve products.
+- Validate account applications against active dates, term, deposit amount and minimum age.
+- Quote the current product rate with configured category modifiers and configured limits.
+- Provide calculator configuration through internal service routes.
+- Provide the older simple/advanced FD calculation and calculation history APIs.
 
-```
-banking-product-backend/
-├── pom.xml                                 # Maven project configuration with all dependencies (Spring Security, JJWT, Actuator, etc.)
-├── src/                                    # Complete Java source code and configuration
-│   ├── main/java/com/bank/
-│   │   ├── product/                        # Core Product module (Controllers, Security, Services, Repositories, DTOs, Entities)
-│   │   └── fdcalculator/                   # Fixed Deposit Calculation & History engine
-│   ├── main/resources/
-│   │   ├── application.yml                 # Application configuration (MySQL datasource, JWT secrets, Actuator)
-│   │   └── schema.sql                      # Database DDL with all 11 audit columns (Tables, Indexes, Foreign Keys)
-│   └── test/                               # Comprehensive automated test suite (45 tests, 100% pass)
-├── schema.sql                              # Database schema DDL script for MySQL
-├── insert_dummy_data.sql                   # Seed data script for MySQL (FD, Savings, Loan products & variations)
-├── postman_collection.json                 # Postman collection (20 requests with automatic JWT token management)
-├── openapi.json                            # Exported OpenAPI 3.0 specification (ready for Angular client generation)
-├── smoke_test_endpoints.sh                 # Bash script to smoke-test all endpoints via curl
-├── SOLUTION_DOCUMENT.md                    # Architecture & API technical specification
-├── PRODUCT_AND_PRICING_MODULE_EXPLANATION.md # Comprehensive guide in Markdown format
-├── PRODUCT_AND_PRICING_MODULE_EXPLANATION.pdf # Comprehensive guide in PDF format
-└── README.md                               # This quick-start guide
-```
+Product/rate data are database-backed. If the product is missing required rate configuration, requests fail validation instead of silently supplying an arbitrary rate. Sample catalog entries are initialized for local development; the source of truth at runtime is the product database.
 
----
+## Main endpoints
 
-## 🗄️ Does the Database Need to Be Sent?
+All paths below use `http://localhost:8080`. Product APIs accept the aliases `/api/product` and `/api/v1/products`.
 
-**No, you do NOT send any database server files!**  
-Databases (like MySQL) run locally on the host machine. Everything needed to build the database is already included in this folder:
-1. **`schema.sql`**: Automatically or manually creates the tables (`products`, `product_business_rules`, `product_charges`, `product_roles`, `product_rate_variations`, `fd_calculations`).
-2. **`insert_dummy_data.sql`**: Seeds the sample products (`FD001`, `SAV001`, `FD002`, `LN001`) and test rate variations.
-3. **In-Memory Testing**: The automated test suite (`mvn test`) automatically uses an embedded H2 database and requires no database setup.
+| Method and path | Access | Function |
+|---|---|---|
+| `GET /actuator/health` | Public | Liveness/readiness health |
+| `GET /api/product/active?type=FD` | Public | Active catalog for product dropdowns |
+| `GET /api/product/search` | Authenticated; role check at controller | Filtered/paged catalog |
+| `GET /api/product/{code}` | Bank officer, admin or customer | Product details |
+| `POST /api/product` | Bank officer or admin | Create product |
+| `PUT /api/product/{code}` | Bank officer or admin | Update product |
+| `DELETE /api/product/{code}` | Bank officer or admin | Retire product |
+| `DELETE /api/product/{code}/permanent` | Admin | Permanent deletion |
+| `GET /api/product/{code}/validate` | Bank officer, admin or customer | Eligibility/configuration validation |
+| `POST /api/product/{code}/rate` | Bank officer, admin or customer | Rate quote using persisted product configuration |
+| `GET /api/product/{code}/defaults` | Bank officer, admin or customer | Defaults for account forms |
+| `GET /internal/products/{code}/calculator-config` | Authenticated service caller | Internal calculator configuration |
+| `POST /api/fd/calculate` | See security configuration | Legacy calculation |
+| `POST /api/fd/calculate/advanced` | See security configuration | Legacy detailed calculation |
+| `GET /api/fd/categories` | See security configuration | Legacy category information |
+| `GET /api/fd/history` | Authenticated user | Legacy saved calculation history |
 
----
+The exact DTOs, validation constraints, and role annotations are maintained in the Java controllers and OpenAPI endpoint reference at the project root.
 
-## 🚀 How to Run the Backend
+## Local development
 
-### Prerequisites
-- Java 21 (JDK 21)
-- Maven 3.8+
-- MySQL 8.0+ (required by the default runtime configuration; tests use H2)
+Prerequisites: Java 21, Maven, MySQL 8.0 and a configured JWT secret/issuer matching Auth. Root Compose provides MySQL on host port 3308 and the application on 8080. The schema and sample catalog are mounted into the database container during first initialization. For an existing database, apply the migration scripts in this directory before deploying schema changes.
 
-### Step 1: MySQL and JWT Setup
-If using MySQL, log in and create the database or run the SQL scripts:
-```bash
-mysql -u root -p < schema.sql
-mysql -u root -p banking_product_db < insert_dummy_data.sql
-```
-Set `DB_URL`, `DB_USER`, `DB_PASSWORD`, `JWT_SECRET` and `JWT_ISSUER` before starting. `spring.sql.init.mode=never`, so Spring does not execute `schema.sql` automatically. Root Compose initializes schema and seed data on an empty MySQL volume.
-
-### Step 2: Build and Test
 ```bash
 mvn -f ../Auth_Sec/pom.xml -pl security-common -am install
-mvn clean test
-```
-This runs the checked-in tests; historical test counts are not a guarantee for the current worktree.
-
-### Step 3: Start the Server
-```bash
+mvn test
 mvn spring-boot:run
 ```
-The server will start at: `http://localhost:8080`.
 
----
+The default standalone configuration expects environment variables for the DB connection and JWT validation. See `src/main/resources/application*.yml` and root [usage.md](../usage.md). Do not place production credentials in the repository.
 
-## 🔍 How to Test the Endpoints
+## Tests and related files
 
-1. **Swagger / OpenAPI Interactive UI**:
-   - URL: `http://localhost:8080/swagger-ui.html`
-   - Use the **Authorize** button with a token generated from `POST http://localhost:8090/api/auth/login`.
+`src/test` covers controller behavior, product business rules, security roles, persistence/integration flow, OpenAPI output, and legacy calculator behavior. Verification on 26 October 2026: `mvn -B test` passed 45 tests. The suite includes isolated and integration-style tests; this result does not certify a separately deployed MySQL instance.
 
-2. **Postman**:
-   - Import `postman_collection.json`.
-   - Authenticate with Auth_Sec on port 8090 and set the collection token variables. Older token-helper requests in exported collections may need updating.
-
-3. **Smoke Test Script (Terminal)**:
-   ```bash
-   chmod +x smoke_test_endpoints.sh
-   ./smoke_test_endpoints.sh
-   ```
-
-4. **Observability**:
-   - Health check: `http://localhost:8080/actuator/health`
+`schema.sql`, `insert_dummy_data.sql` and `migration_product_charge_defaults.sql` describe database setup and migration. `postman_collection.json` is a manual request collection; verify its token variables and endpoints against the current API before use. The former 45-test count was a previous snapshot, not a guarantee of current test outcomes.

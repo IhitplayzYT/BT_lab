@@ -8,6 +8,10 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import com.example.fdauth.entity.User;
+import com.example.fdauth.repository.UserRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -23,10 +27,29 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@TestPropertySource(properties = {"app.jwt.secret=auth-test-secret-auth-test-secret-0001", "app.jwt.issuer=fd-platform-auth"})
+@TestPropertySource(properties = {
+        "app.jwt.secret=auth-test-secret-auth-test-secret-0001",
+        "app.jwt.issuer=fd-platform-auth",
+        "spring.datasource.url=jdbc:h2:mem:authtest;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1",
+        "spring.datasource.driver-class-name=org.h2.Driver",
+        "spring.datasource.username=sa",
+        "spring.datasource.password=",
+        "spring.jpa.hibernate.ddl-auto=create-drop",
+        "spring.jpa.database-platform=org.hibernate.dialect.H2Dialect"
+})
 class AuthIntegrationTest {
     @Autowired MockMvc mvc;
     @Autowired ObjectMapper mapper;
+    @Autowired UserRepository users;
+    @Autowired PasswordEncoder passwords;
+
+    @BeforeEach
+    void seedUsers() {
+        users.deleteAll();
+        users.save(new User("officer1", passwords.encode("officer123"), "officer1@example.test", "BANK_OFFICER"));
+        users.save(new User("admin1", passwords.encode("admin123"), "admin1@example.test", "ADMIN"));
+        users.save(new User("customer1", passwords.encode("customer123"), "customer1@example.test", "CUSTOMER"));
+    }
 
     MvcResult login(String user, String password) throws Exception {
         return mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)

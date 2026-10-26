@@ -28,7 +28,7 @@ public class ProductMapper {
         }
 
         List<ProductCharge> charges = new ArrayList<>();
-        if (dto.getCharges() != null) {
+        if (dto.getCharges() != null && dto.getChargeDetails() == null) {
             if (dto.getCharges().getInterestCreditFrequency() != null) {
                 charges.add(ProductCharge.builder()
                         .chargeType("interestCredit")
@@ -38,20 +38,23 @@ public class ProductMapper {
                         .feeType("PERIODIC")
                         .build());
             }
-            if (dto.getCharges().getTaxDeduction() != null) {
-                charges.add(ProductCharge.builder()
-                        .chargeType("tax")
-                        .chargeValue(dto.getCharges().getTaxDeduction() ? 10.0 : 0.0)
-                        .chargeUnit("percentage")
-                        .feeType("EVENT_BASED")
-                        .build());
-            }
             if (dto.getCharges().getWithdrawalFees() != null) {
                 charges.add(ProductCharge.builder()
                         .chargeType("withdrawalFee")
                         .chargeValue(dto.getCharges().getWithdrawalFees())
                         .chargeUnit("percentage")
                         .feeType("EVENT_BASED")
+                        .build());
+            }
+        }
+        if (dto.getChargeDetails() != null) {
+            for (ProductChargeDTO charge : dto.getChargeDetails()) {
+                if (charge == null || charge.getChargeType() == null || charge.getChargeValue() == null || charge.getChargeUnit() == null) continue;
+                charges.add(ProductCharge.builder()
+                        .chargeType(charge.getChargeType().trim().toUpperCase())
+                        .chargeValue(charge.getChargeValue())
+                        .chargeUnit(charge.getChargeUnit().trim().toLowerCase())
+                        .feeType(charge.getFeeType())
                         .build());
             }
         }
@@ -103,6 +106,15 @@ public class ProductMapper {
                 .status(status)
                 .isActive(status == ProductStatus.ACTIVE)
                 .interestType(interestType)
+                .taxRate(dto.getTaxRate())
+                .serviceFeeRate(dto.getServiceFeeRate())
+                .serviceFeeFlat(dto.getServiceFeeFlat())
+                .documentationFee(dto.getDocumentationFee())
+                .gstRate(dto.getGstRate())
+                .prematurePenaltyRate(dto.getPrematurePenaltyRate())
+                .compoundingFrequency(dto.getCompoundingFrequency() != null ? dto.getCompoundingFrequency()
+                        : dto.getCharges() != null && dto.getCharges().getInterestCreditFrequency() != null
+                        ? dto.getCharges().getInterestCreditFrequency() : "QUARTERLY")
                 .minAge(dto.getMinAge())
                 .minDeposit(dto.getMinDeposit())
                 .maxDeposit(dto.getMaxDeposit())
@@ -199,6 +211,21 @@ public class ProductMapper {
                 .allowedTransactionTypes(entity.getAllowedTransactionTypes())
                 .balanceTypes(entity.getBalanceTypes())
                 .charges(charges)
+                .taxRate(entity.getTaxRate())
+                .serviceFeeRate(entity.getServiceFeeRate())
+                .serviceFeeFlat(entity.getServiceFeeFlat())
+                .documentationFee(entity.getDocumentationFee())
+                .gstRate(entity.getGstRate())
+                .prematurePenaltyRate(entity.getPrematurePenaltyRate())
+                .compoundingFrequency(entity.getCompoundingFrequency())
+                .chargeDetails(entity.getCharges() == null ? Collections.emptyList() : entity.getCharges().stream()
+                        .map(charge -> ProductChargeDTO.builder()
+                                .chargeType(charge.getChargeType())
+                                .chargeValue(charge.getChargeValue())
+                                .chargeUnit(charge.getChargeUnit())
+                                .feeType(charge.getFeeType())
+                                .build())
+                        .collect(Collectors.toList()))
                 .allowedRoles(allowedRoles)
                 .rateVariations(rateVariations)
                 .createdBy(entity.getOooUserId())

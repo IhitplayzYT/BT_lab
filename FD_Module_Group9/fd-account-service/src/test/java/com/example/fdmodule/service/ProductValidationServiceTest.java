@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -44,7 +45,8 @@ class ProductValidationServiceTest {
     void effectiveDateFollowsTheBusinessClockWhenTimeTravelIsOn() {
         var service = service(LocalDate.now().plusYears(2));
         // The business date is three years ahead, so the product has become effective by then.
-        service.setClock(new BusinessClock(null, true) {
+        JdbcTemplate jdbc = Mockito.mock(JdbcTemplate.class);
+        service.setClock(new BusinessClock(jdbc, true) {
             @Override public LocalDate today() { return LocalDate.now().plusYears(3); }
         });
         assertThat(service.validate("FDSTD", 12, new BigDecimal("50000")).getProductCode()).isEqualTo("FDSTD");

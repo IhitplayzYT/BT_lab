@@ -9,15 +9,15 @@
     <div class="calculator-container">
       <div class="calculator-inputs card">
         <div class="input-group">
-          <label for="principal">Principal Amount (₹)</label>
+          <label for="principal">{{ 'Principal Amount' | translate }} ({{ currencyService.getCurrencySymbol(currencyService.preferredCurrency()) }})</label>
           <input
             type="number"
             id="principal"
-            [ngModel]="principal()"
-            (ngModelChange)="principal.set(+$event)"
+            [ngModel]="displayedPrincipal()"
+            (ngModelChange)="setDisplayedPrincipal(+$event)"
             (blur)="validatePrincipal()"
-            [min]="minPrincipal()"
-            [max]="maxPrincipal()"
+            [min]="displayedMinPrincipal()"
+            [max]="displayedMaxPrincipal()"
             step="1000"
             [class.error]="principalError"
           />
@@ -27,10 +27,10 @@
           <div class="slider-container">
             <input
               type="range"
-              [ngModel]="principal()"
-              (ngModelChange)="principal.set(+$event)"
-              [min]="minPrincipal()"
-              [max]="maxPrincipal()"
+              [ngModel]="displayedPrincipal()"
+              (ngModelChange)="setDisplayedPrincipal(+$event)"
+              [min]="displayedMinPrincipal()"
+              [max]="displayedMaxPrincipal()"
               step="5000"
               class="slider"
             />
@@ -72,11 +72,13 @@
 
         <div class="input-group">
           <label for="product">{{ 'Product' | translate }}</label>
-          <select id="product" [ngModel]="productCode()" (ngModelChange)="productCode.set($event); onProductChange()">
+          <select id="product" required [ngModel]="productCode()" (ngModelChange)="productCode.set($event); onProductChange()">
+            <option value="">{{ 'Select an FD product' | translate }}</option>
             @for (product of products(); track product.productCode) {
               <option [value]="product.productCode">{{ product.productName }}</option>
             }
           </select>
+          @if (productError) { <div class="validation-error" role="alert">{{ productError | translate }}</div> }
         </div>
 
         <div class="input-group">
@@ -154,13 +156,27 @@
           
           <div class="result-grid">
             <div class="result-item">
-              <span class="result-label">{{ 'Maturity Amount' | translate }}</span>
-              <span class="result-value text-gradient">₹{{ formattedMaturity() }}</span>
+              <span class="result-label">{{ 'Estimated Net Maturity Amount' | translate }}</span>
+              <span class="result-value text-gradient">{{ formattedMaturity() }}</span>
             </div>
             
             <div class="result-item">
               <span class="result-label">{{ 'Interest Earned' | translate }}</span>
-              <span class="result-value accent">₹{{ formattedInterest() }}</span>
+              <span class="result-value accent">{{ formattedInterest() }}</span>
+            </div>
+
+            <div class="result-item">
+              <span class="result-label">{{ 'Transaction Fees & Deductions' | translate }}</span>
+              @if (calculationResult().totalDeductions > 0) {
+                <span class="result-value">{{ formattedDeductions() }}</span>
+              } @else {
+                <span class="result-value">{{ 'None configured' | translate }}</span>
+              }
+            </div>
+
+            <div class="result-item">
+              <span class="result-label">{{ 'Net Interest' | translate }}</span>
+              <span class="result-value">{{ formattedNetInterest() }}</span>
             </div>
             
             <div class="result-item">
@@ -173,6 +189,18 @@
               <span class="result-value">{{ calculationResult().maturityDate }}</span>
             </div>
           </div>
+
+          @if (chargeBreakdown().length > 0) {
+            <div class="charge-breakdown">
+              <h4>{{ 'Fee Details' | translate }}</h4>
+              @for (charge of chargeBreakdown(); track $index) {
+                <div class="result-item">
+                  <span class="result-label">{{ charge.description || charge.chargeType }}</span>
+                  <span class="result-value">{{ currencyService.formatPreferredCurrency(charge.chargeAmount || 0) }}</span>
+                </div>
+              }
+            </div>
+          }
 
           <div class="result-chart">
             <div class="chart-bar principal-bar" [style.width.%]="getPrincipalBarWidth()">

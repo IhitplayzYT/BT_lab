@@ -28,6 +28,32 @@ public class DataInitializer implements CommandLineRunner {
         } else {
             log.info("Products already exist in database. Skipping initialization.");
         }
+        ensureCoOwnerRole();
+    }
+
+    private void ensureCoOwnerRole() {
+        List<Product> products = productRepository.findAll();
+        boolean updated = false;
+        for (Product product : products) {
+            if (product.getCompoundingFrequency() == null || product.getCompoundingFrequency().isBlank()) {
+                product.setCompoundingFrequency("QUARTERLY");
+                updated = true;
+            }
+            if (!"FD".equalsIgnoreCase(product.getProductType())) continue;
+            List<ProductRole> roles = product.getAllowedRoles();
+            if (roles == null) {
+                roles = new ArrayList<>();
+                product.setAllowedRoles(roles);
+            }
+            if (roles.stream().noneMatch(role -> "CO-OWNER".equalsIgnoreCase(role.getRoleType()))) {
+                roles.add(ProductRole.builder().roleType("CO-OWNER").isMandatory(false).build());
+                updated = true;
+            }
+        }
+        if (updated) {
+            productRepository.saveAll(products);
+            log.info("Enabled optional co-owners on existing FD products");
+        }
     }
 
     private void initializeFDProducts() {
@@ -249,6 +275,10 @@ public class DataInitializer implements CommandLineRunner {
         roles.add(ProductRole.builder()
                 .roleType("OWNER")
                 .isMandatory(true)
+                .build());
+        roles.add(ProductRole.builder()
+                .roleType("CO-OWNER")
+                .isMandatory(false)
                 .build());
         roles.add(ProductRole.builder()
                 .roleType("NOMINEE")

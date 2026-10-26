@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * The one place that defines how FD-platform tokens look and how they are checked.
@@ -88,7 +89,8 @@ public final class JwtSupport {
     }
 
     private static GrantedAuthority toAuthority(String role) {
-        String prefixed = role.startsWith("ROLE_") ? role : "ROLE_" + role;
+        String normalized = role.trim().toUpperCase(Locale.ROOT);
+        String prefixed = normalized.startsWith("ROLE_") ? normalized : "ROLE_" + normalized;
         return new SimpleGrantedAuthority(prefixed);
     }
 }

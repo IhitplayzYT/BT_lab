@@ -10,8 +10,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
+import java.util.Map;
 
 @Service
 public class FDAccountService {
@@ -204,6 +206,63 @@ public class FDAccountService {
             System.out.println("Created new customer profile: customerId=" + customerId + ", userId=" + userId + ", username=" + username);
         }
 
+        return createPendingApplication(request, profile, username);
+    }
+
+    @Transactional
+    public FDApplicationResponse applyForCustomer(FDApplicationRequest request, String userIdValue, String createdBy) {
+        requireSeniorEligibility(request.getProductCode(), request.getApplicantAge());
+        long userId;
+        try {
+            userId = Long.parseLong(userIdValue);
+        } catch (NumberFormatException ex) {
+            throw new IllegalArgumentException("Enter a valid user ID");
+        }
+        String username = authServiceClient.getUsernameByUserId(userId);
+        if (username == null) throw new IllegalArgumentException("Enabled user not found: " + userIdValue);
+        CustomerProfile profile = customerRepository.findByUserId(userId).orElseGet(() -> {
+            CustomerProfile created = new CustomerProfile();
+            created.setCustomerId(nextCustomerId());
+            created.setUserId(userId);
+            created.setCategory("GENERAL");
+            return customerRepository.save(created);
+        });
+        profile.setFullName(request.getApplicantFullName());
+        profile.setPhone(request.getApplicantPhone());
+        customerRepository.save(profile);
+        return createPendingApplication(request, profile, createdBy);
+    }
+
+    private String nextCustomerId() {
+        String maxCustomerId = customerRepository.findMaxCustomerId();
+        int nextNum = 1;
+        if (maxCustomerId != null && maxCustomerId.startsWith("CUST")) {
+            try {
+                nextNum = Integer.parseInt(maxCustomerId.substring(4)) + 1;
+            } catch (NumberFormatException ignored) {
+                nextNum = 1;
+            }
+        }
+        return String.format("CUST%06d", nextNum);
+    }
+
+    public Map<String, String> getCustomerSummary(String customerId) {
+        CustomerProfile profile = customerRepository.findById(customerId)
+                .orElseThrow(() -> new IllegalArgumentException("Customer not found: " + customerId));
+        return Map.of(
+                "customerId", profile.getCustomerId(),
+                "fullName", profile.getFullName() == null ? "" : profile.getFullName(),
+                "category", profile.getCategory() == null ? "GENERAL" : profile.getCategory());
+    }
+
+    @Transactional(readOnly = true)
+    public Long getUserIdForCustomer(String customerId) {
+        return customerRepository.findById(customerId).map(CustomerProfile::getUserId).orElse(null);
+    }
+
+    private FDApplicationResponse createPendingApplication(FDApplicationRequest request, CustomerProfile profile, String createdBy) {
+        requireSeniorEligibility(request.getProductCode(), request.getApplicantAge());
+        String customerId = profile.getCustomerId();
         int termMonthsInt = Integer.parseInt(request.getTermMonths());
         ProductDTO product = productValidationService.validate(
                 request.getProductCode(), termMonthsInt, request.getPrincipalAmount());
@@ -275,7 +334,7 @@ public class FDAccountService {
         fd.setApplicantIfsc(request.getApplicantIfsc());
         fd.setMaturityDate(today().plusMonths(termMonthsInt));
         fd.setCreatedAt(today().atTime(java.time.LocalTime.now(java.time.ZoneId.of("Asia/Kolkata"))));
-        fd.setCreatedBy(username);
+        fd.setCreatedBy(createdBy);
 
         // Persist the parent before inserting nominees with an account foreign key.
         fdRepository.saveAndFlush(fd);
@@ -306,7 +365,7 @@ public class FDAccountService {
         }
 
         FixedDepositAccount saved = fdRepository.save(fd);
-        if (createdPublisher != null) createdPublisher.publishStatus(saved, username);
+        if (createdPublisher != null) createdPublisher.publishStatus(saved, createdBy);
 
         FDApplicationResponse response = new FDApplicationResponse(
                 saved.getFdAccountNo(), saved.getCustomerId(), saved.getProductCode(),
@@ -366,6 +425,15 @@ public class FDAccountService {
     @Transactional(readOnly = true)
     public List<FixedDepositAccount> getPendingApplications() {
         return fdRepository.findByApprovalStatus("PENDING_APPROVAL");
+    }
+
+    @Transactional(readOnly = true)
+    public List<FixedDepositAccount> getBundleAccounts(String bundleId) {
+        return bundleItemRepository.findByBundleId(bundleId).stream()
+                .sorted(java.util.Comparator.comparing(BundleItem::getSequenceOrder))
+                .map(item -> fdRepository.findById(item.getFdAccountNo())
+                        .orElseThrow(() -> new IllegalStateException("Bundle references missing FD account: " + item.getFdAccountNo())))
+                .toList();
     }
 
     @Transactional(readOnly = true)
@@ -471,8 +539,11 @@ public class FDAccountService {
         }
 
         // Generate bundle ID
-        String bundleCategory = request.getCustomerCategory() == null || request.getCustomerCategory().isBlank()
+        String requestedBundleCategory = request.getCustomerCategory() == null || request.getCustomerCategory().isBlank()
                 ? "GENERAL" : request.getCustomerCategory().trim().toUpperCase().replace(' ', '_');
+        Integer bundleApplicantAge = request.getFdItems().get(0).getApplicantAge();
+        String bundleCategory = "GENERAL".equals(requestedBundleCategory) && bundleApplicantAge != null && bundleApplicantAge >= 60
+                ? "SENIOR_CITIZEN" : requestedBundleCategory;
         List<String> bundleRoles = request.getAccountHolderRoles() == null || request.getAccountHolderRoles().isEmpty()
                 ? List.of("OWNER")
                 : request.getAccountHolderRoles().stream().map(role -> role == null ? "" : role.trim().toUpperCase()).distinct().toList();
@@ -493,8 +564,8 @@ public class FDAccountService {
         bundle.setCustomerId(customerId);
         bundle.setBundleName(request.getBundleName());
         bundle.setBundleDescription(request.getBundleDescription());
-        bundle.setTotalAmount(request.getTotalAmount());
-        bundle.setEstimatedReturn(request.getEstimatedReturn());
+        bundle.setTotalAmount(BigDecimal.ZERO);
+        bundle.setEstimatedReturn(BigDecimal.ZERO);
         bundle.setStatus("PENDING");
         bundle.setApprovalStatus("PENDING_APPROVAL");
         bundle.setCreatedAt(today().atTime(java.time.LocalTime.now(java.time.ZoneId.of("Asia/Kolkata"))));
@@ -502,6 +573,8 @@ public class FDAccountService {
 
         // Create individual FD accounts for each item in the bundle
         List<BundleApplicationResponse.FDItemSummary> fdSummaries = new java.util.ArrayList<>();
+        BigDecimal calculatedTotalAmount = BigDecimal.ZERO;
+        BigDecimal calculatedEstimatedReturn = BigDecimal.ZERO;
         int sequenceOrder = 1;
 
         for (BundleApplicationRequest.BundleFDItem item : request.getFdItems()) {
@@ -515,16 +588,11 @@ public class FDAccountService {
                 throw new IllegalArgumentException("Co-owner name is required when CO-OWNER is selected");
             }
 
-            java.math.BigDecimal rate;
-            try {
-                rate = rateService.determineFinalRate(
-                        item.getProductCode(), customerId,
-                        termMonthsInt, item.getPrincipalAmount());
-            } catch (Exception e) {
-                // Fallback to product's max rate if rate service fails
-                System.err.println("Rate service failed for bundle item, using fallback: " + e.getMessage());
-                rate = product.getMaxRate() != null ? product.getMaxRate() : new java.math.BigDecimal("7.0");
-            }
+            BigDecimal rate = rateService.determineFinalRate(
+                    item.getProductCode(), customerId, termMonthsInt, item.getPrincipalAmount());
+            calculatedTotalAmount = calculatedTotalAmount.add(item.getPrincipalAmount());
+            calculatedEstimatedReturn = calculatedEstimatedReturn.add(calculateMaturityEstimate(
+                    item.getPrincipalAmount(), rate, termMonthsInt, product.getCompoundingFrequency()));
 
             String accountNo = accountNumberGenerator.generate("DEFAULT");
 
@@ -577,6 +645,25 @@ public class FDAccountService {
 
             fdRepository.saveAndFlush(fd);
 
+            if (item.getNominees() != null && !item.getNominees().isEmpty()) {
+                for (FDApplicationRequest.NomineeDTO nomineeDto : item.getNominees()) {
+                    Nominee nominee = new Nominee();
+                    nominee.setFdAccountNo(accountNo);
+                    nominee.setNomineeName(nomineeDto.getName());
+                    nominee.setNomineeRelation(nomineeDto.getRelation());
+                    nomineeRepository.save(nominee);
+                }
+                fd.setNomineeName(item.getNominees().get(0).getName());
+                fd.setNomineeRelation(item.getNominees().get(0).getRelation());
+                fdRepository.save(fd);
+            } else if (item.getNomineeName() != null && !item.getNomineeName().isBlank()) {
+                Nominee nominee = new Nominee();
+                nominee.setFdAccountNo(accountNo);
+                nominee.setNomineeName(item.getNomineeName());
+                nominee.setNomineeRelation(item.getNomineeRelation());
+                nomineeRepository.save(nominee);
+            }
+
             if (createdPublisher != null) createdPublisher.publishStatus(fd, username);
 
             // Create bundle item record
@@ -594,18 +681,42 @@ public class FDAccountService {
 
         // Build response
         BundleApplicationResponse response = new BundleApplicationResponse();
+        bundle.setTotalAmount(calculatedTotalAmount);
+        bundle.setEstimatedReturn(calculatedEstimatedReturn);
+        bundleApplicationRepository.save(bundle);
         response.setBundleId(bundleId);
         response.setCustomerId(customerId);
         response.setBundleName(request.getBundleName());
         response.setBundleDescription(request.getBundleDescription());
-        response.setTotalAmount(request.getTotalAmount());
-        response.setEstimatedReturn(request.getEstimatedReturn());
+        response.setTotalAmount(calculatedTotalAmount);
+        response.setEstimatedReturn(calculatedEstimatedReturn);
         response.setStatus("PENDING");
         response.setApprovalStatus("PENDING_APPROVAL");
         response.setCreatedAt(bundle.getCreatedAt());
         response.setFdItems(fdSummaries);
 
         return response;
+    }
+
+    private BigDecimal calculateMaturityEstimate(BigDecimal principal, BigDecimal annualRate, int termMonths,
+                                                 String configuredFrequency) {
+        String frequency = configuredFrequency == null ? "" : configuredFrequency.trim().toUpperCase();
+        int compoundsPerYear = switch (frequency) {
+            case "ANNUAL", "ANNUALLY", "YEARLY", "ON_MATURITY" -> 1;
+            case "SEMI_ANNUAL", "SEMI-ANNUAL", "HALF_YEARLY" -> 2;
+            case "MONTHLY" -> 12;
+            case "DAILY" -> 365;
+            case "QUARTERLY" -> 4;
+            default -> {
+                try { yield Integer.parseInt(frequency); }
+                catch (RuntimeException ex) { throw new IllegalArgumentException("Unsupported compounding frequency: " + configuredFrequency); }
+            }
+        };
+        if (compoundsPerYear <= 0) throw new IllegalArgumentException("Compounding frequency must be positive");
+        double periods = compoundsPerYear * termMonths / 12.0;
+        double ratePerPeriod = annualRate.doubleValue() / (100.0 * compoundsPerYear);
+        return BigDecimal.valueOf(principal.doubleValue() * Math.pow(1.0 + ratePerPeriod, periods))
+                .setScale(2, java.math.RoundingMode.HALF_UP);
     }
 
     private void requireSeniorEligibility(String productCode, Integer applicantAge) {
@@ -629,6 +740,17 @@ public class FDAccountService {
             throw new IllegalArgumentException("Rejection reason is required when action is REJECT");
         }
 
+        List<BundleItem> bundleItems = bundleItemRepository.findByBundleId(bundleId);
+        if ("REJECT".equalsIgnoreCase(action)) {
+            boolean containsActiveAccount = bundleItems.stream()
+                    .map(item -> fdRepository.findById(item.getFdAccountNo())
+                            .orElseThrow(() -> new IllegalStateException("Bundle references missing FD account: " + item.getFdAccountNo())))
+                    .anyMatch(fd -> "ACTIVE".equals(fd.getStatus()) || "APPROVED".equals(fd.getApprovalStatus()));
+            if (containsActiveAccount) {
+                throw new IllegalArgumentException("This bundle contains an already-active FD and cannot be rejected as a whole");
+            }
+        }
+
         LocalDateTime now = today().atTime(java.time.LocalTime.now(java.time.ZoneId.of("Asia/Kolkata")));
         bundle.setApprovedBy(approvedBy);
         bundle.setApprovedAt(now);
@@ -647,7 +769,6 @@ public class FDAccountService {
         bundleApplicationRepository.save(bundle);
 
         // Update all FD accounts in the bundle
-        List<BundleItem> bundleItems = bundleItemRepository.findByBundleId(bundleId);
         for (BundleItem item : bundleItems) {
             FixedDepositAccount fd = fdRepository.findById(item.getFdAccountNo())
                     .orElseThrow(() -> new IllegalArgumentException("FD account not found: " + item.getFdAccountNo()));
@@ -656,16 +777,20 @@ public class FDAccountService {
             fd.setApprovedAt(now);
 
             if ("APPROVE".equalsIgnoreCase(action)) {
+                boolean alreadyApproved = "ACTIVE".equals(fd.getStatus()) && "APPROVED".equals(fd.getApprovalStatus());
                 fd.setStatus("ACTIVE");
                 fd.setApprovalStatus("APPROVED");
-                fd.setMaturityDate(today().plusMonths(fd.getTenureMonths()));
-                fd.setCreatedAt(now);
+                if (!alreadyApproved) {
+                    fd.setMaturityDate(today().plusMonths(fd.getTenureMonths()));
+                    fd.setCreatedAt(now);
 
-                // Record the initial deposit transaction and publish FdCreated event
-                fdRepository.flush();
-                fdTransactionService.recordInitialDeposit(fd, approvedBy);
-                if (createdPublisher != null) {
-                    createdPublisher.publish(fd, approvedBy);
+                    // Record the opening deposit once and publish creation only
+                    // for children that were still awaiting approval.
+                    fdRepository.flush();
+                    fdTransactionService.recordInitialDeposit(fd, approvedBy);
+                    if (createdPublisher != null) {
+                        createdPublisher.publish(fd, approvedBy);
+                    }
                 }
             } else if ("REJECT".equalsIgnoreCase(action)) {
                 fd.setStatus("REJECTED");
@@ -680,7 +805,17 @@ public class FDAccountService {
 
     @Transactional(readOnly = true)
     public List<BundleApplication> getPendingBundles() {
-        return bundleApplicationRepository.findByApprovalStatus("PENDING_APPROVAL");
+        return bundleApplicationRepository.findByApprovalStatus("PENDING_APPROVAL").stream()
+                .filter(bundle -> {
+                    List<FixedDepositAccount> accounts = getBundleAccounts(bundle.getBundleId());
+                    // A bundle remains in the review queue only while all of its
+                    // member applications are still awaiting a decision. This
+                    // prevents individually approved or rejected FDs from being
+                    // presented for a second bundle-level decision.
+                    return !accounts.isEmpty() && accounts.stream()
+                            .allMatch(fd -> "PENDING_APPROVAL".equalsIgnoreCase(fd.getApprovalStatus()));
+                })
+                .toList();
     }
 
     @Transactional(readOnly = true)

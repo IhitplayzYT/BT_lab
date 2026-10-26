@@ -88,16 +88,15 @@ public class ProductSecurityTest {
     }
 
     @Test
-    void testBankOfficer_CannotCreateProduct_Returns403() throws Exception {
-        // BANK_OFFICER cannot create product; creation is restricted to ADMIN
+    void testBankOfficer_CanCreateProduct_Returns201() throws Exception {
+        // ProductController allows BANK_OFFICER and ADMIN to create products.
         String token = com.bank.product.TestTokens.token("officer_sarah", List.of("BANK_OFFICER"));
 
         mockMvc.perform(post("/api/product")
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(validRequest)))
-                .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.errorCode").value("FORBIDDEN"));
+                .andExpect(status().isCreated());
     }
 
     @Test

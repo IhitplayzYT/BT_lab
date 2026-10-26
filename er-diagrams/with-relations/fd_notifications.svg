@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1222" height="582" viewBox="0 0 1222 582">
+<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#596579"/></marker></defs>
+<rect width="100%" height="100%" fill="#f5f7fb"/>
+<text x="36" y="48" font-family="Arial,sans-serif" font-size="27" font-weight="700" fill="#17233b">fd_notifications — notification service</text>
+<text x="36" y="75" font-family="Arial,sans-serif" font-size="13" fill="#58677e">1:1 when child key is unique, otherwise 1:N · solid = declared FK · dashed = inferred logical ID/code reference</text>
+<path d="M 836.0 182.0 C 665.0 182.0, 557.0 340.0, 386.0 340.0" fill="none" stroke="#9b5d17" stroke-width="2.2" stroke-dasharray="7 5" marker-end="url(#arrow)" opacity=".9"><title>notification_contacts.customer_id references External: banking_technology_lab.customer_profile.customer_id; parent:child cardinality 1:1</title></path>
+<text x="816.0" y="175.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="#9b5d17" stroke="#fff" stroke-width="4" paint-order="stroke">1</text>
+<text x="406.0" y="333.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="#9b5d17" stroke="#fff" stroke-width="4" paint-order="stroke">1</text>
+<path d="M 436.0 373.0 C 417.0 373.0, 405.0 340.0, 386.0 340.0" fill="none" stroke="#9b5d17" stroke-width="2.2" stroke-dasharray="7 5" marker-end="url(#arrow)" opacity=".9"><title>notifications_log.customer_id references External: banking_technology_lab.customer_profile.customer_id; parent:child cardinality 1:N</title></path>
+<text x="416.0" y="366.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="#9b5d17" stroke="#fff" stroke-width="4" paint-order="stroke">N</text>
+<text x="406.0" y="333.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="#9b5d17" stroke="#fff" stroke-width="4" paint-order="stroke">1</text>
+<path d="M 786.0 373.0 C 805.0 373.0, 817.0 340.0, 836.0 340.0" fill="none" stroke="#9b5d17" stroke-width="2.2" stroke-dasharray="7 5" marker-end="url(#arrow)" opacity=".9"><title>notifications_log.fd_account_no references External: banking_technology_lab.fd_accounts.fd_account_no; parent:child cardinality 1:N</title></path>
+<text x="806.0" y="366.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="#9b5d17" stroke="#fff" stroke-width="4" paint-order="stroke">N</text>
+<text x="816.0" y="333.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="#9b5d17" stroke="#fff" stroke-width="4" paint-order="stroke">1</text>
+<rect x="36" y="100" width="350" height="164" rx="8" fill="white" stroke="#8290a6" stroke-width="1.2"/>
+<path d="M44,100 h334 q8,0 8,8 v30 h-350 v-30 q0,-8 8,-8" fill="#e6edfa" stroke="none"/>
+<text x="49" y="123" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#182844">event_outbox</text>
+<text x="49" y="150" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#24334d">PK  event_id</text>
+<text x="374" y="150" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(36)</text>
+<text x="49" y="172" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">routing_key</text>
+<text x="374" y="172" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(100)</text>
+<text x="49" y="194" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">payload</text>
+<text x="374" y="194" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">TEXT</text>
+<text x="49" y="216" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">created_at</text>
+<text x="374" y="216" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">TIMESTAMP</text>
+<text x="49" y="238" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">published_at</text>
+<text x="374" y="238" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">TIMESTAMP</text>
+<rect x="436" y="100" width="350" height="76" rx="8" fill="white" stroke="#8290a6" stroke-width="1.2"/>
+<path d="M444,100 h334 q8,0 8,8 v30 h-350 v-30 q0,-8 8,-8" fill="#e6edfa" stroke="none"/>
+<text x="449" y="123" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#182844">consumed_events</text>
+<text x="449" y="150" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#24334d">PK  event_id</text>
+<text x="774" y="150" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(36)</text>
+<rect x="836" y="100" width="350" height="164" rx="8" fill="white" stroke="#8290a6" stroke-width="1.2"/>
+<path d="M844,100 h334 q8,0 8,8 v30 h-350 v-30 q0,-8 8,-8" fill="#e6edfa" stroke="none"/>
+<text x="849" y="123" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#182844">notification_contacts</text>
+<text x="849" y="150" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#24334d">PK  customer_id</text>
+<text x="1174" y="150" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(20)</text>
+<text x="849" y="172" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">full_name</text>
+<text x="1174" y="172" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(255)</text>
+<text x="849" y="194" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">email</text>
+<text x="1174" y="194" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(100)</text>
+<text x="849" y="216" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">phone</text>
+<text x="1174" y="216" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(20)</text>
+<text x="849" y="238" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">updated_at</text>
+<text x="1174" y="238" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">TIMESTAMP</text>
+<rect x="436" y="214" width="350" height="318" rx="8" fill="white" stroke="#8290a6" stroke-width="1.2"/>
+<path d="M444,214 h334 q8,0 8,8 v30 h-350 v-30 q0,-8 8,-8" fill="#e6edfa" stroke="none"/>
+<text x="449" y="237" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#182844">notifications_log</text>
+<text x="449" y="264" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#24334d">PK  id</text>
+<text x="774" y="264" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">BIGINT</text>
+<text x="449" y="286" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">event_id</text>
+<text x="774" y="286" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(36)</text>
+<text x="449" y="308" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">event_type</text>
+<text x="774" y="308" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(50)</text>
+<text x="449" y="330" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">REF  customer_id</text>
+<text x="774" y="330" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(20)</text>
+<text x="449" y="352" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">REF  fd_account_no</text>
+<text x="774" y="352" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(20)</text>
+<text x="449" y="374" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">channel</text>
+<text x="774" y="374" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(20)</text>
+<text x="449" y="396" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">recipient</text>
+<text x="774" y="396" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(255)</text>
+<text x="449" y="418" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">subject</text>
+<text x="774" y="418" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(255)</text>
+<text x="449" y="440" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">body</text>
+<text x="774" y="440" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">LONGTEXT</text>
+<text x="449" y="462" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">status</text>
+<text x="774" y="462" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(20)</text>
+<text x="449" y="484" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">error</text>
+<text x="774" y="484" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(500)</text>
+<text x="449" y="506" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">created_at</text>
+<text x="774" y="506" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">TIMESTAMP</text>
+<rect x="36" y="302" width="350" height="76" rx="8" fill="white" stroke="#8290a6" stroke-width="1.2"/>
+<path d="M44,302 h334 q8,0 8,8 v30 h-350 v-30 q0,-8 8,-8" fill="#e6edfa" stroke="none"/>
+<text x="49" y="325" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#182844">External: banking_technology_lab.customer_profile</text>
+<text x="49" y="352" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#24334d">PK  customer_id</text>
+<text x="374" y="352" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">EXTERNAL KEY</text>
+<rect x="836" y="302" width="350" height="76" rx="8" fill="white" stroke="#8290a6" stroke-width="1.2"/>
+<path d="M844,302 h334 q8,0 8,8 v30 h-350 v-30 q0,-8 8,-8" fill="#e6edfa" stroke="none"/>
+<text x="849" y="325" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#182844">External: banking_technology_lab.fd_accounts</text>
+<text x="849" y="352" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#24334d">PK  fd_account_no</text>
+<text x="1174" y="352" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">EXTERNAL KEY</text>
+</svg>

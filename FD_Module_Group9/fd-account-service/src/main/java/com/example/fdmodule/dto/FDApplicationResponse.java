@@ -5,6 +5,7 @@ import java.util.List;
 public class FDApplicationResponse {
     private String fdAccountNo;
     private String customerId;
+    private Long userId;
     private String productCode;
     private String principalAmount;
     private String interestRate;
@@ -62,6 +63,8 @@ public class FDApplicationResponse {
 
     public String getFdAccountNo() { return fdAccountNo; }
     public String getCustomerId() { return customerId; }
+    public Long getUserId() { return userId; }
+    public void setUserId(Long userId) { this.userId = userId; }
     public String getProductCode() { return productCode; }
     public String getPrincipalAmount() { return principalAmount; }
     public String getInterestRate() { return interestRate; }

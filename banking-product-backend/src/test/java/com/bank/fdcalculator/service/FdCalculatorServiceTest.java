@@ -86,11 +86,13 @@ public class FdCalculatorServiceTest {
     void testCategoryStackingUnderCap() {
         // Request: baseRate=5.0, categories=["EMPLOYEE"] -> +0.5%
         // Effective rate should be 5.5%
+        mockCatalogProduct("FD-CATEGORY-TEST", 5.0, 7.0,
+                new RateVariationDTO("EMPLOYEE", 0.5));
         FdCalculationRequestDTO request = new FdCalculationRequestDTO(
                 BigDecimal.valueOf(100000),
                 new FdTermDTO(2, "years"),
                 5.0,
-                null,
+                "FD-CATEGORY-TEST",
                 List.of("EMPLOYEE"),
                 "SIMPLE",
                 null
@@ -109,11 +111,14 @@ public class FdCalculatorServiceTest {
         // Request: baseRate=5.0, categories=["SENIOR_CITIZEN", "SENIOR_CITIZEN", "EMPLOYEE"]
         // Additions: 1.0 + 1.0 + 0.5 = 2.5. Cap is 2.0.
         // Effective rate: 5.0 + 2.0 = 7.0%
+        mockCatalogProduct("FD-CATEGORY-TEST", 5.0, 7.0,
+                new RateVariationDTO("SENIOR_CITIZEN", 1.0),
+                new RateVariationDTO("EMPLOYEE", 0.5));
         FdCalculationRequestDTO request = new FdCalculationRequestDTO(
                 BigDecimal.valueOf(100000),
                 new FdTermDTO(1, "years"),
                 5.0,
-                null,
+                "FD-CATEGORY-TEST",
                 List.of("SENIOR_CITIZEN", "SENIOR_CITIZEN", "EMPLOYEE"),
                 "SIMPLE",
                 null
@@ -157,6 +162,15 @@ public class FdCalculatorServiceTest {
         assertEquals(0, response.getMaturityAmount().compareTo(BigDecimal.valueOf(107200.00)));
     }
 
+    private void mockCatalogProduct(String code, double minRate, double maxRate,
+                                    RateVariationDTO... variations) {
+        ProductResponseDTO product = new ProductResponseDTO();
+        product.setProductCode(code);
+        product.setRateLimit(new RateLimitDTO(minRate, maxRate));
+        product.setRateVariations(List.of(variations));
+        Mockito.when(productClient.getProduct(code)).thenReturn(product);
+    }
+
     @Test
     void testInvalidPrincipalException() {
         FdCalculationRequestDTO request = new FdCalculationRequestDTO(
@@ -176,11 +190,13 @@ public class FdCalculatorServiceTest {
 
     @Test
     void testUnknownCategoryException() {
+        mockCatalogProduct("FD-UNKNOWN-CATEGORY-TEST", 6.0, 8.0,
+                new RateVariationDTO("SENIOR_CITIZEN", 1.0));
         FdCalculationRequestDTO request = new FdCalculationRequestDTO(
                 BigDecimal.valueOf(100000),
                 new FdTermDTO(12, "months"),
                 6.5,
-                null,
+                "FD-UNKNOWN-CATEGORY-TEST",
                 List.of("INVALID_CATEGORY_XYZ"),
                 "SIMPLE",
                 null

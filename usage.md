@@ -1,6 +1,6 @@
 # Banking Technology Lab - Usage Guide
 
-> Startup scope: root `docker-compose.yml` starts six Java services; `statement-service` is separate. Group 9 and auth Docker images copy prebuilt JARs. Use the full Maven build in [usage.md](usage.md#building-jars), especially on a fresh checkout. `init_all_services.sh` rebuilds auth, product, calculator, account and notification modules but omits the batch JAR needed by Compose. Rebuilding an image alone does not compile changed Group 9/auth Java code.
+> Startup scope: root `docker-compose.yml` starts seven Java services, including statement projection. Group 9 and auth Docker images copy prebuilt JARs. Use the full Maven build below, especially on a fresh checkout. `init_all_services.sh` builds the Group 9 account, batch, notification and statement JARs before Compose starts. Rebuilding an image alone does not compile changed Group 9/auth Java code.
 
 ## Overview
 
@@ -507,7 +507,7 @@ The first command installs the shared `security-common` library. The Group 9 rea
 
 There is no root Maven reactor. Local `spring-boot:run` commands must be run from the relevant module directory, in separate terminals; first install shared libraries (`mvn -f FD_Module_Group9/pom.xml -pl event-common -am install` for Group 9 consumers). Configure DB credentials, JWT secret/issuer, dependent service URLs and Kafka first. Against the root Docker broker, a host process must use `localhost:19092`.
 
-The statement service has separate [startup instructions](FD_Module_Group9/statement-service/backend.md#starting-the-service).
+Statement projection starts with the root Compose stack on port 8082. For host-based development, use the [statement service instructions](FD_Module_Group9/statement-service/backend.md#starting-the-service).
 
 ## API Documentation
 

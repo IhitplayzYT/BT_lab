@@ -1,55 +1,56 @@
-# Fixed Deposit Module — Group 9
+# Fixed Deposit Account and Operations Platform
 
-The FD module implements account applications and approval, deposits and GL transactions, daily interest, maturity, premature withdrawal, reports and Kafka notifications. The current build uses **Java 21 and Spring Boot 3.3.4**.
+This Java 21 / Spring Boot 3.3.4 Maven reactor contains the FD account service and supporting event-driven services. Its core account service owns application and account lifecycle data, ledger transactions, interest processing, business-date controls, maturity and withdrawal handling, reports and charts.
 
-## Services and shared libraries
+## Services
 
-| Component | Port | Database | Purpose |
-| --- | --- | --- | --- |
-| fd-account-service | 8086 | banking_technology_lab | Accounts, ledger, lifecycle, reports and business clock |
-| interest-batch-service | 8081 | fd_batch | Daily 03:00 IST accrual command and admin requests |
-| notification-service | 8083 | fd_notifications | Lifecycle email and WhatsApp notifications |
-| statement-service | 8082 | fd_statements | Interest-event statement projection; started separately |
-| event-common | — | — | Event envelope, outbox relay, retries and dead-letter topics |
-| ../Auth_Sec/security-common | — | — | Shared JWT validation and token issuance utilities |
+| Module | Port | Database/schema | Responsibility |
+|---|---:|---|---|
+| `fd-account-service` | 8086 | `banking_technology_lab` | Applications, bundles, accounts, approval, ledger, interest controls, clock, maturity, reports/charts |
+| `interest-batch-service` | 8081 | `fd_batch` | Admin batch requests and scheduled interest processing coordination |
+| `notification-service` | 8083 | `fd_notifications` | Notification history and event-driven email/WhatsApp delivery |
+| `statement-service` | 8082 | `fd_statements` | Kafka-backed statement projection and statement/summary queries |
+| `event-common` | — | — | Event envelope, transactional outbox relay, delivery retries and deduplication support |
 
-Authentication is implemented in `../Auth_Sec/auth-service` on port 8090 with persistent `auth_db` users and refresh tokens. Product & Pricing runs on 8080 and the dedicated calculator on 8084. Account creation fetches product rules/rates over HTTP; integration is implemented. The Angular UI is in `../uno-frontend (1)/uno-frontend` and uses Bearer JWTs.
+The root Compose file starts all four services plus MySQL, Kafka and Zookeeper. Auth on 8090 and product/catalog on 8080 are neighboring modules outside this reactor. The main Angular UI is in `../uno-frontend (1)/uno-frontend`.
+
+## Main API groups
+
+- `/api/fd/account/**`: application, bundle application, officer approval, account details and transactions.
+- `/api/fd/interest/**`: quotes, account interest views, and admin interest-mode settings.
+- `/api/fd/clock/**` and `/api/fd/maturity/**`: business date and maturity processing controls.
+- `/api/fd/ledger/**`, `/api/fd/journal/**`: ledger and journal queries.
+- `/api/report/**` and `/api/charts/**`: reports, exports and dashboard summaries.
+- `/api/admin/interest-batches/**` (port 8081): submit and inspect admin batch requests.
+- `/api/notifications/**` (port 8083): notification history.
+- `/api/statements/**` (port 8082): account statements and aggregate summaries.
+
+Business endpoints generally require JWT bearer authentication and role checks. Account ownership is enforced for customer-facing reads and operations. See `docs/API_CONTRACTS.md`, `docs/EVENT_CONTRACTS.md`, and `endpoints.md` at project root for more details.
+
+## Business behavior and boundaries
+
+- Customers submit individual FD applications or multi-FD bundle applications. Officers/admins review pending requests; bundle approval is a bundle-level workflow.
+- Product eligibility and rate rules are obtained from Product & Pricing. Initial deposits create transaction/GL entries.
+- Daily interest accrual uses the account service's business date and configured calculation mode. Rate quotes are estimates; actual daily accrual can differ.
+- Maturity processing settles eligible accounts idempotently under database locking. Premature withdrawal applies configured product rules and records accounting entries; no external payment transfer is implemented.
+- Account mutations and event-outbox rows are committed transactionally. Kafka consumers are at-least-once and use deduplication where configured; failed messages may be routed to dead-letter topics.
+- Statement rows are built from events. Delivery/processing latency means a statement projection can lag the account transaction.
+- Clock advance is a development/demo feature and requires `APP_TIME_TRAVEL_ENABLED`. It updates the business clock and triggers applicable scheduled processing; do not use it to model real settlement.
 
 ## Build and run
 
-From the **project root**, follow [usage.md](../usage.md#building-jars) to install Auth_Sec shared libraries, build the product/calculator modules and package the Group 9 reactor. Then:
+Build the shared Auth security library and this Maven reactor following [root usage.md](../usage.md#building-jars). The Docker image copies packaged artifacts, so rebuild JARs before rebuilding affected service images.
 
 ```bash
-docker compose -f docker-compose.yml up -d --build
+mvn -f ../Auth_Sec/pom.xml -pl security-common -am install
+mvn -f pom.xml test
+docker compose -f ../docker-compose.yml up -d --build
 ```
 
-The Group 9 Dockerfile copies prebuilt JARs from `target`, so rebuild those before rebuilding images after Java changes. Root Compose uses MySQL 8.0 and Confluent Platform Kafka image 7.5.0 with ZooKeeper. Host Kafka clients use `localhost:19092`; containers use `kafka:9092`.
+For the full stack, run the Compose command from the project root after all JARs are packaged. Root Compose exposes Kafka to host tools at `localhost:19092`; containers use `kafka:9092`. MySQL schema initialization runs only on new database volumes. Existing installations require the relevant SQL migrations under `fd-account-service/sql/`.
 
-The root stack does not start statement-service. Follow its [startup guide](statement-service/backend.md#starting-the-service). The older `compose.yaml` in this directory has a `full` profile pointing to a removed local auth-service Docker target; it is not a working replacement for the root stack. Older PowerShell/demo/dashboard scripts also require adaptation to the integrated layout.
+## Verification
 
-## Domain behavior
+Run `mvn -B test` from this directory after installing `Auth_Sec/security-common`. Verification on 26 October 2026 passed 139 tests across the reactor: event-common 8, account 80, batch 8, notification 34, and statement 9. Coverage includes outbox/event behavior, account/application/interest/maturity/withdrawal/security/report flows, statement projection, batch and notification services. Tests use configured test profiles and do not certify a separately deployed Kafka/MySQL environment.
 
-- Customer applications await staff approval. Direct staff creation and approved accounts record an initial DEPOSIT transaction.
-- Daily accrual uses ACTUAL/365 and six-decimal intermediate amounts. Financial GL postings occur on capitalization or payout.
-- Maturity runs at 04:00 IST, or through an ADMIN endpoint. It settles due active accounts once under row locks.
-- Early closure uses the accrued balance and product penalty rules. Settlement is represented by GL entries; no external savings/payment transfer is implemented.
-- State changes and events share a transaction through `event_outbox`. Delivery is at least once with consumer deduplication.
-- Clock advance triggers accrual and maturity. The current controller permits CUSTOMER, BANK_OFFICER and ADMIN; the feature must be enabled. Reset changes the offset, not historical financial postings.
-
-## Documentation
-
-- [Account implementation](fd-account-service/backend.md)
-- [Batch implementation](interest-batch-service/backend.md)
-- [Statements](statement-service/backend.md)
-- [Notifications](notification-service/backend.md)
-- [API contracts](docs/API_CONTRACTS.md)
-- [Event contracts](docs/EVENT_CONTRACTS.md)
-- [Architecture and deployment](docs/ARCHITECTURE_AND_DEPLOYMENT.md)
-- [Handover](docs/HANDOVER.md)
-- [Historical Lab 16 handover](fd-account-service/docs/LAB16_HANDOVER.md)
-
-## Verification and limits
-
-Run `mvn -f FD_Module_Group9/pom.xml verify` from the project root after installing the shared security dependency. Older reports' 148-test and 84-check totals describe previous snapshots, not verified results for the present worktree.
-
-Account-number generation uses an in-memory sequence and database collision checks; this is not a distributed sequence allocator. Notification provider calls are not atomic with database commits, and the accrual email batch is held in memory. See the notification guide for delivery/restart limits. Azure deployment remains a proposal.
+See each service's `backend.md` for configuration and implementation notes. The older nested `compose.yaml`, lab scripts, and handover notes are historical/supporting material; root `docker-compose.yml` is the integrated stack entry point.

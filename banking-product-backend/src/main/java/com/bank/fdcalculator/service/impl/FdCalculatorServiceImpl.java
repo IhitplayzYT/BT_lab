@@ -17,7 +17,9 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -26,16 +28,6 @@ public class FdCalculatorServiceImpl implements FdCalculatorService {
 
     private final ProductClient productClient;
     private final FdCalculationRepository fdCalculationRepository;
-
-    // Configurable stacking cap limit
-    private static final double CATEGORY_ADDITION_CAP = 2.0;
-
-    // Default rates matrix fallback
-    private static final Map<String, Double> DEFAULT_CATEGORIES = Map.of(
-            "SENIOR_CITIZEN", 1.0,
-            "EMPLOYEE", 0.5,
-            "CORPORATE", 0.2
-    );
 
     private static final Map<String, String> CATEGORY_NAMES = Map.of(
             "SENIOR_CITIZEN", "Senior Citizen",
@@ -55,23 +47,16 @@ public class FdCalculatorServiceImpl implements FdCalculatorService {
         ProductResponseDTO fetchedProduct = null;
 
         if (dto.getProductCode() != null && !dto.getProductCode().trim().isEmpty()) {
-            try {
-                fetchedProduct = productClient.getProduct(dto.getProductCode());
-                // Fallback to minimum base rate from product limits
-                double minimumRate = (fetchedProduct.getRateLimit() != null && fetchedProduct.getRateLimit().getMin() != null)
-                        ? fetchedProduct.getRateLimit().getMin() : 0.0;
-                double maximumRate = (fetchedProduct.getRateLimit() != null && fetchedProduct.getRateLimit().getMax() != null)
-                        ? fetchedProduct.getRateLimit().getMax() : minimumRate;
-                baseRate = dto.getBaseRate() == null ? minimumRate : dto.getBaseRate();
-                if (baseRate < minimumRate || baseRate > maximumRate) {
-                    throw new InvalidCalculationInputException("Base rate must be within the product rate limits");
-                }
-            } catch (Exception e) {
-                log.error("Failed to retrieve product details for productCode: {}. Error: {}", dto.getProductCode(), e.getMessage());
-                if (dto.getBaseRate() == null) {
-                    throw new InvalidCalculationInputException("Product code " + dto.getProductCode() + " not found, and no baseRate was provided.");
-                }
-                baseRate = dto.getBaseRate();
+            fetchedProduct = productClient.getProduct(dto.getProductCode());
+            if (fetchedProduct.getRateLimit() == null || fetchedProduct.getRateLimit().getMin() == null
+                    || fetchedProduct.getRateLimit().getMax() == null) {
+                throw new InvalidCalculationInputException("Product rate limits are not configured");
+            }
+            double minimumRate = fetchedProduct.getRateLimit().getMin();
+            double maximumRate = fetchedProduct.getRateLimit().getMax();
+            baseRate = dto.getBaseRate() == null ? minimumRate : dto.getBaseRate();
+            if (baseRate < minimumRate || baseRate > maximumRate) {
+                throw new InvalidCalculationInputException("Base rate must be within the product rate limits");
             }
         } else if (dto.getBaseRate() != null) {
             baseRate = dto.getBaseRate();
@@ -100,9 +85,10 @@ public class FdCalculatorServiceImpl implements FdCalculatorService {
                     }
                 }
 
-                // Fallback to default static rate matrix
                 if (modifier == null) {
-                    modifier = DEFAULT_CATEGORIES.get(normalized);
+                    if ("GENERAL".equals(normalized)) modifier = 0.0;
+                    else throw new UnknownCategoryException("Customer category " + category
+                            + " is not configured for product " + dto.getProductCode());
                 }
 
                 if (modifier == null) {
@@ -113,9 +99,7 @@ public class FdCalculatorServiceImpl implements FdCalculatorService {
             }
         }
 
-        // Apply clamping cap to stacked categories
-        double clampedAdditions = Math.min(categoryAdditions, CATEGORY_ADDITION_CAP);
-        double effectiveRate = baseRate + clampedAdditions;
+        double effectiveRate = baseRate + categoryAdditions;
         if (fetchedProduct != null && fetchedProduct.getRateLimit() != null) {
             if (fetchedProduct.getRateLimit().getMin() != null) {
                 effectiveRate = Math.max(effectiveRate, fetchedProduct.getRateLimit().getMin());
@@ -130,38 +114,19 @@ public class FdCalculatorServiceImpl implements FdCalculatorService {
 
         // Determine currency
         String resolvedCurrency = dto.getCurrency();
-        String productCurrency = null;
-        if (dto.getProductCode() != null && !dto.getProductCode().isEmpty()) {
-            try {
-                ProductResponseDTO product = productClient.getProduct(dto.getProductCode());
-                if (product != null && product.getCurrency() != null) {
-                    productCurrency = product.getCurrency();
-                }
-            } catch (Exception e) {
-                log.warn("Failed to fetch product currency: {}.", e.getMessage());
-            }
-        }
+        String productCurrency = fetchedProduct != null ? fetchedProduct.getCurrency() : null;
         if (resolvedCurrency == null || resolvedCurrency.isEmpty()) {
             resolvedCurrency = productCurrency != null ? productCurrency : "INR";
         }
 
-        // 5. Apply formulas with BigDecimal precision, managing conversion if needed
+        // 5. Apply the product rate and configured frequency in product currency.
         BigDecimal originalPrincipal = dto.getPrincipal();
         BigDecimal activeCalculationPrincipal = originalPrincipal;
-        BigDecimal exchangeRate = BigDecimal.valueOf(96.0); // 1 USD = 96 INR
         boolean isConverted = false;
         Double conversionRateValue = null;
 
         if (productCurrency != null && !productCurrency.equalsIgnoreCase(resolvedCurrency)) {
-            isConverted = true;
-            conversionRateValue = 96.0;
-            if ("USD".equalsIgnoreCase(resolvedCurrency) && "INR".equalsIgnoreCase(productCurrency)) {
-                // Calculation is USD, product is INR. Convert input from USD to INR
-                activeCalculationPrincipal = activeCalculationPrincipal.multiply(exchangeRate);
-            } else if ("INR".equalsIgnoreCase(resolvedCurrency) && "USD".equalsIgnoreCase(productCurrency)) {
-                // Calculation is INR, product is USD. Convert input from INR to USD
-                activeCalculationPrincipal = activeCalculationPrincipal.divide(exchangeRate, 10, RoundingMode.HALF_UP);
-            }
+            throw new InvalidCalculationInputException("Calculation currency must match the product currency; convert the amount using a live exchange rate first.");
         }
 
         BigDecimal maturityAmount;
@@ -175,41 +140,22 @@ public class FdCalculatorServiceImpl implements FdCalculatorService {
             maturityAmount = activeCalculationPrincipal.add(interest);
         } else if ("COMPOUND".equals(interestType)) {
             // M = P * (1 + r / (n * 100))^(n * t)
-            int n = dto.getCompoundingFrequency() != null ? dto.getCompoundingFrequency() : 4; // default to quarterly
+            int n = fetchedProduct != null
+                    ? frequencyPerYear(fetchedProduct.getCompoundingFrequency())
+                    : dto.getCompoundingFrequency() != null ? dto.getCompoundingFrequency()
+                    : frequencyPerYear(null);
             if (n <= 0) {
                 throw new InvalidCalculationInputException("Compounding frequency must be greater than zero");
             }
             
-            BigDecimal rateVal = BigDecimal.valueOf(effectiveRate);
-            BigDecimal base = BigDecimal.ONE.add(
-                    rateVal.divide(BigDecimal.valueOf(n * 100), 10, RoundingMode.HALF_UP)
-            );
-            
-            int totalPeriods = (int) Math.round(n * termYears);
-            if (totalPeriods < 1) {
-                totalPeriods = 1;
-            }
-            
-            BigDecimal multiplier = base.pow(totalPeriods);
-            maturityAmount = activeCalculationPrincipal.multiply(multiplier);
+            double multiplier = Math.pow(1 + effectiveRate / (n * 100.0), n * termYears);
+            maturityAmount = BigDecimal.valueOf(activeCalculationPrincipal.doubleValue() * multiplier);
         } else {
             throw new InvalidCalculationInputException("Interest type must be either SIMPLE or COMPOUND");
         }
 
-        // Round final monetary results to 2 decimal places in calculation currency (after converting back)
         BigDecimal roundedMaturity = maturityAmount;
         BigDecimal roundedInterest;
-
-        if (isConverted) {
-            if ("USD".equalsIgnoreCase(resolvedCurrency) && "INR".equalsIgnoreCase(productCurrency)) {
-                // Convert back from INR to USD
-                roundedMaturity = roundedMaturity.divide(exchangeRate, 10, RoundingMode.HALF_UP);
-            } else if ("INR".equalsIgnoreCase(resolvedCurrency) && "USD".equalsIgnoreCase(productCurrency)) {
-                // Convert back from USD to INR
-                roundedMaturity = roundedMaturity.multiply(exchangeRate);
-            }
-        }
-        
         roundedMaturity = roundedMaturity.setScale(2, RoundingMode.HALF_UP);
         roundedInterest = roundedMaturity.subtract(originalPrincipal).setScale(2, RoundingMode.HALF_UP);
 
@@ -264,14 +210,15 @@ public class FdCalculatorServiceImpl implements FdCalculatorService {
         basicRequest.setCompoundingFrequency(dto.getCompoundingFrequency());
         
         FdCalculationResponseDTO basicResponse = calculateMaturity(basicRequest);
+        ProductResponseDTO product = productClient.getProduct(dto.getProductCode());
         
         // 4. Calculate detailed charges
         List<ChargeItemDTO> charges = new ArrayList<>();
         BigDecimal grossInterest = basicResponse.getInterestEarned();
         BigDecimal totalDeductions = BigDecimal.ZERO;
         
-        // Tax Deduction (TDS) - 10% for interest above ₹40,000 (₹50,000 for senior citizens)
-        BigDecimal taxDeduction = calculateTaxDeduction(grossInterest, dto.getAge());
+        BigDecimal taxRate = decimal(product.getTaxRate());
+        BigDecimal taxDeduction = grossInterest.multiply(taxRate).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
         if (taxDeduction.compareTo(BigDecimal.ZERO) > 0) {
             charges.add(new ChargeItemDTO(
                     "TDS",
@@ -279,42 +226,31 @@ public class FdCalculatorServiceImpl implements FdCalculatorService {
                     "Tax Deducted at Source",
                     taxDeduction,
                     "PERCENTAGE",
-                    BigDecimal.valueOf(10.0),
+                    taxRate,
                     true
             ));
             totalDeductions = totalDeductions.add(taxDeduction);
         }
         
-        // Service Fees - flat fee based on principal amount
-        BigDecimal serviceFee = calculateServiceFee(dto.getPrincipal());
-        charges.add(new ChargeItemDTO(
-                "SERVICE_FEE",
-                "SERVICE",
-                "Account maintenance and processing fees",
-                serviceFee,
-                "FLAT",
-                null,
-                true
-        ));
-        totalDeductions = totalDeductions.add(serviceFee);
-        
-        // Documentation Charges - flat fee
-        BigDecimal documentationFee = BigDecimal.valueOf(250.00);
-        charges.add(new ChargeItemDTO(
-                "DOCUMENTATION_FEE",
-                "DOCUMENTATION",
-                "Documentation and processing charges",
-                documentationFee,
-                "FLAT",
-                null,
-                true
-        ));
-        totalDeductions = totalDeductions.add(documentationFee);
+        BigDecimal configuredProcessingFee = configuredCharge(product, "PROCESSING_FEE", dto.getPrincipal());
+        BigDecimal processingFee = configuredProcessingFee == null ? BigDecimal.ZERO : configuredProcessingFee;
+        BigDecimal configuredServiceFee = configuredCharge(product, "SERVICE_FEE", dto.getPrincipal());
+        BigDecimal serviceFee = configuredServiceFee != null ? configuredServiceFee
+                : product.getServiceFeeRate() != null && product.getServiceFeeRate() > 0
+                ? dto.getPrincipal().multiply(decimal(product.getServiceFeeRate())).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP)
+                : decimal(product.getServiceFeeFlat());
+        BigDecimal configuredDocumentationFee = configuredCharge(product, "DOCUMENTATION_FEE", dto.getPrincipal());
+        BigDecimal documentationFee = configuredDocumentationFee != null
+                ? configuredDocumentationFee : decimal(product.getDocumentationFee());
+        addCharge(charges, "PROCESSING_FEE", "PROCESSING", "Configured processing fee", processingFee);
+        addCharge(charges, "SERVICE_FEE", "SERVICE", "Configured service fee", serviceFee);
+        addCharge(charges, "DOCUMENTATION_FEE", "DOCUMENTATION", "Configured documentation fee", documentationFee);
+        totalDeductions = totalDeductions.add(processingFee).add(serviceFee).add(documentationFee);
         
         // Premature Withdrawal Penalty (if applicable)
         if (dto.getIncludePrematureWithdrawal() != null && dto.getIncludePrematureWithdrawal()) {
-            BigDecimal prematurePenalty = calculatePrematureWithdrawalPenalty(
-                    grossInterest, dto.getPrematureWithdrawalMonths(), dto.getTerm().getValue());
+            BigDecimal penaltyRate = decimal(product.getPrematurePenaltyRate());
+            BigDecimal prematurePenalty = grossInterest.multiply(penaltyRate).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
             if (prematurePenalty.compareTo(BigDecimal.ZERO) > 0) {
                 charges.add(new ChargeItemDTO(
                         "PREMATURE_PENALTY",
@@ -322,24 +258,17 @@ public class FdCalculatorServiceImpl implements FdCalculatorService {
                         "Penalty for premature withdrawal",
                         prematurePenalty,
                         "PERCENTAGE",
-                        BigDecimal.valueOf(1.0),
+                        penaltyRate,
                         true
                 ));
                 totalDeductions = totalDeductions.add(prematurePenalty);
             }
         }
         
-        // GST on service charges (18% on service fees and documentation)
-        BigDecimal gstAmount = serviceFee.add(documentationFee).multiply(BigDecimal.valueOf(0.18));
-        charges.add(new ChargeItemDTO(
-                "GST",
-                "TAX",
-                "Goods and Services Tax on service charges",
-                gstAmount,
-                "PERCENTAGE",
-                BigDecimal.valueOf(18.0),
-                true
-        ));
+        BigDecimal gstRate = decimal(product.getGstRate());
+        BigDecimal gstAmount = processingFee.add(serviceFee).add(documentationFee)
+                .multiply(gstRate).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+        addCharge(charges, "GST", "TAX", "GST on configured service charges", gstAmount);
         totalDeductions = totalDeductions.add(gstAmount);
         
         // Calculate net interest and final maturity
@@ -362,51 +291,53 @@ public class FdCalculatorServiceImpl implements FdCalculatorService {
         );
     }
 
-    private BigDecimal calculateTaxDeduction(BigDecimal interest, Integer age) {
-        // Tax exemption threshold
-        BigDecimal threshold = (age != null && age >= 60) ? BigDecimal.valueOf(50000) : BigDecimal.valueOf(40000);
-        
-        if (interest.compareTo(threshold) <= 0) {
-            return BigDecimal.ZERO;
-        }
-        
-        // Taxable amount
-        BigDecimal taxableAmount = interest.subtract(threshold);
-        // TDS rate: 10%
-        return taxableAmount.multiply(BigDecimal.valueOf(0.10)).setScale(2, RoundingMode.HALF_UP);
+    private BigDecimal decimal(Double value) {
+        return value == null ? BigDecimal.ZERO : BigDecimal.valueOf(value);
     }
 
-    private BigDecimal calculateServiceFee(BigDecimal principal) {
-        // Service fee: 0.1% of principal, minimum ₹100, maximum ₹1000
-        BigDecimal fee = principal.multiply(BigDecimal.valueOf(0.001)).setScale(2, RoundingMode.HALF_UP);
-        fee = fee.max(BigDecimal.valueOf(100.00));
-        fee = fee.min(BigDecimal.valueOf(1000.00));
-        return fee;
+    private BigDecimal configuredCharge(ProductResponseDTO product, String type, BigDecimal principal) {
+        if (product.getChargeDetails() == null) return null;
+        Set<String> acceptedTypes = switch (type.toUpperCase(Locale.ROOT)) {
+            case "PROCESSING_FEE" -> Set.of("PROCESSING_FEE", "TRANSACTION_FEE", "DEPOSIT_FEE", "ACCOUNT_OPENING_FEE", "APPLICATION_FEE");
+            default -> Set.of(type.toUpperCase(Locale.ROOT));
+        };
+        return product.getChargeDetails().stream()
+                .filter(charge -> charge.getChargeType() != null
+                        && acceptedTypes.contains(charge.getChargeType().trim().toUpperCase(Locale.ROOT).replace(' ', '_')))
+                .findFirst()
+                .map(charge -> {
+                    BigDecimal value = decimal(charge.getChargeValue());
+                    return "percentage".equalsIgnoreCase(charge.getChargeUnit())
+                            ? principal.multiply(value).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP)
+                            : value;
+                }).orElse(null);
     }
 
-    private BigDecimal calculatePrematureWithdrawalPenalty(BigDecimal interest, Integer withdrawnMonths, Integer totalMonths) {
-        if (withdrawnMonths == null || totalMonths == null) {
-            return BigDecimal.ZERO;
-        }
-        
-        // Penalty: 1% of interest if withdrawn before 6 months, 0.5% if between 6-12 months
-        double penaltyRate = 0.0;
-        if (withdrawnMonths < 6) {
-            penaltyRate = 0.01;
-        } else if (withdrawnMonths < 12) {
-            penaltyRate = 0.005;
-        }
-        
-        return interest.multiply(BigDecimal.valueOf(penaltyRate)).setScale(2, RoundingMode.HALF_UP);
+    private void addCharge(List<ChargeItemDTO> charges, String code, String category, String description, BigDecimal amount) {
+        if (amount.signum() <= 0) return;
+        charges.add(new ChargeItemDTO(code, category, description, amount, "CONFIGURED", null, true));
+    }
+
+    private int frequencyPerYear(String frequency) {
+        if (frequency == null || frequency.isBlank()) throw new InvalidCalculationInputException("Product compounding frequency is not configured");
+        return switch (frequency.trim().toUpperCase()) {
+            case "ANNUAL", "ANNUALLY", "YEARLY", "ON_MATURITY" -> 1;
+            case "SEMI_ANNUAL", "SEMI-ANNUAL", "HALF_YEARLY" -> 2;
+            case "QUARTERLY" -> 4;
+            case "MONTHLY" -> 12;
+            case "DAILY" -> 365;
+            default -> {
+                try { yield Integer.parseInt(frequency.trim()); }
+                catch (NumberFormatException ex) { throw new InvalidCalculationInputException("Unsupported product compounding frequency"); }
+            }
+        };
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<CategoryRateDTO> getAvailableCategories() {
         List<CategoryRateDTO> categories = new ArrayList<>();
-        DEFAULT_CATEGORIES.forEach((code, rate) -> {
-            categories.add(new CategoryRateDTO(code, CATEGORY_NAMES.get(code), rate));
-        });
+        CATEGORY_NAMES.forEach((code, name) -> categories.add(new CategoryRateDTO(code, name, null)));
         return categories;
     }
 

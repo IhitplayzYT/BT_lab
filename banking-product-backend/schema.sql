@@ -25,6 +25,14 @@ CREATE TABLE IF NOT EXISTS products (
     max_withdrawal           DECIMAL(15,2) DEFAULT NULL,
     allowed_transaction_types VARCHAR(255) DEFAULT NULL,
     balance_types            VARCHAR(255) DEFAULT NULL,
+    -- Optional product-level charge configuration; a missing value means no charge.
+    tax_rate                 DECIMAL(5,2) DEFAULT NULL,
+    service_fee_rate         DECIMAL(5,2) DEFAULT NULL,
+    service_fee_flat         DECIMAL(15,2) DEFAULT NULL,
+    documentation_fee        DECIMAL(15,2) DEFAULT NULL,
+    gst_rate                 DECIMAL(5,2) DEFAULT NULL,
+    premature_penalty_rate   DECIMAL(5,2) DEFAULT NULL,
+    compounding_frequency    VARCHAR(20) DEFAULT NULL,
     -- Audit columns (exact match to specification)
     created_at               TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
     updated_at               TIMESTAMP    DEFAULT CURRENT_TIMESTAMP

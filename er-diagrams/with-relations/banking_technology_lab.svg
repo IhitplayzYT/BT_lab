@@ -1,0 +1,332 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1622" height="1198" viewBox="0 0 1622 1198">
+<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#596579"/></marker></defs>
+<rect width="100%" height="100%" fill="#f5f7fb"/>
+<text x="36" y="48" font-family="Arial,sans-serif" font-size="27" font-weight="700" fill="#17233b">banking_technology_lab — FD account service</text>
+<text x="36" y="75" font-family="Arial,sans-serif" font-size="13" fill="#58677e">1:1 when child key is unique, otherwise 1:N · solid = declared FK · dashed = inferred logical ID/code reference</text>
+<path d="M 611.0 330.0 C 611.0 574.7, 211.0 729.3, 211.0 974.0" fill="none" stroke="#9b5d17" stroke-width="2.2" stroke-dasharray="7 5" marker-end="url(#arrow)" opacity=".9"><title>customer_profile.user_id references External: auth_db.users.id; parent:child cardinality 1:N</title></path>
+<text x="620.0" y="350.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="#9b5d17" stroke="#fff" stroke-width="4" paint-order="stroke">N</text>
+<text x="220.0" y="954.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="#9b5d17" stroke="#fff" stroke-width="4" paint-order="stroke">1</text>
+<path d="M 1011.0 100.0 C 1011.0 12.6, 611.0 417.4, 611.0 330.0" fill="none" stroke="#9b5d17" stroke-width="2.2" stroke-dasharray="7 5" marker-end="url(#arrow)" opacity=".9"><title>fd_accounts.customer_id references customer_profile.customer_id; parent:child cardinality 1:N</title></path>
+<text x="1020.0" y="80.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="#9b5d17" stroke="#fff" stroke-width="4" paint-order="stroke">N</text>
+<text x="620.0" y="350.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="#9b5d17" stroke="#fff" stroke-width="4" paint-order="stroke">1</text>
+<path d="M 1186.0 622.0 C 1205.0 622.0, 1217.0 472.0, 1236.0 472.0" fill="none" stroke="#9b5d17" stroke-width="2.2" stroke-dasharray="7 5" marker-end="url(#arrow)" opacity=".9"><title>fd_accounts.bundle_id references bundle_applications.bundle_id; parent:child cardinality 1:N</title></path>
+<text x="1206.0" y="615.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="#9b5d17" stroke="#fff" stroke-width="4" paint-order="stroke">N</text>
+<text x="1216.0" y="465.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="#9b5d17" stroke="#fff" stroke-width="4" paint-order="stroke">1</text>
+<path d="M 1411.0 264.0 C 1411.0 326.3, 1011.0 37.7, 1011.0 100.0" fill="none" stroke="#315d9b" stroke-width="2.2" marker-end="url(#arrow)" opacity=".9"><title>fd_nominees.fd_account_no references fd_accounts.fd_account_no; parent:child cardinality 1:N</title></path>
+<text x="1420.0" y="284.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="#315d9b" stroke="#fff" stroke-width="4" paint-order="stroke">N</text>
+<text x="1020.0" y="80.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="#315d9b" stroke="#fff" stroke-width="4" paint-order="stroke">1</text>
+<path d="M 1236.0 472.0 C 1065.0 472.0, 957.0 215.0, 786.0 215.0" fill="none" stroke="#9b5d17" stroke-width="2.2" stroke-dasharray="7 5" marker-end="url(#arrow)" opacity=".9"><title>bundle_applications.customer_id references customer_profile.customer_id; parent:child cardinality 1:N</title></path>
+<text x="1216.0" y="465.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="#9b5d17" stroke="#fff" stroke-width="4" paint-order="stroke">N</text>
+<text x="806.0" y="208.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="#9b5d17" stroke="#fff" stroke-width="4" paint-order="stroke">1</text>
+<path d="M 386.0 406.0 C 709.0 406.0, 913.0 472.0, 1236.0 472.0" fill="none" stroke="#315d9b" stroke-width="2.2" marker-end="url(#arrow)" opacity=".9"><title>bundle_items.bundle_id references bundle_applications.bundle_id; parent:child cardinality 1:N</title></path>
+<text x="406.0" y="399.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="#315d9b" stroke="#fff" stroke-width="4" paint-order="stroke">N</text>
+<text x="1216.0" y="465.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="#315d9b" stroke="#fff" stroke-width="4" paint-order="stroke">1</text>
+<path d="M 386.0 406.0 C 557.0 406.0, 665.0 622.0, 836.0 622.0" fill="none" stroke="#315d9b" stroke-width="2.2" marker-end="url(#arrow)" opacity=".9"><title>bundle_items.fd_account_no references fd_accounts.fd_account_no; parent:child cardinality 1:1</title></path>
+<text x="406.0" y="399.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="#315d9b" stroke="#fff" stroke-width="4" paint-order="stroke">1</text>
+<text x="816.0" y="615.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="#315d9b" stroke="#fff" stroke-width="4" paint-order="stroke">1</text>
+<path d="M 786.0 560.0 C 805.0 560.0, 817.0 622.0, 836.0 622.0" fill="none" stroke="#315d9b" stroke-width="2.2" marker-end="url(#arrow)" opacity=".9"><title>fd_transactions.fd_account_no references fd_accounts.fd_account_no; parent:child cardinality 1:N</title></path>
+<text x="806.0" y="553.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="#315d9b" stroke="#fff" stroke-width="4" paint-order="stroke">N</text>
+<text x="816.0" y="615.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="#315d9b" stroke="#fff" stroke-width="4" paint-order="stroke">1</text>
+<path d="M 1236.0 773.0 C 1217.0 773.0, 1205.0 622.0, 1186.0 622.0" fill="none" stroke="#315d9b" stroke-width="2.2" marker-end="url(#arrow)" opacity=".9"><title>fd_interest_state.fd_account_no references fd_accounts.fd_account_no; parent:child cardinality 1:1</title></path>
+<text x="1216.0" y="766.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="#315d9b" stroke="#fff" stroke-width="4" paint-order="stroke">1</text>
+<text x="1206.0" y="615.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="#315d9b" stroke="#fff" stroke-width="4" paint-order="stroke">1</text>
+<path d="M 386.0 832.0 C 557.0 832.0, 665.0 622.0, 836.0 622.0" fill="none" stroke="#315d9b" stroke-width="2.2" marker-end="url(#arrow)" opacity=".9"><title>fd_interest_transactions.fd_account_no references fd_accounts.fd_account_no; parent:child cardinality 1:N</title></path>
+<text x="406.0" y="825.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="#315d9b" stroke="#fff" stroke-width="4" paint-order="stroke">N</text>
+<text x="816.0" y="615.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="#315d9b" stroke="#fff" stroke-width="4" paint-order="stroke">1</text>
+<rect x="36" y="100" width="350" height="186" rx="8" fill="white" stroke="#8290a6" stroke-width="1.2"/>
+<path d="M44,100 h334 q8,0 8,8 v30 h-350 v-30 q0,-8 8,-8" fill="#e6edfa" stroke="none"/>
+<text x="49" y="123" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#182844">users</text>
+<text x="49" y="150" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#24334d">PK  id</text>
+<text x="374" y="150" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">BIGINT</text>
+<text x="49" y="172" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">username</text>
+<text x="374" y="172" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(50)</text>
+<text x="49" y="194" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">password_hash</text>
+<text x="374" y="194" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(255)</text>
+<text x="49" y="216" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">email</text>
+<text x="374" y="216" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(100)</text>
+<text x="49" y="238" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">role</text>
+<text x="374" y="238" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(20)</text>
+<text x="49" y="260" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">created_at</text>
+<text x="374" y="260" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">TIMESTAMP</text>
+<rect x="436" y="100" width="350" height="230" rx="8" fill="white" stroke="#8290a6" stroke-width="1.2"/>
+<path d="M444,100 h334 q8,0 8,8 v30 h-350 v-30 q0,-8 8,-8" fill="#e6edfa" stroke="none"/>
+<text x="449" y="123" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#182844">customer_profile</text>
+<text x="449" y="150" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#24334d">PK  customer_id</text>
+<text x="774" y="150" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(20)</text>
+<text x="449" y="172" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">REF  user_id</text>
+<text x="774" y="172" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">BIGINT</text>
+<text x="449" y="194" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">full_name</text>
+<text x="774" y="194" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(255)</text>
+<text x="449" y="216" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">phone</text>
+<text x="774" y="216" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(20)</text>
+<text x="449" y="238" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">address</text>
+<text x="774" y="238" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(255)</text>
+<text x="449" y="260" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">pii_masked_aadhaar</text>
+<text x="774" y="260" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(20)</text>
+<text x="449" y="282" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">category</text>
+<text x="774" y="282" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(50)</text>
+<text x="449" y="304" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">created_at</text>
+<text x="774" y="304" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">TIMESTAMP</text>
+<rect x="836" y="100" width="350" height="1044" rx="8" fill="white" stroke="#8290a6" stroke-width="1.2"/>
+<path d="M844,100 h334 q8,0 8,8 v30 h-350 v-30 q0,-8 8,-8" fill="#e6edfa" stroke="none"/>
+<text x="849" y="123" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#182844">fd_accounts</text>
+<text x="849" y="150" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#24334d">PK  fd_account_no</text>
+<text x="1174" y="150" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(20)</text>
+<text x="849" y="172" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">REF  customer_id</text>
+<text x="1174" y="172" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(20)</text>
+<text x="849" y="194" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">REF  bundle_id</text>
+<text x="1174" y="194" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(50)</text>
+<text x="849" y="216" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">bundle_name</text>
+<text x="1174" y="216" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(255)</text>
+<text x="849" y="238" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">product_code</text>
+<text x="1174" y="238" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(50)</text>
+<text x="849" y="260" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">currency</text>
+<text x="1174" y="260" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(3)</text>
+<text x="849" y="282" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">principal_amount</text>
+<text x="1174" y="282" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">DECIMAL(18,2)</text>
+<text x="849" y="304" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">interest_rate</text>
+<text x="1174" y="304" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">DECIMAL(5,2)</text>
+<text x="849" y="326" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">tenure_months</text>
+<text x="1174" y="326" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">INT</text>
+<text x="849" y="348" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">compounding_frequency</text>
+<text x="1174" y="348" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(20)</text>
+<text x="849" y="370" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">status</text>
+<text x="1174" y="370" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(20)</text>
+<text x="849" y="392" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">approval_status</text>
+<text x="1174" y="392" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(20)</text>
+<text x="849" y="414" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">approved_by</text>
+<text x="1174" y="414" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(50)</text>
+<text x="849" y="436" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">approved_at</text>
+<text x="1174" y="436" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">TIMESTAMP</text>
+<text x="849" y="458" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">rejection_reason</text>
+<text x="1174" y="458" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(500)</text>
+<text x="849" y="480" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">nominee_name</text>
+<text x="1174" y="480" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(255)</text>
+<text x="849" y="502" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">nominee_relation</text>
+<text x="1174" y="502" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(50)</text>
+<text x="849" y="524" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">customer_category</text>
+<text x="1174" y="524" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(50)</text>
+<text x="849" y="546" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">account_holder_roles</text>
+<text x="1174" y="546" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(100)</text>
+<text x="849" y="568" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">co_owner_name</text>
+<text x="1174" y="568" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(255)</text>
+<text x="849" y="590" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">applicant_full_name</text>
+<text x="1174" y="590" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(255)</text>
+<text x="849" y="612" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">applicant_first_name</text>
+<text x="1174" y="612" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(100)</text>
+<text x="849" y="634" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">applicant_middle_name</text>
+<text x="1174" y="634" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(100)</text>
+<text x="849" y="656" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">applicant_last_name</text>
+<text x="1174" y="656" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(100)</text>
+<text x="849" y="678" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">applicant_age</text>
+<text x="1174" y="678" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">INT</text>
+<text x="849" y="700" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">applicant_gender</text>
+<text x="1174" y="700" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(20)</text>
+<text x="849" y="722" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">applicant_occupation</text>
+<text x="1174" y="722" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(100)</text>
+<text x="849" y="744" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">applicant_annual_income</text>
+<text x="1174" y="744" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">DECIMAL(15,2)</text>
+<text x="849" y="766" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">applicant_address</text>
+<text x="1174" y="766" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">TEXT</text>
+<text x="849" y="788" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">applicant_city</text>
+<text x="1174" y="788" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(100)</text>
+<text x="849" y="810" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">applicant_state</text>
+<text x="1174" y="810" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(100)</text>
+<text x="849" y="832" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">applicant_pincode</text>
+<text x="1174" y="832" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(10)</text>
+<text x="849" y="854" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">applicant_nationality</text>
+<text x="1174" y="854" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(50)</text>
+<text x="849" y="876" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">applicant_marital_status</text>
+<text x="1174" y="876" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(20)</text>
+<text x="849" y="898" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">applicant_email</text>
+<text x="1174" y="898" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(255)</text>
+<text x="849" y="920" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">applicant_phone</text>
+<text x="1174" y="920" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(20)</text>
+<text x="849" y="942" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">applicant_pan</text>
+<text x="1174" y="942" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(20)</text>
+<text x="849" y="964" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">applicant_account_number</text>
+<text x="1174" y="964" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(50)</text>
+<text x="849" y="986" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">applicant_ifsc</text>
+<text x="1174" y="986" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(20)</text>
+<text x="849" y="1008" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">maturity_date</text>
+<text x="1174" y="1008" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">DATE</text>
+<text x="849" y="1030" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">accrued_interest</text>
+<text x="1174" y="1030" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">DECIMAL(18,2)</text>
+<text x="849" y="1052" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">created_at</text>
+<text x="1174" y="1052" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">TIMESTAMP</text>
+<text x="849" y="1074" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">created_by</text>
+<text x="1174" y="1074" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(50)</text>
+<text x="849" y="1096" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">modified_at</text>
+<text x="1174" y="1096" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">TIMESTAMP</text>
+<text x="849" y="1118" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">uuid</text>
+<text x="1174" y="1118" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(255)</text>
+<rect x="1236" y="100" width="350" height="164" rx="8" fill="white" stroke="#8290a6" stroke-width="1.2"/>
+<path d="M1244,100 h334 q8,0 8,8 v30 h-350 v-30 q0,-8 8,-8" fill="#e6edfa" stroke="none"/>
+<text x="1249" y="123" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#182844">fd_nominees</text>
+<text x="1249" y="150" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#24334d">PK  id</text>
+<text x="1574" y="150" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">BIGINT</text>
+<text x="1249" y="172" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">FK  fd_account_no</text>
+<text x="1574" y="172" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(20)</text>
+<text x="1249" y="194" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">nominee_name</text>
+<text x="1574" y="194" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(255)</text>
+<text x="1249" y="216" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">nominee_relation</text>
+<text x="1574" y="216" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(50)</text>
+<text x="1249" y="238" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">created_at</text>
+<text x="1574" y="238" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">TIMESTAMP</text>
+<rect x="1236" y="302" width="350" height="340" rx="8" fill="white" stroke="#8290a6" stroke-width="1.2"/>
+<path d="M1244,302 h334 q8,0 8,8 v30 h-350 v-30 q0,-8 8,-8" fill="#e6edfa" stroke="none"/>
+<text x="1249" y="325" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#182844">bundle_applications</text>
+<text x="1249" y="352" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#24334d">PK  bundle_id</text>
+<text x="1574" y="352" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(50)</text>
+<text x="1249" y="374" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">REF  customer_id</text>
+<text x="1574" y="374" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(20)</text>
+<text x="1249" y="396" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">bundle_name</text>
+<text x="1574" y="396" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(255)</text>
+<text x="1249" y="418" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">bundle_description</text>
+<text x="1574" y="418" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">TEXT</text>
+<text x="1249" y="440" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">total_amount</text>
+<text x="1574" y="440" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">DECIMAL(18,2)</text>
+<text x="1249" y="462" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">estimated_return</text>
+<text x="1574" y="462" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">DECIMAL(18,2)</text>
+<text x="1249" y="484" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">status</text>
+<text x="1574" y="484" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(20)</text>
+<text x="1249" y="506" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">approval_status</text>
+<text x="1574" y="506" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(20)</text>
+<text x="1249" y="528" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">approved_by</text>
+<text x="1574" y="528" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(50)</text>
+<text x="1249" y="550" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">approved_at</text>
+<text x="1574" y="550" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">TIMESTAMP</text>
+<text x="1249" y="572" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">rejection_reason</text>
+<text x="1574" y="572" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(500)</text>
+<text x="1249" y="594" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">created_at</text>
+<text x="1574" y="594" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">TIMESTAMP</text>
+<text x="1249" y="616" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">modified_at</text>
+<text x="1574" y="616" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">TIMESTAMP</text>
+<rect x="36" y="324" width="350" height="164" rx="8" fill="white" stroke="#8290a6" stroke-width="1.2"/>
+<path d="M44,324 h334 q8,0 8,8 v30 h-350 v-30 q0,-8 8,-8" fill="#e6edfa" stroke="none"/>
+<text x="49" y="347" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#182844">bundle_items</text>
+<text x="49" y="374" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#24334d">PK  id</text>
+<text x="374" y="374" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">BIGINT</text>
+<text x="49" y="396" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">FK  bundle_id</text>
+<text x="374" y="396" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(50)</text>
+<text x="49" y="418" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">FK  fd_account_no</text>
+<text x="374" y="418" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(20)</text>
+<text x="49" y="440" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">sequence_order</text>
+<text x="374" y="440" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">INT</text>
+<text x="49" y="462" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">created_at</text>
+<text x="374" y="462" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">TIMESTAMP</text>
+<rect x="436" y="368" width="350" height="384" rx="8" fill="white" stroke="#8290a6" stroke-width="1.2"/>
+<path d="M444,368 h334 q8,0 8,8 v30 h-350 v-30 q0,-8 8,-8" fill="#e6edfa" stroke="none"/>
+<text x="449" y="391" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#182844">fd_transactions</text>
+<text x="449" y="418" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#24334d">PK  txn_id</text>
+<text x="774" y="418" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">BIGINT</text>
+<text x="449" y="440" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">FK  fd_account_no</text>
+<text x="774" y="440" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(20)</text>
+<text x="449" y="462" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">txn_type</text>
+<text x="774" y="462" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(20)</text>
+<text x="449" y="484" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">amount</text>
+<text x="774" y="484" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">DECIMAL(18,2)</text>
+<text x="449" y="506" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">currency</text>
+<text x="774" y="506" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(3)</text>
+<text x="449" y="528" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">debit_gl_account</text>
+<text x="774" y="528" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(50)</text>
+<text x="449" y="550" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">credit_gl_account</text>
+<text x="774" y="550" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(50)</text>
+<text x="449" y="572" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">status</text>
+<text x="774" y="572" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(20)</text>
+<text x="449" y="594" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">txn_timestamp</text>
+<text x="774" y="594" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">TIMESTAMP</text>
+<text x="449" y="616" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">remarks</text>
+<text x="774" y="616" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(500)</text>
+<text x="449" y="638" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">uuid</text>
+<text x="774" y="638" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(255)</text>
+<text x="449" y="660" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">created_by</text>
+<text x="774" y="660" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(50)</text>
+<text x="449" y="682" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">created_at</text>
+<text x="774" y="682" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">TIMESTAMP</text>
+<text x="449" y="704" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">updated_by</text>
+<text x="774" y="704" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(50)</text>
+<text x="449" y="726" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">deposit_guard</text>
+<text x="774" y="726" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(20)</text>
+<rect x="36" y="526" width="350" height="164" rx="8" fill="white" stroke="#8290a6" stroke-width="1.2"/>
+<path d="M44,526 h334 q8,0 8,8 v30 h-350 v-30 q0,-8 8,-8" fill="#e6edfa" stroke="none"/>
+<text x="49" y="549" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#182844">event_outbox</text>
+<text x="49" y="576" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#24334d">PK  event_id</text>
+<text x="374" y="576" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(36)</text>
+<text x="49" y="598" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">routing_key</text>
+<text x="374" y="598" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(100)</text>
+<text x="49" y="620" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">payload</text>
+<text x="374" y="620" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">TEXT</text>
+<text x="49" y="642" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">created_at</text>
+<text x="374" y="642" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">TIMESTAMP</text>
+<text x="49" y="664" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">published_at</text>
+<text x="374" y="664" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">TIMESTAMP</text>
+<rect x="1236" y="680" width="350" height="186" rx="8" fill="white" stroke="#8290a6" stroke-width="1.2"/>
+<path d="M1244,680 h334 q8,0 8,8 v30 h-350 v-30 q0,-8 8,-8" fill="#e6edfa" stroke="none"/>
+<text x="1249" y="703" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#182844">fd_interest_state</text>
+<text x="1249" y="730" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#24334d">PK  fd_account_no</text>
+<text x="1574" y="730" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(20)</text>
+<text x="1249" y="752" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">interest_mode</text>
+<text x="1574" y="752" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(20)</text>
+<text x="1249" y="774" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">current_balance</text>
+<text x="1574" y="774" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">DECIMAL(18,2)</text>
+<text x="1249" y="796" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">accrued_precise</text>
+<text x="1574" y="796" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">DECIMAL(18,6)</text>
+<text x="1249" y="818" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">last_accrual_date</text>
+<text x="1574" y="818" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">DATE</text>
+<text x="1249" y="840" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">next_capitalization_date</text>
+<text x="1574" y="840" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">DATE</text>
+<rect x="36" y="728" width="350" height="208" rx="8" fill="white" stroke="#8290a6" stroke-width="1.2"/>
+<path d="M44,728 h334 q8,0 8,8 v30 h-350 v-30 q0,-8 8,-8" fill="#e6edfa" stroke="none"/>
+<text x="49" y="751" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#182844">fd_interest_transactions</text>
+<text x="49" y="778" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#24334d">PK  id</text>
+<text x="374" y="778" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">BIGINT</text>
+<text x="49" y="800" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">FK  fd_account_no</text>
+<text x="374" y="800" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(20)</text>
+<text x="49" y="822" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">accrual_date</text>
+<text x="374" y="822" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">DATE</text>
+<text x="49" y="844" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">interest_amount</text>
+<text x="374" y="844" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">DECIMAL(18,6)</text>
+<text x="49" y="866" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">cumulative_interest</text>
+<text x="374" y="866" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">DECIMAL(18,6)</text>
+<text x="49" y="888" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">capitalized_flag</text>
+<text x="374" y="888" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">BOOLEAN</text>
+<text x="49" y="910" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">settlement_status</text>
+<text x="374" y="910" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(20)</text>
+<rect x="436" y="790" width="350" height="98" rx="8" fill="white" stroke="#8290a6" stroke-width="1.2"/>
+<path d="M444,790 h334 q8,0 8,8 v30 h-350 v-30 q0,-8 8,-8" fill="#e6edfa" stroke="none"/>
+<text x="449" y="813" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#182844">processed_interest_requests</text>
+<text x="449" y="840" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#24334d">PK  request_id</text>
+<text x="774" y="840" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(36)</text>
+<text x="449" y="862" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">processed_at</text>
+<text x="774" y="862" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">TIMESTAMP</text>
+<rect x="1236" y="904" width="350" height="98" rx="8" fill="white" stroke="#8290a6" stroke-width="1.2"/>
+<path d="M1244,904 h334 q8,0 8,8 v30 h-350 v-30 q0,-8 8,-8" fill="#e6edfa" stroke="none"/>
+<text x="1249" y="927" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#182844">business_clock</text>
+<text x="1249" y="954" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#24334d">PK  id</text>
+<text x="1574" y="954" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">INT</text>
+<text x="1249" y="976" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">day_offset</text>
+<text x="1574" y="976" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">INT</text>
+<rect x="436" y="926" width="350" height="208" rx="8" fill="white" stroke="#8290a6" stroke-width="1.2"/>
+<path d="M444,926 h334 q8,0 8,8 v30 h-350 v-30 q0,-8 8,-8" fill="#e6edfa" stroke="none"/>
+<text x="449" y="949" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#182844">admin_operation_logs</text>
+<text x="449" y="976" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#24334d">PK  log_id</text>
+<text x="774" y="976" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">BIGINT</text>
+<text x="449" y="998" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">actor</text>
+<text x="774" y="998" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(100)</text>
+<text x="449" y="1020" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">operation_type</text>
+<text x="774" y="1020" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(64)</text>
+<text x="449" y="1042" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">target_type</text>
+<text x="774" y="1042" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(64)</text>
+<text x="449" y="1064" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">target_id</text>
+<text x="774" y="1064" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(255)</text>
+<text x="449" y="1086" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">summary</text>
+<text x="774" y="1086" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(512)</text>
+<text x="449" y="1108" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">occurred_at</text>
+<text x="774" y="1108" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">TIMESTAMP</text>
+<rect x="36" y="974" width="350" height="76" rx="8" fill="white" stroke="#8290a6" stroke-width="1.2"/>
+<path d="M44,974 h334 q8,0 8,8 v30 h-350 v-30 q0,-8 8,-8" fill="#e6edfa" stroke="none"/>
+<text x="49" y="997" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#182844">External: auth_db.users</text>
+<text x="49" y="1024" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#24334d">PK  id</text>
+<text x="374" y="1024" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">EXTERNAL KEY</text>
+</svg>

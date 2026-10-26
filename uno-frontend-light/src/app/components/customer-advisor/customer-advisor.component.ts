@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { timeout } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { ApiClientService } from '../../services/api-client.service';
+import { CurrencyService } from '../../services/currency.service';
 
 @Component({
   selector: 'app-customer-advisor',
@@ -20,6 +21,7 @@ export class CustomerAdvisorComponent implements OnInit {
   private readonly http = inject(HttpClient);
   private readonly auth = inject(AuthService);
   private readonly apiClient = inject(ApiClientService);
+  readonly currencyService = inject(CurrencyService);
   private readonly endpoint = 'http://127.0.0.1:8091';
 
   readonly available = signal(false);
@@ -64,7 +66,7 @@ export class CustomerAdvisorComponent implements OnInit {
 
     const payload = {
       goal: this.goal,
-      amount: Number(this.amount),
+      amount: this.currencyService.convertToINR(Number(this.amount), this.currencyService.preferredCurrency()),
       horizon_months: Number(this.horizonMonths),
       liquidity_preference: this.liquidityPreference,
       requirements: this.requirements.trim(),
@@ -109,6 +111,10 @@ export class CustomerAdvisorComponent implements OnInit {
         this.asking.set(false);
       },
     });
+  }
+
+  getMaxInvestmentAmount(): number {
+    return this.currencyService.convertFromINR(100000000000, this.currencyService.preferredCurrency());
   }
 
   private numberOr(value: unknown, fallback: number): number {

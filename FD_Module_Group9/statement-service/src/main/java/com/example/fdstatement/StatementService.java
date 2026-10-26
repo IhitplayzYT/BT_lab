@@ -16,6 +16,9 @@ import java.math.BigDecimal;
    jdbc.update("UPDATE fd_statements SET interest_accrued=interest_accrued+?,interest_credited=interest_credited+?,interest_paid=interest_paid+? WHERE fd_account_no=? AND statement_date=?",money(d,"interestAccrued"),money(d,"interestCapitalized"),money(d,"interestPaid"),account,date);
    // Preserve snapshots by event time even when a retried outbox message arrives late.
    if(newer)jdbc.update("UPDATE fd_statements SET closing_balance=?,outstanding_interest=?,last_occurred_at=? WHERE fd_account_no=? AND statement_date=?",money(d,"closingBalance"),money(d,"outstandingInterest"),event.occurredAt().toString(),account,date);
+   // The daily accrual event carries the actual day's opening balance. A payout
+   // event can arrive first on its separate topic, so let that accrual snapshot
+   // correct the opening balance regardless of arrival order.
    if(event.eventType().equals("InterestAccrued"))jdbc.update("UPDATE fd_statements SET opening_balance=? WHERE fd_account_no=? AND statement_date=?",money(d,"openingBalance"),account,date);
   }jdbc.update("INSERT INTO consumed_events(event_id) VALUES(?)",event.eventId());
  }

@@ -2,7 +2,7 @@ import { Component, inject, OnInit, AfterViewInit, ElementRef, signal, ChangeDet
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { timeout } from 'rxjs';
+import { finalize, timeout } from 'rxjs';
 import { ApiClientService } from '../../services/api-client.service';
 
 interface RiskGroup {
@@ -298,14 +298,31 @@ export class RelationNetsComponent implements OnInit, AfterViewInit {
         has_cycle: group.hasCycle,
       },
       { headers: new HttpHeaders({ Authorization: `Bearer ${token}` }) },
-    ).pipe(timeout(35000)).subscribe({
+    ).pipe(
+      timeout(35000),
+      finalize(() => {
+        this.aiInsightLoading[group.id] = false;
+        this.cdr.detectChanges();
+      }),
+    ).subscribe({
       next: result => {
-        this.aiInsights[group.id] = result.insight;
-        this.aiInsightLoading[group.id] = false;
+        const insight = typeof result?.insight === 'string' ? result.insight.trim() : '';
+        if (!insight) {
+          this.aiInsightErrors[group.id] = 'The assistant returned an empty response. Please try again.';
+          return;
+        }
+        this.aiInsights[group.id] = insight;
+        this.cdr.detectChanges();
       },
-      error: () => {
-        this.aiInsightErrors[group.id] = 'AI insight is unavailable right now. The deterministic graph score is still available.';
-        this.aiInsightLoading[group.id] = false;
+      error: error => {
+        if (error?.status === 401 || error?.status === 403) {
+          this.aiInsightErrors[group.id] = 'Your staff session is not authorized for AI insights. Sign in again with a bank officer or admin account.';
+        } else if (error?.status === 0) {
+          this.aiInsightErrors[group.id] = 'Cannot reach the local AI assistant at 127.0.0.1:8091. Start the assistant and Ollama, then try again.';
+        } else {
+          this.aiInsightErrors[group.id] = 'The AI assistant or its Ollama model is unavailable. The deterministic graph score is still available; please try again later.';
+        }
+        this.cdr.detectChanges();
       },
     });
   }

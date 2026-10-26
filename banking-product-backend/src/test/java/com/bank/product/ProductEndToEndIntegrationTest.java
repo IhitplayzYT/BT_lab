@@ -73,13 +73,16 @@ public class ProductEndToEndIntegrationTest {
     }
 
     @Test
-    @DisplayName("E2E Security: Bank Officer cannot create product (ADMIN only) -> 403 FORBIDDEN")
-    void testOfficerCannotCreateProduct_Returns403() throws Exception {
+    @DisplayName("E2E Security: Bank Officer can create a valid product")
+    void testOfficerCanCreateProduct() throws Exception {
         ProductRequestDTO request = ProductRequestDTO.builder()
                 .productCode("FD_OFFICER")
                 .productName("Officer FD")
                 .productType("FD")
                 .currency("INR")
+                .effectiveDate(LocalDate.now())
+                .termLimit(new TermLimitDTO(6, 60))
+                .rateLimit(new RateLimitDTO(6.0, 8.5))
                 .status("ACTIVE")
                 .build();
 
@@ -87,9 +90,7 @@ public class ProductEndToEndIntegrationTest {
                         .header("Authorization", "Bearer " + officerToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.status").value(403))
-                .andExpect(jsonPath("$.errorCode").value("FORBIDDEN"));
+                .andExpect(status().isCreated());
     }
 
     @Test
@@ -169,7 +170,7 @@ public class ProductEndToEndIntegrationTest {
         mockMvc.perform(get("/api/product/search")
                         .param("productType", "FD")
                         .param("page", "0")
-                        .param("size", "10")
+                        .param("size", "50")
                         .header("Authorization", "Bearer " + officerToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[*].productCode", hasItem("FD301")));

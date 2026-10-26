@@ -1,5 +1,6 @@
 package com.example.fdmodule.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -7,6 +8,7 @@ import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 import java.util.List;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class BundleApplicationRequest {
     @NotBlank(message = "Bundle name is required")
     @Size(max = 255, message = "Bundle name must not exceed 255 characters")
@@ -24,9 +26,11 @@ public class BundleApplicationRequest {
     private String coOwnerName;
 
     @NotNull(message = "FD items are required")
+    @Size(min = 1, message = "A bundle must contain at least one FD item")
     @Valid
     private List<BundleFDItem> fdItems;
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class BundleFDItem {
         @NotBlank(message = "Product code is required")
         private String productCode;
@@ -60,6 +64,8 @@ public class BundleApplicationRequest {
         private String applicantIfsc;
         private String nomineeName;
         private String nomineeRelation;
+        @Valid
+        private List<FDApplicationRequest.NomineeDTO> nominees;
 
         // Getters and Setters
         public String getProductCode() { return productCode; }
@@ -110,6 +116,8 @@ public class BundleApplicationRequest {
         public void setNomineeName(String nomineeName) { this.nomineeName = nomineeName; }
         public String getNomineeRelation() { return nomineeRelation; }
         public void setNomineeRelation(String nomineeRelation) { this.nomineeRelation = nomineeRelation; }
+        public List<FDApplicationRequest.NomineeDTO> getNominees() { return nominees; }
+        public void setNominees(List<FDApplicationRequest.NomineeDTO> nominees) { this.nominees = nominees; }
     }
 
     // Getters and Setters

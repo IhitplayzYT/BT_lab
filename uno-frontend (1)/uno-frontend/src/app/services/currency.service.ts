@@ -25,6 +25,7 @@ export class CurrencyService {
   private conversionRates = signal<{ [key: string]: number }>(this.fallbackRates);
   private lastUpdated = signal<Date | null>(null);
   private apiError = signal<string | null>(null);
+  readonly preferredCurrency = signal('INR');
 
   // Currency symbols
   private currencySymbols: { [key: string]: string } = {
@@ -54,7 +55,7 @@ export class CurrencyService {
     { code: 'SAR', name: 'Saudi Riyal' }
   ];
 
-  private readonly API_URL = 'https://api.frankfurter.app/latest?from=INR';
+  private readonly API_URL = 'https://api.frankfurter.dev/v1/latest?base=INR';
   private ratesCache$: Observable<any> | null = null;
 
   constructor(private http: HttpClient) {
@@ -66,6 +67,24 @@ export class CurrencyService {
 
   getSupportedCurrencies() {
     return this.supportedCurrencies;
+  }
+
+  setPreferredCurrency(currencyCode: string): void {
+    if (this.supportedCurrencies.some(currency => currency.code === currencyCode)) {
+      this.preferredCurrency.set(currencyCode);
+    }
+  }
+
+  formatPreferredCurrency(amountInINR: number): string {
+    const amount = Number.isFinite(Number(amountInINR)) ? Number(amountInINR) : 0;
+    const currencyCode = this.preferredCurrency();
+    return this.formatCurrency(this.convertFromINR(amount, currencyCode), currencyCode);
+  }
+
+  formatPreferredCurrencyRaw(amountInINR: number): string {
+    const amount = Number.isFinite(Number(amountInINR)) ? Number(amountInINR) : 0;
+    const currencyCode = this.preferredCurrency();
+    return this.formatCurrencyRaw(this.convertFromINR(amount, currencyCode), currencyCode);
   }
 
   getCurrencySymbol(currencyCode: string): string {

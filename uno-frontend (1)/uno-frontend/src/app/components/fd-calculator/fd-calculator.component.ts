@@ -6,6 +6,7 @@ import { ApiClientService } from '../../services/api-client.service';
 import { AnimationService } from '../../services/animation.service';
 import { ValidationService } from '../../services/validation.service';
 import { AuthService } from '../../services/auth.service';
+import { CurrencyService } from '../../services/currency.service';
 import { Router } from '@angular/router';
 import { NavbarComponent } from '../navbar/navbar.component';
 import { FooterComponent } from '../footer/footer.component';
@@ -25,11 +26,12 @@ export class FdCalculatorComponent implements AfterViewInit {
   private validationService = inject(ValidationService);
   private authService = inject(AuthService);
   private router = inject(Router);
+  readonly currencyService = inject(CurrencyService);
 
   // Form inputs
   principal = signal(100000);
   termMonths = signal(12);
-  productCode = signal('FD_STD_SHORT');
+  productCode = signal('');
   interestType = signal('COMPOUND');
   interestRate = signal(7.0); // User-selected interest rate within product range
   customerCategory = signal('GENERAL');
@@ -55,17 +57,24 @@ export class FdCalculatorComponent implements AfterViewInit {
   principalError = '';
   termMonthsError = '';
   interestRateError = '';
+  productError = '';
 
   // Computed values
-  readonly formattedPrincipal = computed(() => this.principal().toLocaleString('en-IN'));
+  readonly displayedPrincipal = computed(() => this.currencyService.convertFromINR(this.principal(), this.currencyService.preferredCurrency()));
+  readonly displayedMinPrincipal = computed(() => this.currencyService.convertFromINR(this.minPrincipal(), this.currencyService.preferredCurrency()));
+  readonly displayedMaxPrincipal = computed(() => this.currencyService.convertFromINR(this.maxPrincipal(), this.currencyService.preferredCurrency()));
+  readonly formattedPrincipal = computed(() => this.currencyService.formatPreferredCurrency(this.principal()));
   readonly formattedMaturity = computed(() => {
     const result = this.calculationResult();
-    return result ? result.maturityAmount?.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0';
+    return this.currencyService.formatPreferredCurrency(result?.maturityAmount || 0);
   });
   readonly formattedInterest = computed(() => {
     const result = this.calculationResult();
-    return result ? result.interestEarned?.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0';
+    return this.currencyService.formatPreferredCurrency(result?.grossInterest ?? result?.interestEarned ?? 0);
   });
+  readonly formattedDeductions = computed(() => this.currencyService.formatPreferredCurrency(this.calculationResult()?.totalDeductions || 0));
+  readonly formattedNetInterest = computed(() => this.currencyService.formatPreferredCurrency(this.calculationResult()?.netInterest ?? this.calculationResult()?.interestEarned ?? 0));
+  readonly chargeBreakdown = computed(() => this.calculationResult()?.charges || []);
   readonly displayInterestRate = computed(() => {
     const result = this.calculationResult();
     return result ? result.effectiveRate : 0;
@@ -114,16 +123,23 @@ export class FdCalculatorComponent implements AfterViewInit {
 
       // Initialize limits based on the first product or current selection
       if (validProducts && validProducts.length > 0) {
+        if (!validProducts.some(product => product.productCode === this.productCode())) {
+          this.productCode.set(validProducts[0].productCode);
+        }
         this.onProductChange();
         const savedProfile = localStorage.getItem(this.apiClient.getUserStorageKey('default_fd_details'));
         if (savedProfile) {
           const profile = JSON.parse(savedProfile);
+          if (profile.defaultCurrency) this.currencyService.setPreferredCurrency(profile.defaultCurrency);
           if (profile.customerCategory) this.customerCategory.set(profile.customerCategory);
           this.onProductChange();
         }
+      } else {
+        this.productError = 'No active FD products are available to calculate.';
       }
     } catch (error) {
       console.error('Failed to load products:', error);
+      this.productError = 'Could not load FD products. Please try again later.';
     }
   }
 
@@ -179,6 +195,9 @@ export class FdCalculatorComponent implements AfterViewInit {
     console.log('All products:', this.products());
 
     if (selectedProduct) {
+      this.productError = '';
+      this.error.set('');
+      this.calculationResult.set(null);
       // Update product-specific limits - handle both camelCase and snake_case
       const rateLimit = selectedProduct.rateLimit || selectedProduct.rate_limit;
       const termLimit = selectedProduct.termLimit || selectedProduct.term_limit;
@@ -208,6 +227,10 @@ export class FdCalculatorComponent implements AfterViewInit {
         maxTerm: this.maxTerm()
       });
     } else {
+      this.productError = this.products().length
+        ? 'Please select an FD product before calculating.'
+        : 'No active FD products are available to calculate.';
+      this.calculationResult.set(null);
       console.warn('Product not found for code:', this.productCode());
     }
   }
@@ -216,12 +239,16 @@ export class FdCalculatorComponent implements AfterViewInit {
     if (!this.validationService.isValidPositiveNumber(this.principal())) {
       this.principalError = 'Principal amount must be a positive number';
     } else if (this.principal() < this.minPrincipal()) {
-      this.principalError = `Minimum amount is ₹${this.minPrincipal().toLocaleString()}`;
+      this.principalError = `Minimum amount is ${this.currencyService.formatPreferredCurrency(this.minPrincipal())}`;
     } else if (this.principal() > this.maxPrincipal()) {
-      this.principalError = `Maximum amount is ₹${this.maxPrincipal().toLocaleString()}`;
+      this.principalError = `Maximum amount is ${this.currencyService.formatPreferredCurrency(this.maxPrincipal())}`;
     } else {
       this.principalError = '';
     }
+  }
+
+  setDisplayedPrincipal(amount: number): void {
+    this.principal.set(this.currencyService.convertToINR(amount, this.currencyService.preferredCurrency()));
   }
 
   validateTermMonths(): void {
@@ -257,6 +284,13 @@ export class FdCalculatorComponent implements AfterViewInit {
       interestType: this.interestType()
     });
 
+    if (!this.selectedProduct()) {
+      this.productError = 'Please select an FD product before calculating.';
+      this.calculationResult.set(null);
+      this.error.set(this.productError);
+      return;
+    }
+    this.productError = '';
     this.validatePrincipal();
     this.validateTermMonths();
     this.validateInterestRate();
@@ -280,7 +314,7 @@ export class FdCalculatorComponent implements AfterViewInit {
     try {
       // Try to use the API if authenticated
       if (this.authService.isLoggedIn()) {
-        const result = await this.apiClient.calculateMaturity({
+        const result = await this.apiClient.calculateAdvancedMaturity({
           principal: this.principal(),
           term: { value: this.termMonths(), unit: 'MONTHS' },
           baseRate: this.interestRate(),
@@ -288,13 +322,15 @@ export class FdCalculatorComponent implements AfterViewInit {
           categories: this.customerCategory() === 'GENERAL' ? [] : [this.customerCategory()],
           interestType: this.interestType(),
           currency: 'INR',
-          compoundingFrequency: 4
+          compoundingFrequency: 4,
+          includePrematureWithdrawal: false
         }).toPromise();
         const maturityDate = new Date();
         maturityDate.setMonth(maturityDate.getMonth() + this.termMonths());
         this.calculationResult.set({
           ...result,
           principal: this.principal(),
+          interestEarned: result.grossInterest,
           termMonths: this.termMonths(),
           maturityDate: maturityDate.toISOString().split('T')[0]
         });

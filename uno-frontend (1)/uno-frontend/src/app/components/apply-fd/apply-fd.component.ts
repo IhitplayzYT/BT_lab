@@ -1,5 +1,5 @@
 import { TranslatePipe } from '../../pipes/translate.pipe';
-import { Component, inject, AfterViewInit, ElementRef, signal } from '@angular/core';
+import { Component, inject, AfterViewInit, ElementRef, signal, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -9,6 +9,7 @@ import { CurrencyService } from '../../services/currency.service';
 import { AuthService } from '../../services/auth.service';
 import { StarBackgroundComponent } from '../star-background/star-background.component';
 import { finalize } from 'rxjs/operators';
+import { forkJoin } from 'rxjs';
 
 @Component({
   selector: 'app-apply-fd',
@@ -18,17 +19,21 @@ import { finalize } from 'rxjs/operators';
   styleUrls: ['./apply-fd.component.scss']
 })
 export class ApplyFdComponent implements AfterViewInit {
+  @Input() officerMode = false;
+  @Input() officerCustomerId = '';
+  @Input() officerCustomerName = '';
+  @Output() applicationSubmitted = new EventEmitter<void>();
   private elementRef = inject(ElementRef);
   private authService = inject(AuthService);
   private router = inject(Router);
   private apiClient = inject(ApiClientService);
-  private currencyService = inject(CurrencyService);
+  readonly currencyService = inject(CurrencyService);
   private validationService = inject(ValidationService);
 
   readonly isLoggedIn = this.authService.isLoggedIn;
 
   exitApplication(): void {
-    this.router.navigate(['/dashboard']);
+    this.router.navigate([this.officerMode ? '/officer' : '/dashboard']);
   }
 
   formData = {
@@ -91,6 +96,7 @@ export class ApplyFdComponent implements AfterViewInit {
   serviceFee = signal(0);
   documentationFee = signal(0);
   gstAmount = signal(0);
+  taxAmount = signal(0);
   totalFees = signal(0);
   netMaturity = signal(0);
 
@@ -112,6 +118,10 @@ export class ApplyFdComponent implements AfterViewInit {
   bundleDescription = signal('');
   bundleTotalAmount = signal(0);
   bundleEstimatedReturn = signal(0);
+  bundleTotalDeductions = signal(0);
+  bundleBreakdown = signal<any[]>([]);
+  bundleCalculationError = signal('');
+  private bundleEstimateRequestId = 0;
   bundleFDItems = signal<any[]>([]);
   
   // Validation errors
@@ -144,11 +154,11 @@ export class ApplyFdComponent implements AfterViewInit {
       }, index * 200);
     });
     // Load default details if available
-    this.loadDefaultDetails();
+    if (!this.officerMode) this.loadDefaultDetails();
     // Load products from backend
     this.loadProducts();
     // Check for quick purchase package
-    this.loadQuickPurchasePackage();
+    if (!this.officerMode) this.loadQuickPurchasePackage();
     // Calculate initial billing
     this.calculateBilling();
   }
@@ -170,6 +180,8 @@ export class ApplyFdComponent implements AfterViewInit {
       );
       console.log('Products loaded:', productData);
       this.products.set(productData || []);
+      this.reconcileBundleFDItems(productData || []);
+      this.refreshBundleEstimate(productData || []);
       if (!productData.some(product => product.productCode === this.formData.productCode)) {
         this.formData.productCode = '';
         this.selectedProduct.set(null);
@@ -222,6 +234,7 @@ export class ApplyFdComponent implements AfterViewInit {
     } else {
       this.ageError = '';
     }
+    if (this.isBundleMode()) this.refreshBundleEstimate(this.products());
   }
 
   requiresSeniorEligibility(): boolean {
@@ -409,6 +422,15 @@ export class ApplyFdComponent implements AfterViewInit {
   }
 
   nextStep(): void {
+    // A bundle's FD details are fixed by the selected package. Do not run the
+    // single-FD validators (or leave the user on this step because of stale
+    // hidden single-FD fields such as productCode).
+    if (this.isBundleMode() && this.currentStep === 2) {
+      this.errorMessage = '';
+      this.currentStep = 3;
+      return;
+    }
+
     // Validate current step before proceeding
     if (this.currentStep === 1) {
       this.validateFirstName();
@@ -430,7 +452,9 @@ export class ApplyFdComponent implements AfterViewInit {
       }
     }
     
-    if (this.currentStep === 2) {
+    // Bundle FD details are read-only and validated against each product when
+    // the package is built. The single-FD fields below are hidden in this mode.
+    if (this.currentStep === 2 && !this.isBundleMode()) {
       this.validateAge();
       this.validatePrincipalAmount();
       this.validateTenureMonths();
@@ -469,7 +493,7 @@ export class ApplyFdComponent implements AfterViewInit {
 
   submitApplication(): void {
     // Check if user is logged in
-    if (!this.authService.isLoggedIn()) {
+    if (!this.officerMode && !this.authService.isLoggedIn()) {
       this.errorMessage = 'You must be logged in to submit an FD application. Redirecting to login...';
       setTimeout(() => {
         this.router.navigate(['/login']);
@@ -556,35 +580,50 @@ export class ApplyFdComponent implements AfterViewInit {
       coOwnerName: this.formData.coOwnerName
     };
 
-    console.log('Submitting FD application with payload:', requestPayload);
-    console.log('Token present:', !!localStorage.getItem('access_token'));
+    if (!this.officerMode) {
+      console.log('Submitting FD application');
+      console.log('Token present:', !!localStorage.getItem('access_token'));
+    }
 
     // Call API
-    this.apiClient.applyForFD(requestPayload).pipe(
+    const applicationRequest = this.officerMode
+      ? this.apiClient.applyForCustomerFD(this.officerCustomerId, requestPayload)
+      : this.apiClient.applyForFD(requestPayload);
+    applicationRequest.pipe(
       finalize(() => this.isSubmitting = false)
     ).subscribe({
       next: (response) => {
-        console.log('FD application submitted successfully:', response);
+        if (!this.officerMode) console.log('FD application submitted successfully:', response);
         this.isSubmitting = false;
         this.submitSuccess = true;
         // Save default details for future applications
-        this.saveDefaultDetails();
-        // Redirect to dashboard after short delay
-        setTimeout(() => {
-          this.router.navigate(['/dashboard']);
-        }, 2000);
+        if (this.officerMode) {
+          this.resetForm();
+          this.submitSuccess = true;
+          this.applicationSubmitted.emit();
+        } else {
+          this.saveDefaultDetails();
+          // Redirect to dashboard after short delay
+          setTimeout(() => {
+            this.router.navigate(['/dashboard']);
+          }, 2000);
+        }
       },
       error: (error) => {
         console.error('Error submitting FD application:', error);
-        console.error('Error status:', error.status);
-        console.error('Error details:', error.error);
+        if (!this.officerMode) {
+          console.error('Error status:', error.status);
+          console.error('Error details:', error.error);
+        }
         this.isSubmitting = false;
 
         if (error.status === 401) {
-          this.errorMessage = 'You are not logged in. Please login to submit an application.';
-          setTimeout(() => {
-            this.router.navigate(['/login']);
-          }, 1500);
+          this.errorMessage = this.officerMode
+            ? 'Your officer session has expired. Please sign in again.'
+            : 'You are not logged in. Please login to submit an application.';
+          if (!this.officerMode) {
+            setTimeout(() => this.router.navigate(['/login']), 1500);
+          }
         } else if (error.status === 403) {
           this.errorMessage = 'You do not have permission to submit an application.';
         } else {
@@ -650,7 +689,9 @@ export class ApplyFdComponent implements AfterViewInit {
       applicantPan: this.formData.panNumber,
       applicantAccountNumber: this.formData.accountNumber,
       applicantIfsc: this.formData.ifscCode,
-      nominees: this.formData.nominees.length > 0 ? this.formData.nominees : null
+      nominees: this.formData.nominees.length > 0
+        ? this.formData.nominees.map(nominee => ({ name: String(nominee.name || '').trim(), relation: String(nominee.relation || '').trim() }))
+        : undefined
     }));
 
     const bundlePayload = {
@@ -664,8 +705,7 @@ export class ApplyFdComponent implements AfterViewInit {
       fdItems: fdItems
     };
 
-    console.log('Submitting bundle application with payload:', bundlePayload);
-    console.log('Token present:', !!localStorage.getItem('access_token'));
+    console.log('Submitting bundle application', { itemCount: fdItems.length, totalAmount: bundlePayload.totalAmount });
 
     // Call bundle API
     this.apiClient.applyForBundle(bundlePayload).pipe(
@@ -723,6 +763,8 @@ export class ApplyFdComponent implements AfterViewInit {
       accountNumber: this.formData.accountNumber,
       ifscCode: this.formData.ifscCode,
       nominees: this.formData.nominees,
+      currency: this.formData.currency,
+      defaultCurrency: this.currencyService.preferredCurrency(),
       customerCategory: this.formData.customerCategory,
       accountHolderRoles: this.formData.accountHolderRoles,
       coOwnerName: this.formData.coOwnerName
@@ -737,6 +779,12 @@ export class ApplyFdComponent implements AfterViewInit {
     if (saved) {
       try {
         const details = JSON.parse(saved);
+        if (!this.officerMode && details.defaultCurrency) {
+          this.currencyService.setPreferredCurrency(details.defaultCurrency);
+        }
+        const savedCurrency = details.defaultCurrency || this.currencyService.preferredCurrency() || details.currency || 'INR';
+        this.formData.currency = savedCurrency;
+        if (savedCurrency !== this.previousCurrency) this.onCurrencyChange(savedCurrency);
         this.formData.firstName = details.firstName || '';
         this.formData.middleName = details.middleName || '';
         this.formData.lastName = details.lastName || '';
@@ -789,6 +837,9 @@ export class ApplyFdComponent implements AfterViewInit {
   }
 
   isProductRoleAllowed(role: string): boolean {
+    // The account service supports optional co-owners for every FD. Older
+    // product records may not yet include this role in their catalog payload.
+    if (role === 'OWNER' || role === 'CO-OWNER') return true;
     const roles = this.selectedProduct()?.allowedRoles?.map((value: string) => value.toUpperCase()) || ['OWNER'];
     return roles.includes(role);
   }
@@ -833,6 +884,7 @@ export class ApplyFdComponent implements AfterViewInit {
           sequenceOrder: index + 1
         }));
         this.bundleFDItems.set(fdItems);
+        this.reconcileBundleFDItems(this.products());
 
         // Pre-fill applicant details from first product (for display)
         if (pkg.products && pkg.products.length > 0) {
@@ -858,7 +910,92 @@ export class ApplyFdComponent implements AfterViewInit {
     }
   }
 
+  private reconcileBundleFDItems(products: any[]): void {
+    if (!products?.length || !this.isBundleMode()) return;
+    const compatible = (product: any, item: any): boolean => {
+      const minTerm = Number(product.termLimit?.min ?? 6);
+      const maxTerm = Number(product.termLimit?.max ?? 120);
+      const minAmount = Number(product.minDeposit ?? 0);
+      const maxAmount = Number(product.maxDeposit ?? Number.POSITIVE_INFINITY);
+      return item.tenureMonths >= minTerm && item.tenureMonths <= maxTerm &&
+        item.principalAmount >= minAmount && item.principalAmount <= maxAmount;
+    };
+    const updatedItems = this.bundleFDItems().map(item => {
+      const currentProduct = products.find(product => product.productCode === item.productCode);
+      if (currentProduct && compatible(currentProduct, item)) return item;
+      const replacement = products.find(product => compatible(product, item));
+      return replacement ? { ...item, productCode: replacement.productCode } : item;
+    });
+    this.bundleFDItems.set(updatedItems);
+  }
+
+  private refreshBundleEstimate(products: any[]): void {
+    if (!this.isBundleMode() || !products.length) return;
+    const requestId = ++this.bundleEstimateRequestId;
+    const items = this.bundleFDItems();
+    if (!items.length) {
+      this.bundleBreakdown.set([]);
+      this.bundleTotalDeductions.set(0);
+      return;
+    }
+    this.bundleCalculationError.set('');
+    const category = Number(this.formData.age) >= 60 && this.formData.customerCategory === 'GENERAL'
+      ? 'SENIOR_CITIZEN' : this.formData.customerCategory;
+    const requests = items.map(item => this.apiClient.calculateAdvancedMaturity({
+      principal: Number(item.principalAmount),
+      term: { value: Number(item.tenureMonths), unit: 'MONTHS' },
+      productCode: item.productCode,
+      categories: category === 'GENERAL' ? [] : [category],
+      interestType: item.interestType || 'COMPOUND',
+      currency: 'INR',
+      age: Number(this.formData.age) || undefined,
+      includePrematureWithdrawal: false
+    }));
+    forkJoin(requests).subscribe({
+      next: results => {
+        // Ignore stale responses if the bundle or applicant category changed.
+        if (requestId !== this.bundleEstimateRequestId || items !== this.bundleFDItems()) return;
+        let totalPrincipal = 0;
+        let maturityTotal = 0;
+        let totalDeductions = 0;
+        const breakdown = items.map((item, index) => {
+          const product = products.find(candidate => candidate.productCode === item.productCode);
+          const result = results[index] || {};
+          const principal = Number(item.principalAmount) || 0;
+          const grossInterest = Number(result.grossInterest) || 0;
+          const deductions = Number(result.totalDeductions) || 0;
+          const maturity = Number(result.maturityAmount) || principal + grossInterest - deductions;
+          totalPrincipal += principal;
+          maturityTotal += maturity;
+          totalDeductions += deductions;
+          return {
+            ...item,
+            productName: product?.productName || item.productCode,
+            effectiveRate: Number(result.effectiveRate) || 0,
+            grossInterest,
+            totalDeductions: deductions,
+            maturityAmount: maturity,
+            charges: Array.isArray(result.charges) ? result.charges : []
+          };
+        });
+        this.bundleBreakdown.set(breakdown);
+        this.bundleTotalDeductions.set(Math.round(totalDeductions * 100) / 100);
+        this.bundleTotalAmount.set(Math.round(totalPrincipal * 100) / 100);
+        this.bundleEstimatedReturn.set(Math.round(maturityTotal * 100) / 100);
+      },
+      error: error => {
+        if (requestId !== this.bundleEstimateRequestId) return;
+        this.bundleCalculationError.set('Could not calculate one or more FD fee summaries. Please retry after the product calculator is available.');
+        console.warn('Could not refresh detailed bundle estimate:', error.status || error.message);
+      }
+    });
+  }
+
   calculateBilling(): void {
+    if (this.isBundleMode()) {
+      this.refreshBundleEstimate(this.products());
+      return;
+    }
     const principal = Number(this.formData.principalAmount);
     const tenure = Number(this.formData.tenureMonths);
     const principalINR = Number(this.currencyService.convertToINR(principal, this.formData.currency));
@@ -871,31 +1008,40 @@ export class ApplyFdComponent implements AfterViewInit {
       this.serviceFee.set(0);
       this.documentationFee.set(0);
       this.gstAmount.set(0);
+      this.taxAmount.set(0);
       this.totalFees.set(0);
       this.netMaturity.set(0);
       return;
     }
 
-    // Use the same configured base rate and category bonus as the product rate API.
-    let interestRate = 7.5; // Default fallback
     const product = this.selectedProduct();
-
-    if (product && product.rateLimit) {
-      const minRate = Number(product.rateLimit.min ?? 7.0);
-      const maxRate = Number(product.rateLimit.max ?? 7.5);
-      const variation = (product.rateVariations || []).find((item: any) =>
-        String(item.customerCategory).toUpperCase().replaceAll(' ', '_') === this.formData.customerCategory
-      );
-      interestRate = Math.min(maxRate, Math.max(minRate, minRate + Number(variation?.rateModifier || 0)));
+    const minRate = Number(product?.rateLimit?.min);
+    const maxRate = Number(product?.rateLimit?.max);
+    if (!Number.isFinite(minRate) || !Number.isFinite(maxRate) || maxRate < minRate) {
+      this.calculatedInterest.set(0); this.calculatedMaturity.set(0);
+      this.processingFee.set(0); this.serviceFee.set(0); this.documentationFee.set(0);
+      this.gstAmount.set(0); this.taxAmount.set(0); this.totalFees.set(0); this.netMaturity.set(0);
+      return;
     }
+    const category = Number(this.formData.age) >= 60 && this.formData.customerCategory === 'GENERAL'
+      ? 'SENIOR_CITIZEN' : this.formData.customerCategory;
+    const variation = (product.rateVariations || []).find((item: any) =>
+      String(item.customerCategory).trim().toUpperCase().replaceAll(' ', '_') === category
+    );
+    const interestRate = Math.min(maxRate, Math.max(minRate, minRate + Number(variation?.rateModifier || 0)));
 
     // Calculate interest based on interest type
     let interest: number;
     if (this.formData.interestType === 'COMPOUND') {
-      // Compound interest: A = P(1 + r/n)^(nt)
-      // Assuming quarterly compounding (n=4)
+      // Use the product's configured compounding frequency.
       const r = interestRate / 100;
-      const n = 4;
+      const n = this.compoundsPerYear(product.compoundingFrequency);
+      if (!n) {
+        this.calculatedInterest.set(0); this.calculatedMaturity.set(0);
+        this.processingFee.set(0); this.serviceFee.set(0); this.documentationFee.set(0);
+        this.gstAmount.set(0); this.taxAmount.set(0); this.totalFees.set(0); this.netMaturity.set(0);
+        return;
+      }
       const t = tenure / 12;
       interest = principalINR * Math.pow(1 + r/n, n*t) - principalINR;
     } else {
@@ -905,43 +1051,30 @@ export class ApplyFdComponent implements AfterViewInit {
 
     const maturityINR = principalINR + interest;
 
-    // Calculate fees based on product configuration
+    // Only apply charges configured on this product. Withdrawal penalties are
+    // not application fees, and a missing configured fee is zero.
     let processingFeeINR = 0;
     let serviceFeeINR = 0;
     let documentationFeeINR = 0;
 
-    if (product && product.charges && product.charges.length > 0) {
-      product.charges.forEach((charge: any) => {
-        if (charge.chargeType === 'PREMATURE_WITHDRAWAL') {
-          // This is for premature withdrawal, not for application
-          // Skip for now
-        } else if (charge.chargeType === 'PROCESSING_FEE') {
-          if (charge.chargeUnit === 'percentage') {
-            processingFeeINR = principalINR * (Number(charge.chargeValue) / 100);
-          } else {
-            processingFeeINR = Number(charge.chargeValue) || 0;
-          }
-        } else if (charge.chargeType === 'SERVICE_FEE') {
-          if (charge.chargeUnit === 'percentage') {
-            serviceFeeINR = principalINR * (Number(charge.chargeValue) / 100);
-          } else {
-            serviceFeeINR = Number(charge.chargeValue) || 0;
-          }
-        } else if (charge.chargeType === 'DOCUMENTATION_FEE') {
-          documentationFeeINR = Number(charge.chargeValue) || 0;
-        }
-      });
-    }
-
-    // Default processing fee if not specified in product
-    if (processingFeeINR === 0) {
-      processingFeeINR = Math.max(100, Math.min(500, principalINR * 0.005));
-    }
-
-    // Get GST rate from product (default 18%)
-    const gstRate = product?.gstRate || 18.0;
+    const chargeRows = Array.isArray(product.chargeDetails) ? product.chargeDetails : [];
+    const getCharge = (...types: string[]): any => chargeRows.find((charge: any) => types.includes(String(charge.chargeType || '').trim().toUpperCase().replaceAll(' ', '_')));
+    const chargeAmount = (charge: any): number => {
+      if (!charge) return 0;
+      const value = Number(charge.chargeValue) || 0;
+      return String(charge.chargeUnit).toLowerCase() === 'percentage' ? principalINR * value / 100 : value;
+    };
+    processingFeeINR = chargeAmount(getCharge('PROCESSING_FEE', 'TRANSACTION_FEE', 'DEPOSIT_FEE', 'ACCOUNT_OPENING_FEE', 'APPLICATION_FEE'));
+    const serviceCharge = getCharge('SERVICE_FEE');
+    const documentationCharge = getCharge('DOCUMENTATION_FEE');
+    serviceFeeINR = serviceCharge ? chargeAmount(serviceCharge)
+      : Number(product.serviceFeeRate) > 0 ? principalINR * Number(product.serviceFeeRate) / 100
+      : Number(product.serviceFeeFlat) || 0;
+    documentationFeeINR = documentationCharge ? chargeAmount(documentationCharge) : Number(product.documentationFee) || 0;
+    const gstRate = Number(product.gstRate) || 0;
     const totalFeesINR = processingFeeINR + serviceFeeINR + documentationFeeINR;
     const gstINR = totalFeesINR * (gstRate / 100);
+    const taxINR = interest * (Number(product.taxRate) || 0) / 100;
 
     // Convert to selected currency
     const interestInSelectedCurrency = this.currencyService.convertFromINR(interest, this.formData.currency);
@@ -950,22 +1083,36 @@ export class ApplyFdComponent implements AfterViewInit {
     const serviceFee = this.currencyService.convertFromINR(serviceFeeINR, this.formData.currency);
     const documentationFee = this.currencyService.convertFromINR(documentationFeeINR, this.formData.currency);
     const gst = this.currencyService.convertFromINR(gstINR, this.formData.currency);
-    const totalFees = this.currencyService.convertFromINR(totalFeesINR + gstINR, this.formData.currency);
+    const tax = this.currencyService.convertFromINR(taxINR, this.formData.currency);
+    const totalFees = this.currencyService.convertFromINR(totalFeesINR + gstINR + taxINR, this.formData.currency);
 
-    this.calculatedInterest.set(Math.round(interestInSelectedCurrency));
-    this.calculatedMaturity.set(Math.round(maturity));
-    this.processingFee.set(Math.round(processingFee));
-    this.serviceFee.set(Math.round(serviceFee));
-    this.documentationFee.set(Math.round(documentationFee));
-    this.gstAmount.set(Math.round(gst));
-    this.totalFees.set(Math.round(totalFees));
-    this.netMaturity.set(Math.round(maturity - totalFees));
+    this.calculatedInterest.set(Math.round(interestInSelectedCurrency * 100) / 100);
+    this.calculatedMaturity.set(Math.round(maturity * 100) / 100);
+    this.processingFee.set(Math.round(processingFee * 100) / 100);
+    this.serviceFee.set(Math.round(serviceFee * 100) / 100);
+    this.documentationFee.set(Math.round(documentationFee * 100) / 100);
+    this.gstAmount.set(Math.round(gst * 100) / 100);
+    this.taxAmount.set(Math.round(tax * 100) / 100);
+    this.totalFees.set(Math.round(totalFees * 100) / 100);
+    this.netMaturity.set(Math.round((maturity - totalFees) * 100) / 100);
+  }
+
+  private compoundsPerYear(frequency: any): number {
+    const normalized = String(frequency || '').trim().toUpperCase();
+    const named: Record<string, number> = { ANNUAL: 1, ANNUALLY: 1, YEARLY: 1, ON_MATURITY: 1, SEMI_ANNUAL: 2, 'SEMI-ANNUAL': 2, HALF_YEARLY: 2, QUARTERLY: 4, MONTHLY: 12, DAILY: 365 };
+    const value = named[normalized] ?? Number(normalized);
+    return Number.isFinite(value) && value > 0 ? value : 0;
   }
 
   // Helper method for number formatting
   formatNumber(value: any): string {
     const number = Number(value);
     return (Number.isFinite(number) ? number : 0).toLocaleString('en-IN');
+  }
+
+  formatBundleCurrency(amountInINR: number): string {
+    const amount = this.currencyService.convertFromINR(Number(amountInINR) || 0, this.formData.currency);
+    return this.currencyService.formatCurrency(amount, this.formData.currency);
   }
 
   onCurrencyChange(newCurrency: string): void {
@@ -1018,6 +1165,8 @@ export class ApplyFdComponent implements AfterViewInit {
     this.currentStep = 1;
     this.submitSuccess = false;
     this.errorMessage = '';
+    this.termsAccepted = false;
+    this.termsError = '';
     this.selectedProduct.set(null);
   }
 }

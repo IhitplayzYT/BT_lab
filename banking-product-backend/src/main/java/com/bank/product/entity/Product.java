@@ -94,12 +94,14 @@ public class Product {
     private Double documentationFee;
 
     @Column(name = "gst_rate")
+    private Double gstRate;
+
+    @Column(name = "compounding_frequency", length = 20)
     @Builder.Default
-    private Double gstRate = 18.00;
+    private String compoundingFrequency = "QUARTERLY";
 
     @Column(name = "premature_penalty_rate")
-    @Builder.Default
-    private Double prematurePenaltyRate = 1.00;
+    private Double prematurePenaltyRate;
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", nullable = false)

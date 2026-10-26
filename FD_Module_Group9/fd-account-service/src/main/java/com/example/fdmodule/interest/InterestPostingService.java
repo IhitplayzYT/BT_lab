@@ -2,14 +2,15 @@ package com.example.fdmodule.interest;
 import com.example.fdmodule.entity.FDTransaction;
 import com.example.fdmodule.repository.FDTransactionRepository;
 import com.example.fdmodule.service.GLAccounts;
+import com.example.fdmodule.client.AuthServiceClient;
 import com.example.fdshared.Outbox;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.*;import java.time.*;import java.util.*;
 @Service public class InterestPostingService {
- private final JdbcTemplate jdbc;private final FDTransactionRepository ledger;private final Outbox outbox;
- public InterestPostingService(JdbcTemplate jdbc,FDTransactionRepository ledger,Outbox outbox){this.jdbc=jdbc;this.ledger=ledger;this.outbox=outbox;}
+ private final JdbcTemplate jdbc;private final FDTransactionRepository ledger;private final Outbox outbox;private final AuthServiceClient authServiceClient;
+ public InterestPostingService(JdbcTemplate jdbc,FDTransactionRepository ledger,Outbox outbox,AuthServiceClient authServiceClient){this.jdbc=jdbc;this.ledger=ledger;this.outbox=outbox;this.authServiceClient=authServiceClient;}
  private com.example.fdmodule.clock.BusinessClock clock;
  @org.springframework.beans.factory.annotation.Autowired(required = false) void setClock(com.example.fdmodule.clock.BusinessClock c){this.clock=c;}
  private LocalDate today(){return clock!=null?clock.today():LocalDate.now(ZoneId.of("Asia/Kolkata"));}
@@ -21,16 +22,23 @@ import java.math.*;import java.time.*;import java.util.*;
   jdbc.update("UPDATE fd_interest_state SET interest_mode=? WHERE fd_account_no=?",mode,account);
  }
  @Transactional public Map<String,Object> processBatch(String requestId,LocalDate target,String actor){
+  return process(requestId,target,actor,true);
+ }
+ /** A clock-triggered run has no row in fd_batch.batch_requests, so it must not publish a batch result event. */
+ @Transactional public Map<String,Object> processClockAdvance(String requestId,LocalDate target,String actor){
+  return process(requestId,target,actor,false);
+ }
+ private Map<String,Object> process(String requestId,LocalDate target,String actor,boolean reportBatchResult){
   if(target.isAfter(today()))throw new IllegalArgumentException("Future accrual dates are not permitted");
   if(jdbc.queryForObject("SELECT COUNT(*) FROM processed_interest_requests WHERE request_id=?",Integer.class,requestId)>0)return Map.of("requestId",requestId,"duplicate",true);
   var accounts=jdbc.queryForList("SELECT fd_account_no FROM fd_accounts WHERE status='ACTIVE' ORDER BY fd_account_no",String.class);
-  int days=0; for(String account:accounts)days+=processAccount(account,target,actor);
+  int events=0; for(String account:accounts)events+=processAccount(account,target,actor);
   jdbc.update("INSERT INTO processed_interest_requests(request_id,processed_at) VALUES(?,CURRENT_TIMESTAMP)",requestId);
-  var result=Map.<String,Object>of("requestId",requestId,"accounts",accounts.size(),"accrualDays",days,"businessDate",target.toString(),"status","COMPLETED");
-  outbox.emit("event.batch.completed","InterestBatchCompleted",requestId,result);
+  var result=Map.<String,Object>of("requestId",requestId,"accounts",accounts.size(),"accrualEvents",events,"businessDate",target.toString(),"status","COMPLETED");
+  if(reportBatchResult)outbox.emit("event.batch.completed","InterestBatchCompleted",requestId,result);
   jdbc.update("INSERT INTO admin_operation_logs(actor,operation_type,target_type,target_id,summary) VALUES(?,?,?,?,?)",
    actor,"INTEREST_BATCH_PROCESSED","INTEREST_BATCH",requestId,
-   "Processed interest for "+accounts.size()+" active FD accounts through "+target+" ("+days+" accrual days)");
+   "Processed interest for "+accounts.size()+" active FD accounts through "+target+" ("+events+" daily accrual events)");
   return result;
  }
  private int processAccount(String account,LocalDate target,String actor){
@@ -40,9 +48,11 @@ import java.math.*;import java.time.*;import java.util.*;
   LocalDate end=target.isBefore(maturity)?target:maturity.minusDays(1);
   if(java.time.temporal.ChronoUnit.DAYS.between(last,end)>366)throw new IllegalArgumentException("Catch-up exceeds 366 days; submit intermediate dates first");
   BigDecimal principal=decimal(fd.get("principal_amount")),rate=decimal(fd.get("interest_rate")), balance=decimal(s.get("current_balance")), accrued=decimal(s.get("accrued_precise"));
-  LocalDate next=date(s.get("next_capitalization_date"));int n=0;
+  LocalDate next=date(s.get("next_capitalization_date"));
   BigDecimal totalInterestAccrued=BigDecimal.ZERO;
+  int emittedEvents=0;
   for(LocalDate day=last.plusDays(1);!day.isAfter(end);day=day.plusDays(1)){
+   BigDecimal openingBalance=balance;
    BigDecimal capitalized=BigDecimal.ZERO;
    // Settle the previous monthly period before accruing the anniversary day.
    if("MONTHLY_COMPOUND".equals(s.get("interest_mode")) && !day.isBefore(next)){
@@ -55,15 +65,16 @@ import java.math.*;import java.time.*;import java.util.*;
    totalInterestAccrued=totalInterestAccrued.add(interest);
    jdbc.update("INSERT INTO fd_interest_transactions(fd_account_no,accrual_date,interest_amount,cumulative_interest,capitalized_flag) VALUES(?,?,?,?,false)",account,day,interest,accrued);
    saveState(account,balance,accrued,day,next);
+   if(interest.signum()>0||capitalized.signum()>0){
+    var data=new LinkedHashMap<String,Object>();data.put("fdAccountNo",account);data.put("customerId",fd.get("customer_id"));data.put("businessDate",day.toString());data.put("currency",fd.get("currency"));data.put("openingBalance",openingBalance);data.put("interestAccrued",interest);data.put("interestCapitalized",capitalized);data.put("interestPaid",BigDecimal.ZERO);data.put("closingBalance",balance);data.put("outstandingInterest",accrued);data.put("actor",actor);
+    com.example.fdmodule.service.NotificationContacts.enrich(jdbc, account, data);
+    outbox.emit("event.interest.accrued","InterestAccrued",account,data);emittedEvents++;
+   }
   }
-  // Emit a single summary event per account at the end of processing, not daily
   if(totalInterestAccrued.signum()>0){
    ledger.save(new FDTransaction(account,FDTransaction.TYPE_INTEREST_ACCRUAL,totalInterestAccrued,Objects.toString(fd.get("currency")),GLAccounts.EXPENSE_INTEREST,GLAccounts.LIABILITY_INTEREST_PAYABLE,"Interest accrued through "+end,actor));
-   var data=new LinkedHashMap<String,Object>();data.put("fdAccountNo",account);data.put("customerId",fd.get("customer_id"));data.put("businessDate",end.toString());data.put("currency",fd.get("currency"));data.put("openingBalance",decimal(fd.get("principal_amount")));data.put("interestAccrued",totalInterestAccrued);data.put("interestCapitalized",BigDecimal.ZERO);data.put("interestPaid",BigDecimal.ZERO);data.put("closingBalance",balance);data.put("outstandingInterest",accrued);data.put("actor",actor);
-   com.example.fdmodule.service.NotificationContacts.enrich(jdbc, account, data);
-   outbox.emit("event.interest.accrued","InterestAccrued",account,data);n++;
   }
-  return n;
+  return emittedEvents;
  }
  @Transactional public Map<String,Object> payout(String requestId,String account,LocalDate day,String actor){
   if(jdbc.queryForObject("SELECT COUNT(*) FROM processed_interest_requests WHERE request_id=?",Integer.class,requestId)>0)return Map.of("requestId",requestId,"duplicate",true);
@@ -101,6 +112,7 @@ import java.math.*;import java.time.*;import java.util.*;
  private Map<String,Object> state(String a){return jdbc.queryForMap("SELECT * FROM fd_interest_state WHERE fd_account_no=? FOR UPDATE",a);}
  private void saveState(String a,BigDecimal b,BigDecimal i,LocalDate last,LocalDate next){jdbc.update("UPDATE fd_interest_state SET current_balance=?,accrued_precise=?,last_accrual_date=?,next_capitalization_date=? WHERE fd_account_no=?",b,i,last,next,a);jdbc.update("UPDATE fd_accounts SET accrued_interest=?,modified_at=CURRENT_TIMESTAMP WHERE fd_account_no=?",i.setScale(2,RoundingMode.HALF_UP),a);}
  public List<Map<String,Object>> accounts(){return jdbc.queryForList("SELECT a.fd_account_no,a.customer_id,a.currency,a.principal_amount,a.interest_rate,a.status,a.maturity_date,COALESCE(s.interest_mode,'SIMPLE') AS interest_mode,COALESCE(s.current_balance,a.principal_amount) AS current_balance,COALESCE(s.accrued_precise,0) AS accrued_interest,s.last_accrual_date FROM fd_accounts a LEFT JOIN fd_interest_state s ON a.fd_account_no=s.fd_account_no ORDER BY a.fd_account_no");}
+ public List<Map<String,Object>> accountsForCustomer(String username){Long userId=authServiceClient.getUserIdByUsername(username);if(userId==null)return List.of();return jdbc.queryForList("SELECT a.fd_account_no,a.customer_id,a.currency,a.principal_amount,a.interest_rate,a.status,a.maturity_date,COALESCE(s.interest_mode,'SIMPLE') AS interest_mode,COALESCE(s.current_balance,a.principal_amount) AS current_balance,COALESCE(s.accrued_precise,0) AS accrued_interest,s.last_accrual_date FROM fd_accounts a JOIN customer_profile c ON c.customer_id=a.customer_id LEFT JOIN fd_interest_state s ON a.fd_account_no=s.fd_account_no WHERE c.user_id=? ORDER BY a.fd_account_no",userId);}
  private static BigDecimal decimal(Object o){return o==null?BigDecimal.ZERO:new BigDecimal(o.toString());}
  private static LocalDate date(Object o){if(o instanceof java.sql.Timestamp t)return t.toLocalDateTime().toLocalDate();if(o instanceof LocalDateTime t)return t.toLocalDate();if(o instanceof java.sql.Date d)return d.toLocalDate();return LocalDate.parse(o.toString().substring(0,10));}
 }

@@ -19,6 +19,39 @@
     <div class="loading">{{ 'Loading products...' | translate }}</div>
   }
 
+  <div class="product-filter-panel card">
+    <div class="product-filter-grid">
+      <label>{{ 'Search' | translate }}
+        <input type="search" [(ngModel)]="searchQuery" [attr.placeholder]="'Name, code, currency...' | translate">
+      </label>
+      <label>{{ 'Product Type' | translate }}
+        <select [(ngModel)]="typeFilter">
+          <option value="ALL">{{ 'All types' | translate }}</option>
+          @for (type of productTypes; track type) { <option [value]="type">{{ type }}</option> }
+        </select>
+      </label>
+      <label>{{ 'Minimum duration (months)' | translate }}
+        <input type="number" min="0" [(ngModel)]="durationMin">
+      </label>
+      <label>{{ 'Maximum duration (months)' | translate }}
+        <input type="number" min="0" [(ngModel)]="durationMax">
+      </label>
+      <label>{{ 'Sort by' | translate }}
+        <select [(ngModel)]="sortBy">
+          <option value="name-asc">{{ 'Name A to Z' | translate }}</option>
+          <option value="name-desc">{{ 'Name Z to A' | translate }}</option>
+          <option value="type-asc">{{ 'Type A to Z' | translate }}</option>
+          <option value="duration-asc">{{ 'Shortest duration' | translate }}</option>
+          <option value="duration-desc">{{ 'Longest duration' | translate }}</option>
+          <option value="rate-asc">{{ 'Lowest starting rate' | translate }}</option>
+          <option value="rate-desc">{{ 'Highest starting rate' | translate }}</option>
+          <option value="status-asc">{{ 'Status' | translate }}</option>
+        </select>
+      </label>
+    </div>
+    <small>{{ 'Showing {0} of {1} products' | translate:[filteredProducts.length, products().length] }}</small>
+  </div>
+
   @if (showCreateForm() || showEditForm()) {
     <div data-lenis-prevent class="form-overlay" (click)="hideForms()">
       <div class="form-container" (click)="$event.stopPropagation()">
@@ -216,7 +249,7 @@
   }
 
   <div class="products-grid">
-    @for (product of products(); track product.productCode) {
+    @for (product of filteredProducts; track product.productCode) {
       <div class="product-card">
         <div class="product-header">
           <h3>{{ product.productName }}</h3>
@@ -278,10 +311,10 @@
     }
   </div>
 
-  @if (products().length === 0 && !isLoading()) {
+  @if (filteredProducts.length === 0 && !isLoading()) {
     <div class="empty-state">
-      <p>{{ 'No products found' | translate }}</p>
-      @if (canCreateProduct()) {
+      <p>{{ products().length ? ('No products match these filters.' | translate) : ('No products found' | translate) }}</p>
+      @if (products().length === 0 && canCreateProduct()) {
         <button class="btn btn-primary" (click)="showCreate()">{{ 'Create First Product' | translate }}</button>
       }
     </div>

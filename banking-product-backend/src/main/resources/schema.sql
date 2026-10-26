@@ -30,8 +30,9 @@ CREATE TABLE IF NOT EXISTS products (
     service_fee_rate         DECIMAL(5,2) DEFAULT NULL,     -- Service fee rate as percentage
     service_fee_flat         DECIMAL(15,2) DEFAULT NULL,   -- Flat service fee amount
     documentation_fee        DECIMAL(15,2) DEFAULT NULL,   -- Documentation fee amount
-    gst_rate                 DECIMAL(5,2) DEFAULT 18.00,   -- GST rate as percentage
-    premature_penalty_rate   DECIMAL(5,2) DEFAULT 1.00,     -- Premature withdrawal penalty rate
+    gst_rate                 DECIMAL(5,2) DEFAULT NULL,   -- GST rate as percentage, configured per product
+    premature_penalty_rate   DECIMAL(5,2) DEFAULT NULL,     -- Premature withdrawal penalty rate, configured per product
+    compounding_frequency    VARCHAR(20) DEFAULT 'QUARTERLY',
     -- Audit columns (exact match to specification)
     created_by               VARCHAR(50)  DEFAULT NULL,
     created_at               TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,

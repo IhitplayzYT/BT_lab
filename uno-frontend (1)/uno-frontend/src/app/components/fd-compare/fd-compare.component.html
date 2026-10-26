@@ -8,11 +8,9 @@
       <div class="currency-selector">
         <label for="currency">Currency:</label>
         <select id="currency" [ngModel]="selectedCurrency()" (change)="onCurrencyChange($event)">
-          <option value="INR">INR (₹)</option>
-          <option value="USD">USD ($)</option>
-          <option value="EUR">EUR (€)</option>
-          <option value="GBP">GBP (£)</option>
-          <option value="JPY">JPY (¥)</option>
+          @for (currency of supportedCurrencies; track currency.code) {
+            <option [value]="currency.code">{{ currency.code }} ({{ currencyService.getCurrencySymbol(currency.code) }})</option>
+          }
         </select>
       </div>
     </div>
@@ -301,15 +299,15 @@
               <div class="metrics-list">
                 <div class="metric-item">
                   <span class="metric-label">{{ 'Principal' | translate }}</span>
-                  <span class="metric-value">₹{{ formattedPrincipal1() }}</span>
+                  <span class="metric-value">{{ formattedPrincipal1() }}</span>
                 </div>
                 <div class="metric-item">
                   <span class="metric-label">{{ 'Maturity Amount' | translate }}</span>
-                  <span class="metric-value text-gradient">₹{{ formattedMaturity1() }}</span>
+                  <span class="metric-value text-gradient">{{ formattedMaturity1() }}</span>
                 </div>
                 <div class="metric-item">
                   <span class="metric-label">{{ 'Interest Earned' | translate }}</span>
-                  <span class="metric-value accent">₹{{ formattedInterest1() }}</span>
+                  <span class="metric-value accent">{{ formattedInterest1() }}</span>
                 </div>
                 <div class="metric-item">
                   <span class="metric-label">{{ 'Interest Rate' | translate }}</span>
@@ -344,15 +342,15 @@
               <div class="metrics-list">
                 <div class="metric-item">
                   <span class="metric-label">{{ 'Principal' | translate }}</span>
-                  <span class="metric-value">₹{{ formattedPrincipal2() }}</span>
+                  <span class="metric-value">{{ formattedPrincipal2() }}</span>
                 </div>
                 <div class="metric-item">
                   <span class="metric-label">{{ 'Maturity Amount' | translate }}</span>
-                  <span class="metric-value text-gradient">₹{{ formattedMaturity2() }}</span>
+                  <span class="metric-value text-gradient">{{ formattedMaturity2() }}</span>
                 </div>
                 <div class="metric-item">
                   <span class="metric-label">{{ 'Interest Earned' | translate }}</span>
-                  <span class="metric-value accent">₹{{ formattedInterest2() }}</span>
+                  <span class="metric-value accent">{{ formattedInterest2() }}</span>
                 </div>
                 <div class="metric-item">
                   <span class="metric-label">{{ 'Interest Rate' | translate }}</span>

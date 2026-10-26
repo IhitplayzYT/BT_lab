@@ -17,6 +17,11 @@ export class ProductManagementComponent implements OnInit {
   private authService = inject(AuthService);
 
   products = signal<any[]>([]);
+  searchQuery = '';
+  typeFilter = 'ALL';
+  durationMin: number | null = null;
+  durationMax: number | null = null;
+  sortBy = 'name-asc';
   isLoading = signal(false);
   error = signal<string | null>(null);
   showCreateForm = signal(false);
@@ -72,7 +77,7 @@ export class ProductManagementComponent implements OnInit {
     this.isLoading.set(true);
     this.error.set(null);
     
-    this.apiClient.searchProducts('FD', undefined, undefined, undefined, 0, 50, 'productId').subscribe({
+    this.apiClient.searchProducts(undefined, undefined, undefined, undefined, 0, 200, 'productId').subscribe({
       next: (products) => {
         this.products.set(products);
         this.isLoading.set(false);
@@ -83,6 +88,41 @@ export class ProductManagementComponent implements OnInit {
         this.isLoading.set(false);
       }
     });
+  }
+
+  get productTypes(): string[] {
+    return [...new Set(this.products().map(product => String(product.productType || '').toUpperCase()).filter(Boolean))].sort();
+  }
+
+  get filteredProducts(): any[] {
+    const query = this.searchQuery.trim().toLowerCase();
+    let results = this.products().filter(product => {
+      const matchesQuery = !query || [product.productName, product.productCode, product.productType, product.currency]
+        .some(value => String(value || '').toLowerCase().includes(query));
+      const matchesType = this.typeFilter === 'ALL' || String(product.productType || '').toUpperCase() === this.typeFilter;
+      const minTerm = Number(product.termLimit?.min ?? 0);
+      const maxTerm = Number(product.termLimit?.max ?? Number.POSITIVE_INFINITY);
+      const matchesDuration = (this.durationMin === null || maxTerm >= this.durationMin) &&
+        (this.durationMax === null || minTerm <= this.durationMax);
+      return matchesQuery && matchesType && matchesDuration;
+    });
+
+    const [field, direction] = this.sortBy.split('-');
+    const value = (product: any): string | number => {
+      switch (field) {
+        case 'type': return String(product.productType || '').toLowerCase();
+        case 'duration': return Number(product.termLimit?.min ?? 0);
+        case 'rate': return Number(product.rateLimit?.min ?? 0);
+        case 'status': return String(product.status || '').toLowerCase();
+        default: return String(product.productName || '').toLowerCase();
+      }
+    };
+    results = [...results].sort((a, b) => {
+      const av = value(a), bv = value(b);
+      const compared = typeof av === 'number' && typeof bv === 'number' ? av - bv : String(av).localeCompare(String(bv));
+      return direction === 'desc' ? -compared : compared;
+    });
+    return results;
   }
 
   showCreate(): void {

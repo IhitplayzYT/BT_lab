@@ -2,7 +2,10 @@
   <app-star-background></app-star-background>
   <div class="container">
     <div class="section-header">
-      @if (isBundleMode()) {
+      @if (officerMode) {
+        <h1 class="text-gradient">{{ 'Create FD Application for Customer' | translate }}</h1>
+        <p>{{ 'Customer: {0} ({1})' | translate:[officerCustomerName, officerCustomerId] }}</p>
+      } @else if (isBundleMode()) {
         <h1 class="text-gradient">{{ 'Apply for FD Package' | translate }}</h1>
         <p>{{ 'Complete your application for the {0} package' | translate:[bundleName()] }}</p>
       } @else {
@@ -49,11 +52,11 @@
               <div class="bundle-stats">
                 <div class="bundle-stat">
                   <span class="stat-label">{{ 'Total Investment' | translate }}</span>
-                  <span class="stat-value">₹{{ formatNumber(bundleTotalAmount()) }}</span>
+                  <span class="stat-value">{{ currencyService.formatPreferredCurrency(bundleTotalAmount()) }}</span>
                 </div>
                 <div class="bundle-stat">
                   <span class="stat-label">{{ 'Estimated Return' | translate }}</span>
-                  <span class="stat-value text-accent">₹{{ formatNumber(bundleEstimatedReturn()) }}</span>
+                  <span class="stat-value text-accent">{{ currencyService.formatPreferredCurrency(bundleEstimatedReturn()) }}</span>
                 </div>
                 <div class="bundle-stat">
                   <span class="stat-label">{{ 'Number of FDs' | translate }}</span>
@@ -210,7 +213,7 @@
                 </div>
 
                 <div class="form-group">
-                  <label for="annualIncome">{{ 'Annual Income (₹) *' | translate }}</label>
+                  <label for="annualIncome">{{ 'Annual Income' | translate }} ({{ currencyService.getCurrencySymbol(currencyService.preferredCurrency()) }}) *</label>
                   <input 
                     type="number" 
                     id="annualIncome" 
@@ -337,7 +340,7 @@
                       <div class="fd-item-details">
                         <div class="fd-item-detail">
                           <span class="detail-label">{{ 'Amount' | translate }}</span>
-                          <span class="detail-value">₹{{ formatNumber(item.principalAmount) }}</span>
+                          <span class="detail-value">{{ formatBundleCurrency(item.principalAmount) }}</span>
                         </div>
                         <div class="fd-item-detail">
                           <span class="detail-label">{{ 'Tenure' | translate }}</span>
@@ -461,8 +464,8 @@
                           <p class="product-description">{{ selectedProduct().productType }} - {{ selectedProduct().productCode }}</p>
                           <div class="product-specs">
                             <span class="spec">{{ 'Rate: {0}%' | translate:[selectedProduct().rateLimit?.max || 7.0] }}</span>
-                            <span class="spec">{{ 'Min: {0} {1}' | translate:[selectedProduct().currency || 'INR', formatNumber(selectedProduct().minDeposit)] }}</span>
-                            <span class="spec">{{ 'Max: {0} {1}' | translate:[selectedProduct().currency || 'INR', formatNumber(selectedProduct().maxDeposit)] }}</span>
+                            <span class="spec">{{ 'Min: {0}' | translate:[currencyService.formatPreferredCurrency(selectedProduct().minDeposit)] }}</span>
+                            <span class="spec">{{ 'Max: {0}' | translate:[currencyService.formatPreferredCurrency(selectedProduct().maxDeposit)] }}</span>
                             <span class="spec">{{ 'Tenure: {0}-{1}m' | translate:[selectedProduct().termLimit?.min || 6, selectedProduct().termLimit?.max || 120] }}</span>
                             @if (selectedProduct().rateVariations && selectedProduct().rateVariations.length > 0) {
                               <span class="spec offer-badge">Special rates available</span>
@@ -492,7 +495,7 @@
                       @for (role of ['OWNER', 'CO-OWNER']; track role) {
                         <label class="product-role-option">
                           <input type="checkbox" [checked]="hasApplicationRole(role)" [disabled]="role === 'OWNER' || !isProductRoleAllowed(role)" (change)="toggleApplicationRole(role, $any($event.target).checked)">
-                          <span>{{ role === 'OWNER' ? 'Owner' : 'Co-Owner' | translate }}</span>
+                          <span>{{ role === 'OWNER' ? ('Owner (required)' | translate) : ('Co-Owner' | translate) }}</span>
                         </label>
                       }
                     </div>
@@ -586,25 +589,71 @@
                     <span class="summary-label">{{ 'Name' | translate }}</span>
                     <span class="summary-value">{{ formData.firstName }} {{ formData.middleName }} {{ formData.lastName }}</span>
                   </div>
-                  <div class="summary-item">
-                    <span class="summary-label">{{ 'Amount' | translate }}</span>
-                    <span class="summary-value">{{ currencyService.getCurrencySymbol(formData.currency) }}{{ formatNumber(formData.principalAmount) }}</span>
-                  </div>
-                  <div class="summary-item">
-                    <span class="summary-label">{{ 'Amount in INR' | translate }}</span>
-                    <span class="summary-value">₹{{ formatNumber(principalAmountINR) }}</span>
-                  </div>
-                  <div class="summary-item">
-                    <span class="summary-label">{{ 'Tenure' | translate }}</span>
-                    <span class="summary-value">{{ '{0} months' | translate:[formData.tenureMonths] }}</span>
-                  </div>
-                  <div class="summary-item">
-                    <span class="summary-label">{{ 'Interest Type' | translate }}</span>
-                    <span class="summary-value">{{ formData.interestType }}</span>
-                  </div>
+                  @if (isBundleMode()) {
+                    @for (item of bundleFDItems(); track $index) {
+                      <div class="summary-item bundle-summary-row">
+                        <span class="summary-label">{{ 'FD #{0}' | translate:[$index + 1] }} · {{ bundleBreakdown()[$index]?.productName || item.productCode }}</span>
+                        <span class="summary-value">{{ formatBundleCurrency(item.principalAmount) }} · {{ '{0} months' | translate:[item.tenureMonths] }} · {{ item.interestType || 'COMPOUND' }}</span>
+                      </div>
+                    }
+                    <div class="summary-item">
+                      <span class="summary-label">{{ 'Bundle Total Principal' | translate }}</span>
+                      <span class="summary-value">{{ formatBundleCurrency(bundleTotalAmount()) }}</span>
+                    </div>
+                    <div class="summary-item">
+                      <span class="summary-label">{{ 'Estimated Net Maturity' | translate }}</span>
+                      <span class="summary-value">{{ formatBundleCurrency(bundleEstimatedReturn()) }}</span>
+                    </div>
+                  } @else {
+                    <div class="summary-item">
+                      <span class="summary-label">{{ 'Amount' | translate }}</span>
+                      <span class="summary-value">{{ currencyService.getCurrencySymbol(formData.currency) }}{{ formatNumber(formData.principalAmount) }}</span>
+                    </div>
+                    <div class="summary-item">
+                      <span class="summary-label">{{ 'Amount in INR' | translate }}</span>
+                      <span class="summary-value">₹{{ formatNumber(principalAmountINR) }}</span>
+                    </div>
+                    <div class="summary-item">
+                      <span class="summary-label">{{ 'Tenure' | translate }}</span>
+                      <span class="summary-value">{{ '{0} months' | translate:[formData.tenureMonths] }}</span>
+                    </div>
+                    <div class="summary-item">
+                      <span class="summary-label">{{ 'Interest Type' | translate }}</span>
+                      <span class="summary-value">{{ formData.interestType }}</span>
+                    </div>
+                  }
                 </div>
               </div>
 
+              @if (isBundleMode()) {
+                <div class="billing-summary-card card">
+                  <h3 class="text-gradient">{{ 'Bundle Billing Summary' | translate }}</h3>
+                  @if (bundleCalculationError()) { <p class="validation-error" role="status">{{ bundleCalculationError() }}</p> }
+                  @if (bundleBreakdown().length === 0 && !bundleCalculationError()) { <p>{{ 'Calculating each FD and its fees...' | translate }}</p> }
+                  @for (item of bundleBreakdown(); track $index) {
+                    <div class="billing-grid bundle-billing-item">
+                      <div class="billing-item total"><span class="billing-label">{{ 'FD #{0}' | translate:[$index + 1] }} · {{ item.productName }}</span><span class="billing-value">{{ item.effectiveRate }}% · {{ '{0} months' | translate:[item.tenureMonths] }}</span></div>
+                      <div class="billing-item"><span class="billing-label">{{ 'Principal Amount' | translate }}</span><span class="billing-value">{{ formatBundleCurrency(item.principalAmount) }}</span></div>
+                      <div class="billing-item"><span class="billing-label">{{ 'Estimated Interest' | translate }}</span><span class="billing-value text-accent">+{{ formatBundleCurrency(item.grossInterest) }}</span></div>
+                      <div class="billing-item"><span class="billing-label">{{ 'Transaction Fees & Deductions' | translate }}</span><span class="billing-value text-error">-{{ formatBundleCurrency(item.totalDeductions) }}</span></div>
+                      @if (item.charges.length > 0) {
+                        @for (charge of item.charges; track $index) {
+                          <div class="billing-item"><span class="billing-label">{{ charge.description || charge.chargeType }}</span><span class="billing-value text-error">-{{ formatBundleCurrency(charge.chargeAmount) }}</span></div>
+                        }
+                      } @else {
+                        <small class="billing-note">{{ 'No fees are configured for this product.' | translate }}</small>
+                      }
+                      <div class="billing-item total"><span class="billing-label">{{ 'Net Maturity Amount' | translate }}</span><span class="billing-value total-value">{{ formatBundleCurrency(item.maturityAmount) }}</span></div>
+                    </div>
+                  }
+                  <div class="billing-grid">
+                    <div class="billing-item"><span class="billing-label">{{ 'Bundle Total Principal' | translate }}</span><span class="billing-value">{{ formatBundleCurrency(bundleTotalAmount()) }}</span></div>
+                    <div class="billing-item"><span class="billing-label">{{ 'Bundle Fees & Deductions' | translate }}</span><span class="billing-value text-error">-{{ formatBundleCurrency(bundleTotalDeductions()) }}</span></div>
+                    <div class="billing-item total"><span class="billing-label">{{ 'Estimated Bundle Maturity' | translate }}</span><span class="billing-value total-value">{{ formatBundleCurrency(bundleEstimatedReturn()) }}</span></div>
+                  </div>
+                </div>
+              }
+              @if (!isBundleMode()) {
               <div class="billing-summary-card card">
                 <h3 class="text-gradient">{{ 'Billing Summary' | translate }}</h3>
                 <div class="billing-grid">
@@ -620,10 +669,17 @@
                     <span class="billing-label">{{ 'Gross Maturity Amount' | translate }}</span>
                     <span class="billing-value">{{ currencyService.getCurrencySymbol(formData.currency) }}{{ formatNumber(calculatedMaturity()) }}</span>
                   </div>
-                  <div class="billing-item">
-                    <span class="billing-label">{{ 'Processing Fee' | translate }}</span>
-                    <span class="billing-value text-error">-{{ currencyService.getCurrencySymbol(formData.currency) }}{{ formatNumber(processingFee()) }}</span>
-                  </div>
+                  @if (processingFee() > 0) {
+                    <div class="billing-item">
+                      <span class="billing-label">{{ 'Transaction Fee' | translate }}</span>
+                      <span class="billing-value text-error">-{{ currencyService.getCurrencySymbol(formData.currency) }}{{ formatNumber(processingFee()) }}</span>
+                    </div>
+                  } @else {
+                    <div class="billing-item">
+                      <span class="billing-label">{{ 'Transaction Fee' | translate }}</span>
+                      <span class="billing-value">{{ 'None configured' | translate }}</span>
+                    </div>
+                  }
                   @if (serviceFee() > 0) {
                     <div class="billing-item">
                       <span class="billing-label">{{ 'Service Fee' | translate }}</span>
@@ -638,8 +694,14 @@
                   }
                   @if (gstAmount() > 0) {
                     <div class="billing-item">
-                      <span class="billing-label">{{ 'GST (18%)' | translate }}</span>
+                      <span class="billing-label">{{ 'GST ({0}%)' | translate:[selectedProduct()?.gstRate || 0] }}</span>
                       <span class="billing-value text-error">-{{ currencyService.getCurrencySymbol(formData.currency) }}{{ formatNumber(gstAmount()) }}</span>
+                    </div>
+                  }
+                  @if (taxAmount() > 0) {
+                    <div class="billing-item">
+                      <span class="billing-label">{{ 'Tax Deduction' | translate }}</span>
+                      <span class="billing-value text-error">-{{ currencyService.getCurrencySymbol(formData.currency) }}{{ formatNumber(taxAmount()) }}</span>
                     </div>
                   }
                   <div class="billing-item total">
@@ -649,6 +711,7 @@
                 </div>
                 <p class="billing-note">{{ '* Interest calculated based on selected product. Actual rate may vary based on customer category and tenure.' | translate }}</p>
               </div>
+              }
             </div>
           }
 
@@ -776,26 +839,45 @@
                     <span class="summary-label">{{ 'Phone' | translate }}</span>
                     <span class="summary-value">{{ formData.phone }}</span>
                   </div>
-                  <div class="summary-item">
-                    <span class="summary-label">{{ 'Amount' | translate }}</span>
-                    <span class="summary-value">{{ currencyService.getCurrencySymbol(formData.currency) }}{{ formatNumber(formData.principalAmount) }}</span>
-                  </div>
-                  <div class="summary-item">
-                    <span class="summary-label">{{ 'Amount in INR' | translate }}</span>
-                    <span class="summary-value">₹{{ formatNumber(principalAmountINR) }}</span>
-                  </div>
-                  <div class="summary-item">
-                    <span class="summary-label">{{ 'Tenure' | translate }}</span>
-                    <span class="summary-value">{{ '{0} months' | translate:[formData.tenureMonths] }}</span>
-                  </div>
-                  <div class="summary-item">
-                    <span class="summary-label">{{ 'Interest Type' | translate }}</span>
-                    <span class="summary-value">{{ formData.interestType }}</span>
-                  </div>
-                  <div class="summary-item">
-                    <span class="summary-label">{{ 'Product' | translate }}</span>
-                    <span class="summary-value">{{ selectedProduct()?.productName || formData.productCode }}</span>
-                  </div>
+                  @if (isBundleMode()) {
+                    @for (item of bundleFDItems(); track $index) {
+                      <div class="summary-item bundle-summary-row">
+                        <span class="summary-label">{{ 'FD #{0}' | translate:[$index + 1] }} · {{ bundleBreakdown()[$index]?.productName || item.productCode }}</span>
+                        <span class="summary-value">{{ formatBundleCurrency(item.principalAmount) }} · {{ '{0} months' | translate:[item.tenureMonths] }} · {{ item.interestType || 'COMPOUND' }}</span>
+                        @if (bundleBreakdown()[$index]) { <small>{{ 'Fees' | translate }}: {{ formatBundleCurrency(bundleBreakdown()[$index].totalDeductions) }} · {{ 'Net maturity' | translate }}: {{ formatBundleCurrency(bundleBreakdown()[$index].maturityAmount) }}</small> }
+                        @else { <small>{{ 'Calculating fees and maturity...' | translate }}</small> }
+                      </div>
+                    }
+                    <div class="summary-item">
+                      <span class="summary-label">{{ 'Bundle Total Principal' | translate }}</span>
+                      <span class="summary-value">{{ formatBundleCurrency(bundleTotalAmount()) }}</span>
+                    </div>
+                    <div class="summary-item">
+                      <span class="summary-label">{{ 'Estimated Net Maturity' | translate }}</span>
+                      <span class="summary-value">{{ formatBundleCurrency(bundleEstimatedReturn()) }}</span>
+                    </div>
+                  } @else {
+                    <div class="summary-item">
+                      <span class="summary-label">{{ 'Amount' | translate }}</span>
+                      <span class="summary-value">{{ currencyService.getCurrencySymbol(formData.currency) }}{{ formatNumber(formData.principalAmount) }}</span>
+                    </div>
+                    <div class="summary-item">
+                      <span class="summary-label">{{ 'Amount in INR' | translate }}</span>
+                      <span class="summary-value">₹{{ formatNumber(principalAmountINR) }}</span>
+                    </div>
+                    <div class="summary-item">
+                      <span class="summary-label">{{ 'Tenure' | translate }}</span>
+                      <span class="summary-value">{{ '{0} months' | translate:[formData.tenureMonths] }}</span>
+                    </div>
+                    <div class="summary-item">
+                      <span class="summary-label">{{ 'Interest Type' | translate }}</span>
+                      <span class="summary-value">{{ formData.interestType }}</span>
+                    </div>
+                    <div class="summary-item">
+                      <span class="summary-label">{{ 'Product' | translate }}</span>
+                      <span class="summary-value">{{ selectedProduct()?.productName || formData.productCode }}</span>
+                    </div>
+                  }
                 </div>
               </div>
             </div>
@@ -837,10 +919,19 @@
         <div class="success-card card">
           <div class="success-icon">✓</div>
           <h2 class="text-gradient">{{ 'Application Submitted Successfully!' | translate }}</h2>
-          <p>{{ 'Your FD application has been received and is being processed. You will receive a confirmation email shortly with your FD details.' | translate }}</p>
+          @if (officerMode) {
+            <p>{{ 'The FD application for {0} has been submitted for approval.' | translate:[officerCustomerName] }}</p>
+          } @else {
+            <p>{{ 'Your FD application has been received and is being processed. You will receive a confirmation email shortly with your FD details.' | translate }}</p>
+          }
           <div class="success-actions">
-            <button class="btn btn-primary" (click)="resetForm()">{{ 'Apply Another FD' | translate }}</button>
-            <button class="btn btn-secondary">{{ 'View Dashboard' | translate }}</button>
+            @if (officerMode) {
+              <button class="btn btn-primary" (click)="resetForm()">{{ 'Create Another Application' | translate }}</button>
+              <button class="btn btn-secondary" (click)="exitApplication()">{{ 'Return to Officer Dashboard' | translate }}</button>
+            } @else {
+              <button class="btn btn-primary" (click)="resetForm()">{{ 'Apply Another FD' | translate }}</button>
+              <button class="btn btn-secondary">{{ 'View Dashboard' | translate }}</button>
+            }
           </div>
         </div>
       </div>

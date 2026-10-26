@@ -13,11 +13,12 @@ import { catchError } from 'rxjs/operators';
 export class LoggingInterceptor implements HttpInterceptor {
   intercept(request: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
     const startTime = Date.now();
+    const containsApplicantDetails = /\/api\/fd\/account\/(?:apply(?:-for-user\/[^/?]+)?|bundle\/apply)(?:[/?]|$)/.test(request.url);
     
     console.log('🚀 HTTP Request:', {
       url: request.url,
       method: request.method,
-      body: request.body,
+      body: containsApplicantDetails ? '[redacted applicant details]' : request.body,
       headers: request.headers.keys().reduce((acc, key) => {
         acc[key] = request.headers.get(key);
         return acc;

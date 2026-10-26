@@ -7,6 +7,7 @@ import com.example.fdmodule.repository.CustomerProfileRepository;
 import com.example.fdmodule.repository.FDTransactionRepository;
 import com.example.fdmodule.repository.FixedDepositAccountRepository;
 import com.example.fdmodule.client.ProductServiceClient;
+import com.example.fdmodule.client.AuthServiceClient;
 import com.example.fdmodule.service.FDTransactionService;
 import com.example.fdmodule.service.GLAccounts;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -28,7 +29,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
+import static com.example.fdmodule.test.JwtTestSupport.jwtAuth;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -49,6 +50,7 @@ class FDTransactionApiIntegrationTest {
     @Autowired private ObjectMapper objectMapper;
     @Autowired private JdbcTemplate jdbc;
     @org.springframework.boot.test.mock.mockito.MockBean private ProductServiceClient productRepository;
+    @org.springframework.boot.test.mock.mockito.MockBean private AuthServiceClient authServiceClient;
     @Autowired private CustomerProfileRepository customerRepository;
     @Autowired private FixedDepositAccountRepository fdRepository;
     @Autowired private FDTransactionRepository transactionRepository;
@@ -58,6 +60,8 @@ class FDTransactionApiIntegrationTest {
     @BeforeEach
     void setUp() {
         TestData.reset(jdbc, productRepository, customerRepository);
+        Long userId = jdbc.queryForObject("SELECT id FROM users WHERE username='customer1'", Long.class);
+        org.mockito.Mockito.when(authServiceClient.getUserIdByUsername("customer1")).thenReturn(userId);
     }
 
     // ---- Deliverables 2, 3 and 4: creation + DEPOSIT + GL + response -------------------------
@@ -111,7 +115,7 @@ class FDTransactionApiIntegrationTest {
         String historyUrl = created.get("transactionHistoryUrl").asText();
         long txnId = created.get("initialTransactionId").asLong();
 
-        mvc.perform(get(historyUrl).with(httpBasic("officer1", "officer123")))
+        mvc.perform(get(historyUrl).with(jwtAuth("officer1")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].txnId").value(txnId))
@@ -128,7 +132,7 @@ class FDTransactionApiIntegrationTest {
         String second = createAs("officer1", "officer123").get("fdAccountNo").asText();
         assertThat(first).isNotEqualTo(second);
 
-        mvc.perform(get("/api/fd/account/" + first + "/transactions").with(httpBasic("officer1", "officer123")))
+        mvc.perform(get("/api/fd/account/" + first + "/transactions").with(jwtAuth("officer1")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].fdAccountNo").value(first));
@@ -136,7 +140,7 @@ class FDTransactionApiIntegrationTest {
 
     @Test
     void history_unknownAccount_returns400() throws Exception {
-        mvc.perform(get("/api/fd/account/NOPE000000/transactions").with(httpBasic("officer1", "officer123")))
+        mvc.perform(get("/api/fd/account/NOPE000000/transactions").with(jwtAuth("officer1")))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("FD account not found: NOPE000000"));
     }
@@ -146,7 +150,7 @@ class FDTransactionApiIntegrationTest {
     @Test
     void createWithTxn_belowMinimumDeposit_createsNothing() throws Exception {
         String belowMinimum = TestData.VALID_REQUEST_JSON.replace("200000", "5000");
-        mvc.perform(post(CREATE_WITH_TXN).with(httpBasic("officer1", "officer123"))
+        mvc.perform(post(CREATE_WITH_TXN).with(jwtAuth("officer1"))
                         .contentType(MediaType.APPLICATION_JSON).content(belowMinimum))
                 .andExpect(status().isBadRequest());
 
@@ -157,7 +161,7 @@ class FDTransactionApiIntegrationTest {
     @Test
     void createWithTxn_unknownCustomer_createsNothing() throws Exception {
         String unknownCustomer = TestData.VALID_REQUEST_JSON.replace("CUST001", "CUST999");
-        mvc.perform(post(CREATE_WITH_TXN).with(httpBasic("officer1", "officer123"))
+        mvc.perform(post(CREATE_WITH_TXN).with(jwtAuth("officer1"))
                         .contentType(MediaType.APPLICATION_JSON).content(unknownCustomer))
                 .andExpect(status().isBadRequest());
 
@@ -194,7 +198,7 @@ class FDTransactionApiIntegrationTest {
 
     @Test
     void createWithTxn_customer_isForbidden() throws Exception {
-        mvc.perform(post(CREATE_WITH_TXN).with(httpBasic("customer1", "customer123"))
+        mvc.perform(post(CREATE_WITH_TXN).with(jwtAuth("customer1"))
                         .contentType(MediaType.APPLICATION_JSON).content(TestData.VALID_REQUEST_JSON))
                 .andExpect(status().isForbidden());
         assertThat(countRows("fd_accounts")).isZero();
@@ -202,7 +206,7 @@ class FDTransactionApiIntegrationTest {
 
     @Test
     void createWithTxn_admin_isForbidden() throws Exception {
-        mvc.perform(post(CREATE_WITH_TXN).with(httpBasic("admin1", "admin123"))
+        mvc.perform(post(CREATE_WITH_TXN).with(jwtAuth("admin1"))
                         .contentType(MediaType.APPLICATION_JSON).content(TestData.VALID_REQUEST_JSON))
                 .andExpect(status().isForbidden());
         assertThat(countRows("fd_accounts")).isZero();
@@ -218,7 +222,7 @@ class FDTransactionApiIntegrationTest {
     @Test
     void history_customerRole_canRead() throws Exception {
         String fdAccountNo = createAs("officer1", "officer123").get("fdAccountNo").asText();
-        mvc.perform(get("/api/fd/account/" + fdAccountNo + "/transactions").with(httpBasic("customer1", "customer123")))
+        mvc.perform(get("/api/fd/account/" + fdAccountNo + "/transactions").with(jwtAuth("customer1")))
                 .andExpect(status().isOk());
     }
 
@@ -226,10 +230,10 @@ class FDTransactionApiIntegrationTest {
 
     @Test
     void existingL13Create_stillWorks_andIsNotChangedByLab16() throws Exception {
-        String response = mvc.perform(post("/api/fd/account/create").with(httpBasic("officer1", "officer123"))
+        String response = mvc.perform(post("/api/fd/account/create").with(jwtAuth("officer1"))
                         .contentType(MediaType.APPLICATION_JSON).content(TestData.VALID_REQUEST_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.termMonths").value(12))
+                .andExpect(jsonPath("$.tenureMonths").value(12))
                 .andExpect(jsonPath("$.createdBy").value("officer1"))
                 .andReturn().getResponse().getContentAsString();
         String fdAccountNo = objectMapper.readTree(response).get("fdAccountNo").asText();
@@ -242,7 +246,7 @@ class FDTransactionApiIntegrationTest {
     // ---- helpers -----------------------------------------------------------------------------------
 
     private JsonNode createAs(String user, String password) throws Exception {
-        String json = mvc.perform(post(CREATE_WITH_TXN).with(httpBasic(user, password))
+        String json = mvc.perform(post(CREATE_WITH_TXN).with(jwtAuth(user))
                         .contentType(MediaType.APPLICATION_JSON).content(TestData.VALID_REQUEST_JSON))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();

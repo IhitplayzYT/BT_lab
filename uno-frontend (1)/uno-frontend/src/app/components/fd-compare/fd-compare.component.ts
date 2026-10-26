@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { ApiClientService } from '../../services/api-client.service';
 import { ValidationService } from '../../services/validation.service';
 import { AuthService } from '../../services/auth.service';
+import { CurrencyService } from '../../services/currency.service';
 import { NavbarComponent } from '../navbar/navbar.component';
 import { FooterComponent } from '../footer/footer.component';
 import { StarBackgroundComponent } from '../star-background/star-background.component';
@@ -21,7 +22,9 @@ export class FdCompareComponent implements AfterViewInit, OnDestroy {
   private apiClient = inject(ApiClientService);
   private validationService = inject(ValidationService);
   private authService = inject(AuthService);
+  readonly currencyService = inject(CurrencyService);
   private platformId = inject(PLATFORM_ID);
+  readonly supportedCurrencies = this.currencyService.getSupportedCurrencies();
 
   // Product 1 inputs
   principal1 = signal(100000);
@@ -114,41 +117,17 @@ export class FdCompareComponent implements AfterViewInit, OnDestroy {
   });
 
   // Currency settings
-  selectedCurrency = signal('INR');
-  currencySymbols: Record<string, string> = {
-    INR: '₹',
-    USD: '$',
-    EUR: '€',
-    GBP: '£',
-    JPY: '¥'
-  };
-  currencyRates: Record<string, number> = {
-    INR: 1,
-    USD: 0.012,
-    EUR: 0.011,
-    GBP: 0.0095,
-    JPY: 1.78
-  };
-  currencyDecimals: Record<string, number> = {
-    INR: 2,
-    USD: 2,
-    EUR: 2,
-    GBP: 2,
-    JPY: 0
-  };
+  selectedCurrency = signal(this.currencyService.preferredCurrency());
 
   // Currency conversion helper
   private convertCurrency(amount: number): number {
-    const rate = this.currencyRates[this.selectedCurrency()] || 1;
-    return amount * rate;
+    return this.currencyService.convertFromINR(amount, this.selectedCurrency());
   }
 
   private formatCurrency(amount: number): string {
     const currency = this.selectedCurrency();
-    const symbol = this.currencySymbols[currency] || '₹';
-    const decimals = this.currencyDecimals[currency] || 2;
     const converted = this.convertCurrency(amount);
-    return `${symbol}${converted.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}`;
+    return this.currencyService.formatCurrency(converted, currency);
   }
 
   // Computed values for product 1
@@ -179,7 +158,12 @@ export class FdCompareComponent implements AfterViewInit, OnDestroy {
       this.onProductChange2();
       const savedProfile = localStorage.getItem(this.apiClient.getUserStorageKey('default_fd_details'));
       if (savedProfile) {
-        const category = JSON.parse(savedProfile).customerCategory;
+        const profile = JSON.parse(savedProfile);
+        const category = profile.customerCategory;
+        if (profile.defaultCurrency) {
+          this.currencyService.setPreferredCurrency(profile.defaultCurrency);
+          this.selectedCurrency.set(profile.defaultCurrency);
+        }
         if (category) {
           this.customerCategory1.set(category);
           this.customerCategory2.set(category);
@@ -448,12 +432,9 @@ export class FdCompareComponent implements AfterViewInit, OnDestroy {
 
     // Convert data points to selected currency
     const currency = this.selectedCurrency();
-    const symbol = this.currencySymbols[currency] || '₹';
-    const rate = this.currencyRates[currency] || 1;
-    const decimals = this.currencyDecimals[currency] || 2;
-
-    const convertedDataPoints1 = dataPoints1.map(val => val * rate);
-    const convertedDataPoints2 = dataPoints2.map(val => val * rate);
+    const currencyService = this.currencyService;
+    const convertedDataPoints1 = dataPoints1.map(val => currencyService.convertFromINR(val, currency));
+    const convertedDataPoints2 = dataPoints2.map(val => currencyService.convertFromINR(val, currency));
 
     const labels = Array.from({ length: maxMonths + 1 }, (_, i) => `Month ${i}`);
 
@@ -516,7 +497,7 @@ export class FdCompareComponent implements AfterViewInit, OnDestroy {
               label: function(context) {
                 const value = context.parsed.y;
                 if (value === null || value === undefined) return '';
-                return `${context.dataset.label}: ${symbol}${value.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}`;
+                return `${context.dataset.label}: ${currencyService.formatCurrency(value, currency)}`;
               }
             }
           }
@@ -538,7 +519,7 @@ export class FdCompareComponent implements AfterViewInit, OnDestroy {
             ticks: {
               color: '#ffffff',
               callback: function(value) {
-                return symbol + value.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+                return currencyService.formatCurrency(Number(value), currency);
               }
             }
           }

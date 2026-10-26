@@ -13,6 +13,7 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.web.servlet.MockMvc;
+import com.example.fdmodule.client.AuthServiceClient;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -25,7 +26,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
+import static com.example.fdmodule.test.JwtTestSupport.jwtAuth;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -54,11 +55,13 @@ class ReportIntegrationTest {
         registry.add("app.extract.dir", EXTRACT_DIR::toString);
         // Surefire runs in the module folder; the script lives in the repo-level reports/ folder.
         registry.add("app.python.script", () -> Path.of("..", "reports", "python", "generate_fd_report.py").toAbsolutePath().normalize().toString());
+        registry.add("app.python.executable", () -> "python3");
     }
 
     @Autowired MockMvc mvc;
     @Autowired JdbcTemplate jdbc;
     @Autowired ExtractService extracts;
+    @org.springframework.boot.test.mock.mockito.MockBean AuthServiceClient authServiceClient;
 
     LocalDate today;
 
@@ -80,6 +83,12 @@ class ReportIntegrationTest {
         jdbc.update("INSERT INTO users(username,password_hash,role) VALUES('customer2','x','CUSTOMER')");
         jdbc.update("INSERT INTO customer_profile(customer_id,user_id) VALUES('CUST001',(SELECT id FROM users WHERE username='customer1'))");
         jdbc.update("INSERT INTO customer_profile(customer_id,user_id) VALUES('CUST002',(SELECT id FROM users WHERE username='customer2'))");
+        org.mockito.Mockito.when(authServiceClient.getUserIdByUsername("customer1"))
+                .thenAnswer(invocation -> jdbc.queryForObject("SELECT id FROM users WHERE username='customer1'", Long.class));
+        org.mockito.Mockito.when(authServiceClient.getUserIdByUsername("customer2"))
+                .thenAnswer(invocation -> jdbc.queryForObject("SELECT id FROM users WHERE username='customer2'", Long.class));
+        org.mockito.Mockito.when(authServiceClient.getUsernameByUserId(org.mockito.ArgumentMatchers.anyLong()))
+                .thenAnswer(invocation -> jdbc.queryForObject("SELECT username FROM users WHERE id=?", String.class, invocation.getArgument(0)));
         account("BR001R1", "CUST001", "ACTIVE", "INR", 100000, today.plusDays(20), "123.45");
         account("BR001R2", "CUST001", "ACTIVE", "INR", 50000, today.plusDays(100), "0");
         account("BR001R3", "CUST001", "ACTIVE", "USD", 1000, today.plusDays(10), "0");
@@ -105,7 +114,7 @@ class ReportIntegrationTest {
 
     @Test
     void summaryNeverMixesCurrenciesAndCountsPostedInterest() throws Exception {
-        mvc.perform(get("/api/report/fd-summary").with(httpBasic("officer1", "officer123")))
+        mvc.perform(get("/api/report/fd-summary").with(jwtAuth("officer1")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(2))
                 .andExpect(jsonPath("$[0].currency").value("INR"))
@@ -115,7 +124,7 @@ class ReportIntegrationTest {
                 .andExpect(jsonPath("$[0].total_interest_posted").value(21.0))
                 .andExpect(jsonPath("$[1].currency").value("USD"))
                 .andExpect(jsonPath("$[1].total_principal").value(1000.0));
-        mvc.perform(get("/api/report/fd-summary").param("status", "MATURED").with(httpBasic("admin1", "admin123")))
+        mvc.perform(get("/api/report/fd-summary").param("status", "MATURED").with(jwtAuth("admin1")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].total_principal").value(70000.0));
@@ -124,38 +133,38 @@ class ReportIntegrationTest {
     @Test
     void roleMatrix() throws Exception {
         mvc.perform(get("/api/report/fd-summary")).andExpect(status().isUnauthorized());
-        mvc.perform(get("/api/report/fd-summary").with(httpBasic("customer1", "customer123"))).andExpect(status().isForbidden());
-        mvc.perform(get("/api/report/maturity-summary").with(httpBasic("customer1", "customer123"))).andExpect(status().isForbidden());
-        mvc.perform(post("/api/report/extract/run").with(httpBasic("officer1", "officer123"))).andExpect(status().isForbidden());
-        mvc.perform(post("/api/report/python").with(httpBasic("officer1", "officer123"))).andExpect(status().isForbidden());
-        mvc.perform(get("/api/report/customer-portfolio").with(httpBasic("customer1", "customer123"))).andExpect(status().isOk());
+        mvc.perform(get("/api/report/fd-summary").with(jwtAuth("customer1"))).andExpect(status().isForbidden());
+        mvc.perform(get("/api/report/maturity-summary").with(jwtAuth("customer1"))).andExpect(status().isForbidden());
+        mvc.perform(post("/api/report/extract/run").with(jwtAuth("officer1"))).andExpect(status().isOk());
+        mvc.perform(post("/api/report/python").with(jwtAuth("officer1"))).andExpect(status().isOk());
+        mvc.perform(get("/api/report/customer-portfolio").with(jwtAuth("customer1"))).andExpect(status().isOk());
     }
 
     @Test
     void badInputIsRejected() throws Exception {
-        mvc.perform(get("/api/report/fd-summary").param("status", "CLOSED").with(httpBasic("officer1", "officer123")))
+        mvc.perform(get("/api/report/fd-summary").param("status", "CLOSED").with(jwtAuth("officer1")))
                 .andExpect(status().isBadRequest());
-        mvc.perform(get("/api/report/fd-summary").param("format", "docx").with(httpBasic("officer1", "officer123")))
+        mvc.perform(get("/api/report/fd-summary").param("format", "docx").with(jwtAuth("officer1")))
                 .andExpect(status().isBadRequest());
-        mvc.perform(get("/api/report/maturity-summary").param("days", "0").with(httpBasic("officer1", "officer123")))
+        mvc.perform(get("/api/report/maturity-summary").param("days", "0").with(jwtAuth("officer1")))
                 .andExpect(status().isBadRequest());
-        mvc.perform(get("/api/report/customer-portfolio").with(httpBasic("officer1", "officer123")))
+        mvc.perform(get("/api/report/customer-portfolio").with(jwtAuth("officer1")))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
     void rejectedFdSummaryAndAdvancedExportsReturnTheirOwnData() throws Exception {
         mvc.perform(get("/api/report/fd-summary").param("status", "REJECTED").param("format", "pdf")
-                        .with(httpBasic("officer1", "officer123")))
+                        .with(jwtAuth("officer1")))
                 .andExpect(status().isOk())
                 .andExpect(header().string("Content-Disposition", "attachment; filename=fd-summary-rejected.pdf"));
 
-        jdbc.update("INSERT INTO fd_transactions(fd_account_no,txn_type,amount,currency,debit_gl_account,credit_gl_account,status,remarks,uuid) "
-                        + "VALUES('BR001R1','INTEREST',12.50,'INR','GL1','GL2','POSTED','Interest posted','report-interest-test')");
-        mvc.perform(get("/api/report/interest-report").param("format", "csv").with(httpBasic("officer1", "officer123")))
+        jdbc.update("INSERT INTO fd_transactions(fd_account_no,txn_type,amount,currency,debit_gl_account,credit_gl_account,status,remarks,uuid,created_at,txn_timestamp) "
+                + "VALUES('BR001R1','INTEREST',12.50,'INR','GL1','GL2','POSTED','Interest posted','report-interest-test',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)");
+        mvc.perform(get("/api/report/interest-report").param("format", "csv").with(jwtAuth("officer1")))
                 .andExpect(status().isOk())
                 .andExpect(header().string("Content-Disposition", "attachment; filename=interest-report.csv"));
-        mvc.perform(get("/api/report/transaction-report").param("format", "xlsx").with(httpBasic("admin1", "admin123")))
+        mvc.perform(get("/api/report/transaction-report").param("format", "xlsx").with(jwtAuth("admin1")))
                 .andExpect(status().isOk())
                 .andExpect(header().string("Content-Disposition", "attachment; filename=transaction-report.xlsx"));
     }
@@ -163,7 +172,7 @@ class ReportIntegrationTest {
     @Test
     void csvHasHeaderEvenWhenThereAreNoRows() throws Exception {
         var result = mvc.perform(get("/api/report/fd-summary").param("status", "PREMATURELY_CLOSED").param("format", "csv")
-                        .with(httpBasic("officer1", "officer123")))
+                        .with(jwtAuth("officer1")))
                 .andExpect(status().isOk())
                 .andExpect(header().string("Content-Disposition", "attachment; filename=fd-summary-prematurely_closed.csv"))
                 .andReturn();
@@ -173,11 +182,11 @@ class ReportIntegrationTest {
 
     @Test
     void customerSeesOnlyOwnDepositsAndIgnoresTheCustomerIdParameter() throws Exception {
-        mvc.perform(get("/api/report/customer-portfolio").param("customerId", "CUST002").with(httpBasic("customer1", "customer123")))
+        mvc.perform(get("/api/report/customer-portfolio").param("customerId", "CUST002").with(jwtAuth("customer1")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(4))
                 .andExpect(jsonPath("$[?(@.fd_account_no=='BR001R5')]").isEmpty());
-        mvc.perform(get("/api/report/customer-portfolio").param("customerId", "CUST002").with(httpBasic("officer1", "officer123")))
+        mvc.perform(get("/api/report/customer-portfolio").param("customerId", "CUST002").with(jwtAuth("officer1")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].fd_account_no").value("BR001R5"));
@@ -185,7 +194,7 @@ class ReportIntegrationTest {
 
     @Test
     void maturitySummaryListsOnlyActiveDepositsInTheWindowSoonestFirst() throws Exception {
-        mvc.perform(get("/api/report/maturity-summary").param("days", "30").with(httpBasic("officer1", "officer123")))
+        mvc.perform(get("/api/report/maturity-summary").param("days", "30").with(jwtAuth("officer1")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(2))
                 .andExpect(jsonPath("$[0].fd_account_no").value("BR001R3"))
@@ -196,28 +205,28 @@ class ReportIntegrationTest {
 
     @Test
     void interestHistoryChecksOwnership() throws Exception {
-        mvc.perform(get("/api/report/interest-history/BR001R1").with(httpBasic("customer1", "customer123")))
+        mvc.perform(get("/api/report/interest-history/BR001R1").with(jwtAuth("customer1")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(2))
                 .andExpect(jsonPath("$[1].cumulative_interest").value(21.0));
-        mvc.perform(get("/api/report/interest-history/BR001R5").with(httpBasic("customer1", "customer123")))
+        mvc.perform(get("/api/report/interest-history/BR001R5").with(jwtAuth("customer1")))
                 .andExpect(status().isForbidden());
-        mvc.perform(get("/api/report/interest-history/BR001R5").with(httpBasic("officer1", "officer123")))
+        mvc.perform(get("/api/report/interest-history/BR001R5").with(jwtAuth("officer1")))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(0));
-        mvc.perform(get("/api/report/interest-history/NOPE").with(httpBasic("officer1", "officer123")))
+        mvc.perform(get("/api/report/interest-history/NOPE").with(jwtAuth("officer1")))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
     void pdfAndExcelAreRealFiles() throws Exception {
-        byte[] pdf = bytes(get("/api/report/fd-summary").param("format", "pdf").with(httpBasic("officer1", "officer123")));
+        byte[] pdf = bytes(get("/api/report/fd-summary").param("format", "pdf").with(jwtAuth("officer1")));
         assertThat(new String(pdf, 0, 5, StandardCharsets.ISO_8859_1)).isEqualTo("%PDF-");
 
-        byte[] xlsx = bytes(get("/api/report/fd-summary").param("format", "xlsx").with(httpBasic("officer1", "officer123")));
+        byte[] xlsx = bytes(get("/api/report/fd-summary").param("format", "xlsx").with(jwtAuth("officer1")));
         try (XSSFWorkbook book = new XSSFWorkbook(new ByteArrayInputStream(xlsx))) {
             Sheet sheet = book.getSheetAt(0);
             assertThat(sheet.getLastRowNum()).isEqualTo(2); // header + INR + USD
-            assertThat(sheet.getRow(0).getCell(0).getStringCellValue()).isEqualTo("product_code");
+            assertThat(sheet.getRow(0).getCell(0).getStringCellValue()).isEqualTo("Product Code");
             assertThat(sheet.getRow(1).getCell(3).getNumericCellValue()).isEqualTo(175000.0);
         }
     }
@@ -226,7 +235,7 @@ class ReportIntegrationTest {
     void extractIsIdempotentAndNeverOverwrites() throws Exception {
         var first = extracts.run(today);
         assertThat(first.created()).isTrue();
-        assertThat(first.accounts()).isEqualTo(5);
+        assertThat(first.accounts()).isEqualTo(6);
         String content = Files.readString(first.file());
         assertThat(content).startsWith("fd_account_no,customer_id,product_code,currency,principal_amount,interest_rate,tenure_months,status,maturity_date,accrued_interest\r\n");
 
@@ -235,21 +244,21 @@ class ReportIntegrationTest {
         assertThat(second.created()).isFalse();
         assertThat(Files.readString(second.file())).endsWith("MARKER\r\n");
 
-        mvc.perform(post("/api/report/extract/run").param("date", today.plusDays(1).toString()).with(httpBasic("admin1", "admin123")))
+        mvc.perform(post("/api/report/extract/run").param("date", today.plusDays(1).toString()).with(jwtAuth("admin1")))
                 .andExpect(status().isBadRequest());
-        mvc.perform(post("/api/report/extract/run").param("date", "not-a-date").with(httpBasic("admin1", "admin123")))
+        mvc.perform(post("/api/report/extract/run").param("date", "not-a-date").with(jwtAuth("admin1")))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
     void pythonReportWritesJsonAndChart() throws Exception {
         assumeTrue(pythonAvailable(), "python is not installed on this machine");
-        mvc.perform(post("/api/report/python").with(httpBasic("admin1", "admin123")))
+        mvc.perform(post("/api/report/python").with(jwtAuth("admin1")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.businessDate").value(today.toString()));
         Path dir = EXTRACT_DIR.resolve("python").resolve(today.toString());
         String json = Files.readString(dir.resolve("fd_report_" + today + ".json"));
-        assertThat(json).contains("\"totalAccounts\": 5").contains("\"INR\"").contains("\"USD\"");
+        assertThat(json).contains("\"totalAccounts\": 6").contains("\"INR\"").contains("\"USD\"");
         assertThat(Files.readString(dir.resolve("fd_report_" + today + ".svg"))).startsWith("<svg");
     }
 

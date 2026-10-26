@@ -89,9 +89,15 @@ public class ProductValidationService {
         product.setMaxTermMonths(json.path("termLimit").path("max").asInt());
         product.setMinRate(json.path("rateLimit").path("min").decimalValue());
         product.setMaxRate(json.path("rateLimit").path("max").decimalValue());
-        product.setMinDeposit(json.hasNonNull("minDeposit") ? new BigDecimal(json.get("minDeposit").asText()) : new BigDecimal("10000"));
-        product.setMaxDeposit(json.hasNonNull("maxDeposit") ? new BigDecimal(json.get("maxDeposit").asText()) : new BigDecimal("10000000"));
-        product.setCompoundingFrequency(json.has("compoundingFrequency") ? json.get("compoundingFrequency").asText() : "QUARTERLY");
+        product.setMinDeposit(json.hasNonNull("minDeposit") ? new BigDecimal(json.get("minDeposit").asText()) : BigDecimal.ZERO);
+        product.setMaxDeposit(json.hasNonNull("maxDeposit") ? new BigDecimal(json.get("maxDeposit").asText()) : null);
+        product.setCompoundingFrequency(json.hasNonNull("compoundingFrequency") ? json.get("compoundingFrequency").asText() : null);
+        product.setServiceFeeRate(decimalOrNull(json, "serviceFeeRate"));
+        product.setServiceFeeFlat(decimalOrNull(json, "serviceFeeFlat"));
+        product.setDocumentationFee(decimalOrNull(json, "documentationFee"));
+        product.setGstRate(decimalOrNull(json, "gstRate"));
+        product.setTaxRate(decimalOrNull(json, "taxRate"));
+        product.setPrematurePenaltyRate(decimalOrNull(json, "prematurePenaltyRate"));
         product.setStatus(json.has("status") ? json.get("status").asText() : "ACTIVE");
         List<String> allowedRoles = new ArrayList<>();
         if (json.path("allowedRoles").isArray()) {
@@ -106,5 +112,9 @@ public class ProductValidationService {
         }
         
         return product;
+    }
+
+    private BigDecimal decimalOrNull(JsonNode json, String field) {
+        return json.hasNonNull(field) && json.get(field).isNumber() ? json.get(field).decimalValue() : null;
     }
 }

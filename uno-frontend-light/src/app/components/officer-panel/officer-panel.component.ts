@@ -6,11 +6,12 @@ import { ProductManagementComponent } from '../product-management/product-manage
 import { ApiClientService } from '../../services/api-client.service';
 import { LanguageSelectorComponent } from '../language-selector/language-selector.component';
 import { RelationNetsComponent } from '../relation-nets/relation-nets.component';
+import { ApplyFdComponent } from '../apply-fd/apply-fd.component';
 
 @Component({
   selector: 'app-officer-panel',
   standalone: true,
-  imports: [TranslatePipe, CommonModule, FormsModule, ProductManagementComponent, LanguageSelectorComponent, RelationNetsComponent],
+  imports: [TranslatePipe, CommonModule, FormsModule, ProductManagementComponent, LanguageSelectorComponent, RelationNetsComponent, ApplyFdComponent],
   templateUrl: './officer-panel.component.html',
   styleUrls: ['./officer-panel.component.scss']
 })
@@ -20,6 +21,14 @@ export class OfficerPanelComponent implements AfterViewInit, OnInit, OnDestroy {
   private cdr = inject(ChangeDetectorRef);
 
   showProductManagement = false;
+  customerLookupId = '';
+  customerLookupLoading = false;
+  customerLookupError = '';
+  selectedApplicationCustomer: any = null;
+  staffUsers: any[] = [];
+  staffUsersLoading = false;
+  staffUsersError = '';
+  staffUserSearch = '';
 
   set activeTab(value: string) {
     this._activeTab = value;
@@ -42,6 +51,7 @@ export class OfficerPanelComponent implements AfterViewInit, OnInit, OnDestroy {
   rejectionReason = '';
 
   pendingBundles: any[] = [];
+  pendingBundlesError = '';
   selectedBundle: any = null;
   bundleRejectionReason = '';
 
@@ -117,6 +127,7 @@ export class OfficerPanelComponent implements AfterViewInit, OnInit, OnDestroy {
     this.loadThemePreference();
     this.loadPendingApplications();
     this.loadPendingBundles();
+    this.loadStaffUsers();
     this.loadClockStatus();
     this.accountingRefreshHandle = setInterval(() => {
       if (document.hidden) return;
@@ -142,6 +153,58 @@ export class OfficerPanelComponent implements AfterViewInit, OnInit, OnDestroy {
     setTimeout(() => this.elementRef.nativeElement.querySelector('.bundles-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0);
   }
 
+  async findCustomerForApplication(): Promise<void> {
+    const customerId = this.customerLookupId.trim();
+    if (!customerId || this.customerLookupLoading) {
+      this.customerLookupError = 'Enter a user ID to continue';
+      return;
+    }
+    const user = this.staffUsers.find(item => String(item.id) === customerId);
+    if (user) this.selectUserForApplication(user);
+    else this.customerLookupError = 'User not found. Search the user directory and try again.';
+  }
+
+  async loadStaffUsers(): Promise<void> {
+    this.staffUsersLoading = true;
+    this.staffUsersError = '';
+    try {
+      this.apiClient.loadToken();
+      const response = await this.apiClient.getStaffUsers().toPromise();
+      this.staffUsers = (response?.users || []).map((user: any) => ({
+        ...user,
+        roles: Array.isArray(user.roles) ? user.roles : String(user.roles || '').split(',').filter(Boolean)
+      }));
+    } catch (error: any) {
+      this.staffUsersError = error?.error?.message || 'Could not load the user directory.';
+    } finally {
+      this.staffUsersLoading = false;
+    }
+  }
+
+  get filteredStaffUsers(): any[] {
+    const query = this.staffUserSearch.trim().toLowerCase();
+    const users = query ? this.staffUsers.filter(user =>
+      String(user.id).includes(query) || user.username?.toLowerCase().includes(query) ||
+      user.email?.toLowerCase().includes(query) || user.roles.some((role: string) => role.toLowerCase().includes(query))
+    ) : [...this.staffUsers];
+    return users.sort((a, b) => Number(a.id) - Number(b.id));
+  }
+
+  selectUserForApplication(user: any): void {
+    if (!user.enabled) {
+      this.customerLookupError = 'Applications cannot be created for disabled users.';
+      return;
+    }
+    this.selectedApplicationCustomer = { ...user, customerId: String(user.id), fullName: user.username };
+    this.customerLookupId = String(user.id);
+    this.customerLookupError = '';
+    this.activeTab = 'create-fd';
+  }
+
+  onOfficerApplicationSubmitted(): void {
+    void this.loadPendingApplications();
+  }
+
   async loadPendingApplications(): Promise<void> {
     try {
       this.isLoading = true;
@@ -151,6 +214,7 @@ export class OfficerPanelComponent implements AfterViewInit, OnInit, OnDestroy {
       // Transform data to match expected format
       this.pendingApplications = (data || []).map((app: any) => ({
         id: app.fdAccountNo,
+        userId: app.userId,
         customer: app.applicantFullName || `${app.applicantFirstName} ${app.applicantLastName}` || 'Unknown',
         amount: parseFloat(app.principalAmount) || 0,
         tenure: app.tenureMonths || 0,
@@ -189,12 +253,19 @@ export class OfficerPanelComponent implements AfterViewInit, OnInit, OnDestroy {
 
   async loadPendingBundles(): Promise<void> {
     try {
+      this.pendingBundlesError = '';
       // Ensure token is available before request
       this.apiClient.loadToken();
       const data = await this.apiClient.getPendingBundles().toPromise();
       // Transform data to match expected format
-      this.pendingBundles = (data || []).map((bundle: any) => ({
+      this.pendingBundles = (data || []).filter((bundle: any) => {
+        const items = Array.isArray(bundle.fdItems) ? bundle.fdItems : [];
+        return items.length > 0 && items.every((item: any) =>
+          String(item.approvalStatus || item.status || '').toUpperCase() === 'PENDING_APPROVAL'
+        );
+      }).map((bundle: any) => ({
         id: bundle.bundleId,
+        userId: bundle.userId,
         customer: bundle.customerDetails?.fullName || bundle.customerId || 'Unknown',
         name: bundle.bundleName || 'Package',
         description: bundle.bundleDescription || '',
@@ -202,7 +273,8 @@ export class OfficerPanelComponent implements AfterViewInit, OnInit, OnDestroy {
         estimatedReturn: bundle.estimatedReturn || 0,
         status: bundle.approvalStatus || 'PENDING',
         date: bundle.createdAt ? new Date(bundle.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-        fdCount: bundle.fdItems ? bundle.fdItems.length : 0,
+        fdItems: Array.isArray(bundle.fdItems) ? bundle.fdItems : [],
+        fdCount: Array.isArray(bundle.fdItems) ? bundle.fdItems.length : 0,
         // Store customer details for review
         customerDetails: bundle.customerDetails ? {
           ...bundle.customerDetails,
@@ -214,7 +286,7 @@ export class OfficerPanelComponent implements AfterViewInit, OnInit, OnDestroy {
       this.analytics.pendingBundles = this.pendingBundles.length;
     } catch (error: any) {
       console.error('Error loading pending bundles:', error);
-      // Keep empty array as fallback
+      this.pendingBundlesError = error.error?.message || 'Failed to load pending bundles. Refresh and try again.';
       this.pendingBundles = [];
     }
   }
@@ -249,6 +321,7 @@ export class OfficerPanelComponent implements AfterViewInit, OnInit, OnDestroy {
         alert(`Application ${this.selectedApplication.id} approved successfully!`);
         this.selectedApplication = null;
         this.loadPendingApplications(); // Refresh list
+        this.loadPendingBundles(); // Remove bundles with newly completed members
       },
       error: (err) => {
         console.error('Error approving application:', err);
@@ -271,6 +344,7 @@ export class OfficerPanelComponent implements AfterViewInit, OnInit, OnDestroy {
         this.selectedApplication = null;
         this.rejectionReason = '';
         this.loadPendingApplications(); // Refresh list
+        this.loadPendingBundles(); // Remove bundles with newly completed members
       },
       error: (err) => {
         console.error('Error rejecting application:', err);

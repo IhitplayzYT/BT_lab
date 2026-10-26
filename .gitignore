@@ -14,8 +14,9 @@
 *.pfx
 
 # Java / Maven / Gradle
-**/target/
-**/build/
+**/target/**
+**/build/**
+**/out/**
 .gradle/
 *.class
 *.jar
@@ -27,6 +28,10 @@
 **/dist/
 **/.angular/
 **/coverage/
+**/playwright-report/
+**/test-results/
+**/.vite/
+**/.cache/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -38,6 +43,9 @@ __pycache__/
 *$py.class
 **/.venv/
 **/venv/
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
 pip-wheel-metadata/
 
 # Logs and temporary files
@@ -46,6 +54,10 @@ pip-wheel-metadata/
 *.temp
 *.swp
 *.swo
+*~
+.~lock.*#
+~$*.docx
+~$*.xlsx
 
 # Local databases and generated database files
 *.sqlite
@@ -59,3 +71,7 @@ pip-wheel-metadata/
 .DS_Store
 Thumbs.db
 Desktop.ini
+
+# Local tool and report artifacts
+.codex-local/
+report-output/

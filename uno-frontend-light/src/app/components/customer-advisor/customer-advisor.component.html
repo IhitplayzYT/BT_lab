@@ -29,8 +29,8 @@
             <option value="compare">Compare the available products</option>
           </select>
         </label>
-        <label>Amount you may invest (INR)
-          <input name="amount" type="number" min="0" max="100000000000" step="1000" required [(ngModel)]="amount" placeholder="e.g. 100000">
+        <label>Amount you may invest ({{ currencyService.getCurrencySymbol(currencyService.preferredCurrency()) }} {{ currencyService.preferredCurrency() }})
+          <input name="amount" type="number" min="0" [max]="getMaxInvestmentAmount()" step="1000" required [(ngModel)]="amount" placeholder="e.g. 100000">
         </label>
         <label>Time horizon
           <select name="horizon" [(ngModel)]="horizonMonths">

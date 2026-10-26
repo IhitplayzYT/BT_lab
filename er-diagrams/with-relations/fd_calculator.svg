@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="822" height="692" viewBox="0 0 822 692">
+<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#596579"/></marker></defs>
+<rect width="100%" height="100%" fill="#f5f7fb"/>
+<text x="36" y="48" font-family="Arial,sans-serif" font-size="27" font-weight="700" fill="#17233b">fd_calculator — FD calculator</text>
+<text x="36" y="75" font-family="Arial,sans-serif" font-size="13" fill="#58677e">1:1 when child key is unique, otherwise 1:N · solid = declared FK · dashed = inferred logical ID/code reference</text>
+<path d="M 386.0 369.0 C 405.0 369.0, 417.0 138.0, 436.0 138.0" fill="none" stroke="#9b5d17" stroke-width="2.2" stroke-dasharray="7 5" marker-end="url(#arrow)" opacity=".9"><title>fd_calculation_audit.product_code references External: banking_product_db.products.product_code; parent:child cardinality 1:N</title></path>
+<text x="406.0" y="362.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="#9b5d17" stroke="#fff" stroke-width="4" paint-order="stroke">N</text>
+<text x="416.0" y="131.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="#9b5d17" stroke="#fff" stroke-width="4" paint-order="stroke">1</text>
+<path d="M 386.0 369.0 C 405.0 369.0, 417.0 252.0, 436.0 252.0" fill="none" stroke="#9b5d17" stroke-width="2.2" stroke-dasharray="7 5" marker-end="url(#arrow)" opacity=".9"><title>fd_calculation_audit.customer_id references External: banking_technology_lab.customer_profile.customer_id; parent:child cardinality 1:N</title></path>
+<text x="406.0" y="362.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="#9b5d17" stroke="#fff" stroke-width="4" paint-order="stroke">N</text>
+<text x="416.0" y="245.0" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="#9b5d17" stroke="#fff" stroke-width="4" paint-order="stroke">1</text>
+<rect x="36" y="100" width="350" height="538" rx="8" fill="white" stroke="#8290a6" stroke-width="1.2"/>
+<path d="M44,100 h334 q8,0 8,8 v30 h-350 v-30 q0,-8 8,-8" fill="#e6edfa" stroke="none"/>
+<text x="49" y="123" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#182844">fd_calculation_audit</text>
+<text x="49" y="150" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#24334d">PK  calculation_id</text>
+<text x="374" y="150" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(30)</text>
+<text x="49" y="172" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">uuid</text>
+<text x="374" y="172" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(36)</text>
+<text x="49" y="194" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">REF  customer_id</text>
+<text x="374" y="194" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(50)</text>
+<text x="49" y="216" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">REF  product_code</text>
+<text x="374" y="216" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(20)</text>
+<text x="49" y="238" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">principal</text>
+<text x="374" y="238" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">DECIMAL(18, 2)</text>
+<text x="49" y="260" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">term_months</text>
+<text x="374" y="260" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">INT</text>
+<text x="49" y="282" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">base_rate</text>
+<text x="374" y="282" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">DECIMAL(6, 2)</text>
+<text x="49" y="304" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">effective_rate</text>
+<text x="374" y="304" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">DECIMAL(6, 2)</text>
+<text x="49" y="326" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">interest_type</text>
+<text x="374" y="326" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(10)</text>
+<text x="49" y="348" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">interest_earned</text>
+<text x="374" y="348" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">DECIMAL(18, 2)</text>
+<text x="49" y="370" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">maturity_amount</text>
+<text x="374" y="370" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">DECIMAL(18, 2)</text>
+<text x="49" y="392" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">estimated_maturity_date</text>
+<text x="374" y="392" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">DATE</text>
+<text x="49" y="414" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">created_at</text>
+<text x="374" y="414" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">TIMESTAMP</text>
+<text x="49" y="436" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">updated_at</text>
+<text x="374" y="436" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">TIMESTAMP</text>
+<text x="49" y="458" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">ldbid</text>
+<text x="374" y="458" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">INT</text>
+<text x="49" y="480" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">ooo_acpt_ts_utc_ofst</text>
+<text x="374" y="480" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(6)</text>
+<text x="49" y="502" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">ooo_user_id</text>
+<text x="374" y="502" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(32)</text>
+<text x="49" y="524" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">ooo_ws_id</text>
+<text x="374" y="524" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(32)</text>
+<text x="49" y="546" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">rule_system_id</text>
+<text x="374" y="546" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">VARCHAR(32)</text>
+<text x="49" y="568" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">ooo_acpt_ts</text>
+<text x="374" y="568" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">DATETIME(6)</text>
+<text x="49" y="590" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">ooo_host_ts</text>
+<text x="374" y="590" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">DATETIME(6)</text>
+<text x="49" y="612" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#24334d">ooo_local_ts</text>
+<text x="374" y="612" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">DATETIME(6)</text>
+<rect x="436" y="100" width="350" height="76" rx="8" fill="white" stroke="#8290a6" stroke-width="1.2"/>
+<path d="M444,100 h334 q8,0 8,8 v30 h-350 v-30 q0,-8 8,-8" fill="#e6edfa" stroke="none"/>
+<text x="449" y="123" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#182844">External: banking_product_db.products</text>
+<text x="449" y="150" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#24334d">PK  product_code</text>
+<text x="774" y="150" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">EXTERNAL KEY</text>
+<rect x="436" y="214" width="350" height="76" rx="8" fill="white" stroke="#8290a6" stroke-width="1.2"/>
+<path d="M444,214 h334 q8,0 8,8 v30 h-350 v-30 q0,-8 8,-8" fill="#e6edfa" stroke="none"/>
+<text x="449" y="237" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#182844">External: banking_technology_lab.customer_profile</text>
+<text x="449" y="264" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#24334d">PK  customer_id</text>
+<text x="774" y="264" text-anchor="end" font-family="Arial,sans-serif" font-size="11" fill="#6b778c">EXTERNAL KEY</text>
+</svg>

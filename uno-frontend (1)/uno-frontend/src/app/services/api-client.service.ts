@@ -55,7 +55,6 @@ export class ApiClientService {
       console.log('ApiClientService: Checking storage for token...');
       console.log('  - localStorage access_token exists:', !!localStorage.getItem('access_token'));
       console.log('  - sessionStorage access_token exists:', !!sessionStorage.getItem('access_token'));
-      console.log('  - Token value (first 20 chars):', storedToken ? storedToken.substring(0, 20) + '...' : 'N/A');
       this.token = storedToken;
       console.log('ApiClientService: Token loaded:', !!this.token);
     }
@@ -108,7 +107,7 @@ export class ApiClientService {
 
     if (this.token) {
       headers = headers.set('Authorization', `Bearer ${this.token}`);
-      console.log('Authorization header set with token:', this.token.substring(0, 20) + '...');
+      console.log('Authorization header attached');
     } else {
       console.warn('No token available for request');
     }
@@ -182,6 +181,10 @@ export class ApiClientService {
       targetType = 'FD_APPLICATION';
       targetId = response?.fdAccountNo || '';
       operationType = 'FD_APPLICATION_SUBMITTED';
+    } else if (path.startsWith(':8086/api/fd/account/apply-for-user/') && method === 'POST') {
+      targetType = 'FD_APPLICATION';
+      targetId = response?.fdAccountNo || '';
+      operationType = 'FD_APPLICATION_SUBMITTED_BY_OFFICER';
     } else if (path === ':8086/api/fd/account/bundle/apply' && method === 'POST') {
       targetType = 'FD_BUNDLE';
       targetId = response?.bundleId || '';
@@ -294,10 +297,10 @@ export class ApiClientService {
     return this.request(`:8080/api/v1/products/${productCode}/validate${params}`);
   }
 
-  calculateRate(productCode: string, termMonths: number, customerCategory: string): Observable<any> {
+  calculateRate(productCode: string, termMonths: number, customerCategory: string, amount?: number, age?: number): Observable<any> {
     return this.request(`:8080/api/v1/products/${productCode}/rate`, {
       method: 'POST',
-      body: { termMonths, customerCategory }
+      body: { termMonths, customerCategory, amount, age }
     });
   }
 
@@ -396,6 +399,25 @@ export class ApiClientService {
 
   applyForFD(data: any): Observable<any> {
     return this.request(':8086/api/fd/account/apply', {
+      method: 'POST',
+      body: data
+    });
+  }
+
+  getCustomerSummary(customerId: string): Observable<any> {
+    return this.request(`:8086/api/fd/account/customers/${encodeURIComponent(customerId)}`);
+  }
+
+  getStaffUsers(): Observable<any> {
+    return this.request(':8090/api/auth/staff/users');
+  }
+
+  getCurrentUser(): Observable<any> {
+    return this.request(':8090/api/auth/me');
+  }
+
+  applyForCustomerFD(userId: string, data: any): Observable<any> {
+    return this.request(`:8086/api/fd/account/apply-for-user/${encodeURIComponent(userId)}`, {
       method: 'POST',
       body: data
     });
@@ -530,6 +552,32 @@ export class ApiClientService {
       method: 'POST',
       body: data
     });
+  }
+
+  getInterestAccounts(): Observable<any[]> {
+    return this.request(':8086/api/fd/interest/accounts');
+  }
+
+  getMyInterestAccounts(): Observable<any[]> {
+    return this.request(':8086/api/fd/interest/mine');
+  }
+
+  updateInterestMode(account: string, mode: string): Observable<any> {
+    return this.request(`:8086/api/fd/interest/${encodeURIComponent(account)}/settings`, {
+      method: 'PUT', body: { mode }
+    });
+  }
+
+  getNotificationLogs(limit = 100): Observable<any[]> {
+    return this.request(`:8083/api/notifications?limit=${Math.min(Math.max(limit, 1), 200)}`);
+  }
+
+  getStatementSummary(): Observable<any> {
+    return this.request(':8082/api/statements/summary/all');
+  }
+
+  getAccountStatements(account: string): Observable<any[]> {
+    return this.request(`:8082/api/statements/${encodeURIComponent(account)}`);
   }
 
   // Integration endpoints (via Account Service)

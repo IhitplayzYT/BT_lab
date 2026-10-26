@@ -41,6 +41,21 @@ public class FDAccountController {
         return ResponseEntity.ok(fdAccountService.applyForFD(request, authentication.getName()));
     }
 
+    @PostMapping("/apply-for-user/{userId}")
+    @PreAuthorize("hasAnyRole('BANK_OFFICER','ADMIN')")
+    public ResponseEntity<FDApplicationResponse> applyForCustomer(
+            @PathVariable String userId,
+            @Valid @RequestBody FDApplicationRequest request,
+            Authentication authentication) {
+        return ResponseEntity.ok(fdAccountService.applyForCustomer(request, userId, authentication.getName()));
+    }
+
+    @GetMapping("/customers/{customerId}")
+    @PreAuthorize("hasAnyRole('BANK_OFFICER','ADMIN')")
+    public ResponseEntity<Map<String, String>> getCustomerSummary(@PathVariable String customerId) {
+        return ResponseEntity.ok(fdAccountService.getCustomerSummary(customerId));
+    }
+
     @PutMapping("/profile/category")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<Map<String, String>> updateCustomerCategory(
@@ -72,6 +87,7 @@ public class FDAccountController {
                             acc.getPrincipalAmount().toString(), acc.getInterestRate().toString(),
                             acc.getTenureMonths(), acc.getMaturityDate().toString(),
                             acc.getStatus(), acc.getApprovalStatus(), acc.getCreatedAt().toString());
+                    response.setUserId(fdAccountService.getUserIdForCustomer(acc.getCustomerId()));
                     response.setApplicantFullName(acc.getApplicantFullName());
                     response.setCustomerCategory(acc.getCustomerCategory());
                     response.setAccountHolderRoles(acc.getAccountHolderRoles());
@@ -121,6 +137,7 @@ public class FDAccountController {
                             acc.getPrincipalAmount().toString(), acc.getInterestRate().toString(),
                             acc.getTenureMonths(), acc.getMaturityDate().toString(),
                             acc.getStatus(), acc.getApprovalStatus(), acc.getCreatedAt().toString());
+                    response.setUserId(fdAccountService.getUserIdForCustomer(acc.getCustomerId()));
                     response.setApplicantFullName(acc.getApplicantFullName());
                     response.setCustomerCategory(acc.getCustomerCategory());
                     response.setAccountHolderRoles(acc.getAccountHolderRoles());
@@ -179,6 +196,7 @@ public class FDAccountController {
                             acc.getPrincipalAmount().toString(), acc.getInterestRate().toString(),
                             acc.getTenureMonths(), acc.getMaturityDate().toString(),
                             acc.getStatus(), acc.getApprovalStatus(), acc.getCreatedAt().toString());
+                    response.setUserId(fdAccountService.getUserIdForCustomer(acc.getCustomerId()));
                     response.setApplicantFullName(acc.getApplicantFullName());
                     response.setCustomerCategory(acc.getCustomerCategory());
                     response.setAccountHolderRoles(acc.getAccountHolderRoles());
@@ -256,6 +274,7 @@ public class FDAccountController {
                     Map<String, Object> bundleData = new HashMap<>();
                     bundleData.put("bundleId", bundle.getBundleId());
                     bundleData.put("customerId", bundle.getCustomerId());
+                    bundleData.put("userId", fdAccountService.getUserIdForCustomer(bundle.getCustomerId()));
                     bundleData.put("bundleName", bundle.getBundleName());
                     bundleData.put("bundleDescription", bundle.getBundleDescription());
                     bundleData.put("totalAmount", bundle.getTotalAmount());
@@ -264,10 +283,23 @@ public class FDAccountController {
                     bundleData.put("approvalStatus", bundle.getApprovalStatus());
                     bundleData.put("createdAt", bundle.getCreatedAt());
 
-                    // Get customer details from their FD applications
-                    List<FixedDepositAccount> customerFDs = fdAccountService.getCustomerApplications(bundle.getCustomerId());
-                    if (!customerFDs.isEmpty()) {
-                        FixedDepositAccount firstFD = customerFDs.get(0);
+                    // Load exactly the FDs linked to this bundle. The customer
+                    // application lookup accepts a login name, not customerId.
+                    List<FixedDepositAccount> bundleFDs = fdAccountService.getBundleAccounts(bundle.getBundleId());
+                    bundleData.put("fdCount", bundleFDs.size());
+                    bundleData.put("fdItems", bundleFDs.stream().map(fd -> {
+                        Map<String, Object> item = new HashMap<>();
+                        item.put("fdAccountNo", fd.getFdAccountNo());
+                        item.put("productCode", fd.getProductCode());
+                        item.put("principalAmount", fd.getPrincipalAmount());
+                        item.put("tenureMonths", fd.getTenureMonths());
+                        item.put("interestRate", fd.getInterestRate());
+                        item.put("status", fd.getStatus());
+                        item.put("approvalStatus", fd.getApprovalStatus());
+                        return item;
+                    }).toList());
+                    if (!bundleFDs.isEmpty()) {
+                        FixedDepositAccount firstFD = bundleFDs.get(0);
                         Map<String, Object> customerDetails = new HashMap<>();
                         customerDetails.put("fullName", firstFD.getApplicantFullName());
                         customerDetails.put("firstName", firstFD.getApplicantFirstName());

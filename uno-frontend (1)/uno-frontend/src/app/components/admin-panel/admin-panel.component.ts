@@ -26,6 +26,9 @@ export class AdminPanelComponent implements AfterViewInit, OnInit, OnDestroy {
   set activeTab(value: string) {
     this._activeTab = value;
     if (value === 'logs') void this.loadOperationLogs();
+    if (value === 'interest') this.loadInterestAccounts();
+    if (value === 'notifications') this.loadNotificationLogs();
+    if (value === 'statements') this.loadStatementSummary();
     setTimeout(() => this.animateCards(), 50);
   }
 
@@ -51,6 +54,7 @@ export class AdminPanelComponent implements AfterViewInit, OnInit, OnDestroy {
 
   recentApplications: any[] = [];
   allApplications: any[] = [];
+  selectedRecentApplication: any = null;
   productWiseDistribution: any[] = [];
   visualizationAccounts: any[] = [];
   visualizationMonthly: any[] = [];
@@ -67,6 +71,17 @@ export class AdminPanelComponent implements AfterViewInit, OnInit, OnDestroy {
   operationLogsLoading = false;
   operationLogsError = '';
   operationLogFilters = { operationType: '', actor: '', target: '', from: '', to: '', sortBy: 'time', sort: 'DESC' };
+  interestAccounts: any[] = [];
+  interestLoading = false;
+  interestError = '';
+  notificationLogs: any[] = [];
+  notificationsLoading = false;
+  notificationsError = '';
+  statementSummary: any = null;
+  statementRows: any[] = [];
+  statementAccount = '';
+  statementsLoading = false;
+  statementsError = '';
   readonly operationLogTypes = [
     'USER_CREATED', 'USER_DELETED', 'USER_ROLE_UPDATED', 'USER_DEACTIVATED', 'USER_REACTIVATED',
     'PRODUCT_CREATED', 'PRODUCT_UPDATED', 'PRODUCT_RETIRED', 'PRODUCT_REACTIVATED', 'PRODUCT_DELETED',
@@ -217,7 +232,9 @@ export class AdminPanelComponent implements AfterViewInit, OnInit, OnDestroy {
 
         // Store all applications for filtering
         this.allApplications = allApps.map((app: any) => ({
+          ...app,
           id: app.fdAccountNo,
+          userId: app.userId,
           customer: app.applicantFullName || `${app.applicantFirstName} ${app.applicantLastName}` || 'Unknown',
           amount: parseFloat(app.principalAmount) || 0,
           status: app.approvalStatus || app.status,
@@ -260,6 +277,14 @@ export class AdminPanelComponent implements AfterViewInit, OnInit, OnDestroy {
 
   formatCurrency(value: number): string {
     return '₹' + (value / 10000000).toFixed(2) + ' Cr';
+  }
+
+  viewRecentApplication(application: any): void {
+    this.selectedRecentApplication = application;
+  }
+
+  closeRecentApplication(): void {
+    this.selectedRecentApplication = null;
   }
 
   formatNumber(value: number): string {
@@ -424,6 +449,58 @@ export class AdminPanelComponent implements AfterViewInit, OnInit, OnDestroy {
       this.operationLogsLoading = false;
       this.cdr.detectChanges();
     }
+  }
+
+  loadInterestAccounts(): void {
+    this.interestLoading = true;
+    this.interestError = '';
+    this.apiClient.getInterestAccounts().subscribe({
+      next: rows => this.interestAccounts = rows || [],
+      error: error => { this.interestError = error.error?.message || 'Could not load interest accounts.'; this.interestAccounts = []; this.interestLoading = false; },
+      complete: () => this.interestLoading = false
+    });
+  }
+
+  saveInterestMode(account: any): void {
+    this.apiClient.updateInterestMode(account.fd_account_no, account.interest_mode).subscribe({
+      next: () => alert(`Interest mode updated for ${account.fd_account_no}`),
+      error: error => {
+        this.interestError = error.error?.message || 'Could not update interest mode.';
+        this.loadInterestAccounts();
+      }
+    });
+  }
+
+  loadNotificationLogs(): void {
+    this.notificationsLoading = true;
+    this.notificationsError = '';
+    this.apiClient.getNotificationLogs().subscribe({
+      next: rows => this.notificationLogs = rows || [],
+      error: error => { this.notificationsError = error.error?.message || 'Could not load notification logs.'; this.notificationLogs = []; this.notificationsLoading = false; },
+      complete: () => this.notificationsLoading = false
+    });
+  }
+
+  loadStatementSummary(): void {
+    this.statementsLoading = true;
+    this.statementsError = '';
+    this.apiClient.getStatementSummary().subscribe({
+      next: summary => this.statementSummary = summary,
+      error: error => { this.statementsError = error.error?.message || 'Could not load statement summary.'; this.statementSummary = null; this.statementsLoading = false; },
+      complete: () => this.statementsLoading = false
+    });
+  }
+
+  loadStatements(): void {
+    const account = this.statementAccount.trim();
+    if (!account) { this.statementsError = 'Enter an FD account number.'; return; }
+    this.statementsLoading = true;
+    this.statementsError = '';
+    this.apiClient.getAccountStatements(account).subscribe({
+      next: rows => this.statementRows = rows || [],
+      error: error => { this.statementsError = error.error?.message || 'Could not load statements for this account.'; this.statementRows = []; this.statementsLoading = false; },
+      complete: () => this.statementsLoading = false
+    });
   }
 
   applyOperationLogFilters(): void {
@@ -652,8 +729,10 @@ export class AdminPanelComponent implements AfterViewInit, OnInit, OnDestroy {
     if (this.userSearchQuery) {
       const query = this.userSearchQuery.toLowerCase();
       filtered = filtered.filter(user =>
+        String(user.id).includes(query) ||
         user.username.toLowerCase().includes(query) ||
-        user.email.toLowerCase().includes(query)
+        user.email.toLowerCase().includes(query) ||
+        user.roles.some((role: string) => role.toLowerCase().includes(query))
       );
     }
 

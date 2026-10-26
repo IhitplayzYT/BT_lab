@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.Authentication;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -376,8 +377,41 @@ class AuthApiController {
     }
 
     // Admin endpoints
+    @GetMapping("/me")
+    public ResponseEntity<Map<String, Object>> getCurrentUser(Authentication authentication) {
+        var user = userRepository.findByUsername(authentication.getName());
+        if (user.isEmpty()) return error(HttpStatus.NOT_FOUND, "User not found");
+        Map<String, Object> userData = new LinkedHashMap<>();
+        userData.put("id", user.get().getId());
+        userData.put("username", user.get().getUsername());
+        userData.put("email", user.get().getEmail());
+        userData.put("roles", user.get().getRoles());
+        return ResponseEntity.ok(userData);
+    }
+
+    @GetMapping("/staff/users")
+    public ResponseEntity<Map<String, Object>> getStaffUserDirectory() {
+        return ResponseEntity.ok(userDirectoryResponse());
+    }
+
     @GetMapping("/admin/users")
     public ResponseEntity<Map<String, Object>> getAllUsers() {
+        return ResponseEntity.ok(userDirectoryResponse());
+    }
+
+    @GetMapping("/admin/users/by-id/{id}")
+    public ResponseEntity<Map<String, Object>> getUserById(@PathVariable Long id) {
+        var user = userRepository.findById(id);
+        if (user.isEmpty()) return error(HttpStatus.NOT_FOUND, "User not found");
+        Map<String, Object> userData = new LinkedHashMap<>();
+        userData.put("id", user.get().getId());
+        userData.put("username", user.get().getUsername());
+        userData.put("enabled", user.get().getEnabled());
+        userData.put("roles", user.get().getRoles());
+        return ResponseEntity.ok(userData);
+    }
+
+    private Map<String, Object> userDirectoryResponse() {
         var userList = users.getAllUsers();
         List<Map<String, Object>> usersData = userList.stream().map(user -> {
             Map<String, Object> userData = new LinkedHashMap<>();
@@ -390,7 +424,7 @@ class AuthApiController {
             userData.put("lastLoginAt", user.getLastLoginAt());
             return userData;
         }).toList();
-        return ResponseEntity.ok(Map.of("users", usersData));
+        return Map.of("users", usersData);
     }
 
     @GetMapping("/admin/users/{username}")

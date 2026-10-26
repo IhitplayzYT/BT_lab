@@ -2,7 +2,7 @@
 
 ## Project overview
 
-Root `docker-compose.yml` starts six backend services: Auth (8090), Product & Pricing (8080), Calculator (8084), FD Account (8086), Interest Batch (8081), and Notification (8083). Statement-service is available separately on 8082. The Angular frontend runs on 4200 from `uno-frontend (1)/uno-frontend`.
+Root `docker-compose.yml` starts seven backend services: Auth (8090), Product & Pricing (8080), Calculator (8084), FD Account (8086), Interest Batch (8081), Statement (8082), and Notification (8083). The Angular frontend runs on 4200 from `uno-frontend (1)/uno-frontend`.
 
 Four MySQL server containers expose ports 3307–3310; the Group 9 server holds multiple service schemas. Root Kafka uses `localhost:19092` for host clients and `kafka:9092` for container clients. Mailpit exposes SMTP 1025 and inbox 8025.
 
@@ -30,7 +30,7 @@ docker compose ps
 docker compose logs -f fd-account-service
 ```
 
-Statements need [separate startup](FD_Module_Group9/statement-service/backend.md#starting-the-service). The older Group 9 `compose.yaml --profile full` references a removed auth target and is not the integrated startup route.
+For host-based statement-service startup, see its [service guide](FD_Module_Group9/statement-service/backend.md#starting-the-service). The older Group 9 `compose.yaml --profile full` references a removed auth target and is not the integrated startup route.
 
 To stop while retaining database volumes:
 

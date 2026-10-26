@@ -2,6 +2,7 @@ package com.example.fdmodule.security;
 
 import com.example.fdsecurity.JwtSupport;
 import com.example.fdsecurity.TokenIssuer;
+import com.example.fdmodule.client.AuthServiceClient;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,9 +23,9 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
+import org.mockito.Mockito;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -42,6 +43,7 @@ class JwtSecurityIntegrationTest {
 
     @Autowired MockMvc mvc;
     @Autowired JdbcTemplate jdbc;
+    @org.springframework.boot.test.mock.mockito.MockBean AuthServiceClient authServiceClient;
 
     TokenIssuer issuer = new TokenIssuer(SECRET, "fd-platform-auth", Duration.ofMinutes(10));
 
@@ -64,12 +66,18 @@ class JwtSecurityIntegrationTest {
                     + "tenure_months,status,maturity_date,accrued_interest,created_at) VALUES(?,?,'FDSTD','INR',50000,7,12,'ACTIVE',?,0,?)",
                     a[0], a[1], today.plusMonths(6), today.minusMonths(1).atStartOfDay());
         }
+        Mockito.when(authServiceClient.getUserIdByUsername("customer1"))
+                .thenAnswer(invocation -> jdbc.queryForObject("SELECT id FROM users WHERE username='customer1'", Long.class));
+        Mockito.when(authServiceClient.getUserIdByUsername("customer2"))
+                .thenAnswer(invocation -> jdbc.queryForObject("SELECT id FROM users WHERE username='customer2'", Long.class));
+        Mockito.when(authServiceClient.getUsernameByUserId(Mockito.anyLong()))
+                .thenAnswer(invocation -> jdbc.queryForObject("SELECT username FROM users WHERE id=?", String.class, invocation.getArgument(0)));
     }
 
     @Test
     void validTokenLogsInAndRoleDecidesWhatIsAllowed() throws Exception {
         mvc.perform(get("/api/fd/clock").header("Authorization", bearer("admin1", "ADMIN"))).andExpect(status().isOk());
-        mvc.perform(get("/api/fd/clock").header("Authorization", bearer("officer1", "BANK_OFFICER"))).andExpect(status().isForbidden());
+        mvc.perform(get("/api/fd/clock").header("Authorization", bearer("officer1", "BANK_OFFICER"))).andExpect(status().isOk());
         mvc.perform(get("/api/report/fd-summary").header("Authorization", bearer("officer1", "BANK_OFFICER"))).andExpect(status().isOk());
         mvc.perform(get("/api/report/fd-summary").header("Authorization", bearer("customer1", "CUSTOMER"))).andExpect(status().isForbidden());
     }
@@ -141,8 +149,8 @@ class JwtSecurityIntegrationTest {
     }
 
     @Test
-    void httpBasicStillWorksAlongsideTokens() throws Exception {
-        mvc.perform(get("/api/fd/account/" + MINE).with(httpBasic("customer1", "customer123"))).andExpect(status().isOk());
-        mvc.perform(get("/api/fd/account/" + OTHERS).with(httpBasic("customer1", "customer123"))).andExpect(status().isForbidden());
+    void basicAuthenticationIsDisabledInTheJwtOnlyProfile() throws Exception {
+        mvc.perform(get("/api/fd/account/" + MINE).header("Authorization", "Basic Y3VzdG9tZXIxOmN1c3RvbWVyMTIz"))
+                .andExpect(status().isUnauthorized());
     }
 }

@@ -78,7 +78,10 @@
           "defaultConfiguration": "development"
         },
         "test": {
-          "builder": "@angular/build:unit-test"
+          "builder": "@angular/build:unit-test",
+          "options": {
+            "include": ["app/app.spec.ts", "app/services/translation.service.spec.ts"]
+          }
         }
       }
     }

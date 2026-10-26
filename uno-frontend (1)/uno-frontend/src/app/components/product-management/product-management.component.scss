@@ -1,4 +1,8 @@
 :host { display: block; }
+.product-filter-panel { margin: 1rem 0 1.5rem; padding: 1rem; }
+.product-filter-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: 0.85rem; align-items: end; }
+.product-filter-grid label { display: grid; gap: 0.35rem; }
+.product-filter-panel small { display: block; margin-top: 0.75rem; color: var(--text-3); }
 .product-options-section { margin: 1.5rem 0; }
 .product-options-section h4 { margin-bottom: 0.75rem; }
 .product-role-options { display: flex; flex-wrap: wrap; gap: 1rem; }

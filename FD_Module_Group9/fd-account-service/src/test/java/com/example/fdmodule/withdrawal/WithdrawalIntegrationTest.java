@@ -3,6 +3,8 @@ package com.example.fdmodule.withdrawal;
 import com.example.fdmodule.interest.InterestPostingService;
 import com.example.fdmodule.maturity.MaturityService;
 import com.example.fdmodule.service.GLAccounts;
+import com.example.fdmodule.client.AuthServiceClient;
+import com.example.fdmodule.client.ProductServiceClient;
 import com.example.fdshared.EventInfrastructure;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,7 +25,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
+import static com.example.fdmodule.test.JwtTestSupport.jwtAuth;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -43,6 +45,8 @@ class WithdrawalIntegrationTest {
     @Autowired MaturityService maturity;
     @Autowired JdbcTemplate jdbc;
     @Autowired MockMvc mvc;
+    @org.springframework.boot.test.mock.mockito.MockBean AuthServiceClient authServiceClient;
+    @org.springframework.boot.test.mock.mockito.MockBean ProductServiceClient productServiceClient;
 
     LocalDate today;
 
@@ -56,6 +60,12 @@ class WithdrawalIntegrationTest {
         jdbc.update("INSERT INTO products(product_code,currency,status,pre_maturity_penalty_pct) VALUES('FDSTD','INR','ACTIVE',1.00)");
         jdbc.update("INSERT INTO users(username,password_hash,role) VALUES('customer1','x','CUSTOMER')");
         jdbc.update("INSERT INTO customer_profile(customer_id,user_id) VALUES('CUST001',(SELECT id FROM users WHERE username='customer1'))");
+        org.mockito.Mockito.when(authServiceClient.getUserIdByUsername("customer1"))
+                .thenAnswer(invocation -> jdbc.queryForObject("SELECT id FROM users WHERE username='customer1'", Long.class));
+        var product = new com.fasterxml.jackson.databind.ObjectMapper().createObjectNode()
+                .put("productCode", "FDSTD").put("status", "ACTIVE");
+        product.putObject("charges").put("withdrawalFees", 1.0);
+        org.mockito.Mockito.when(productServiceClient.getProductByCode("FDSTD")).thenReturn(product);
         // Opened 3 months ago, matures in 9 months, 12% on 100000, monthly compounding so some interest is capitalized.
         jdbc.update("INSERT INTO fd_accounts(fd_account_no,customer_id,product_code,currency,principal_amount,"
                 + "interest_rate,tenure_months,status,maturity_date,accrued_interest,created_at) "
@@ -159,17 +169,17 @@ class WithdrawalIntegrationTest {
 
     @Test
     void endpointsReturnQuoteAndClosedAccount() throws Exception {
-        mvc.perform(get("/api/fd/account/" + ACCT + "/withdrawal-inquiry").with(httpBasic("customer1", "customer123")))
+        mvc.perform(get("/api/fd/account/" + ACCT + "/withdrawal-inquiry").with(jwtAuth("customer1")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accountNumber").value(ACCT))
                 .andExpect(jsonPath("$.inquiryDate").value(today.toString()));
-        mvc.perform(post("/api/fd/account/" + ACCT + "/withdrawal").with(httpBasic("officer1", "officer123"))
+        mvc.perform(post("/api/fd/account/" + ACCT + "/withdrawal").with(jwtAuth("officer1"))
                         .contentType(MediaType.APPLICATION_JSON).content("{\"reason\":\"need funds\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("PREMATURELY_CLOSED"));
-        mvc.perform(post("/api/fd/account/" + ACCT + "/withdrawal").with(httpBasic("officer1", "officer123")))
+        mvc.perform(post("/api/fd/account/" + ACCT + "/withdrawal").with(jwtAuth("officer1")))
                 .andExpect(status().isBadRequest());
-        mvc.perform(get("/api/fd/account/BR999NONE/withdrawal-inquiry").with(httpBasic("officer1", "officer123")))
+        mvc.perform(get("/api/fd/account/BR999NONE/withdrawal-inquiry").with(jwtAuth("officer1")))
                 .andExpect(status().isBadRequest());
         mvc.perform(get("/api/fd/account/" + ACCT + "/withdrawal-inquiry")).andExpect(status().isUnauthorized());
     }

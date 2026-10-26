@@ -95,19 +95,23 @@ class MaturityIntegrationTest {
         assertThat(result.matured()).isEqualTo(1);
         assertThat(fdStatus("BR001MAT")).isEqualTo("MATURED");
         var rows = ledger("BR001MAT");
-        assertThat(rows).hasSize(2);
+        assertThat(rows).hasSize(3);
 
         BigDecimal expectedInterest = new BigDecimal("32.876712").multiply(BigDecimal.valueOf(29))
                 .setScale(2, RoundingMode.HALF_UP);
-        assertThat(rows.get(0).get("txn_type")).isEqualTo("INTEREST");
+        assertThat(rows.get(0).get("txn_type")).isEqualTo("INTEREST_ACCRUAL");
         assertThat((BigDecimal) rows.get(0).get("amount")).isEqualByComparingTo(expectedInterest);
         assertThat(rows.get(0).get("debit_gl_account")).isEqualTo(GLAccounts.EXPENSE_INTEREST);
-        assertThat(rows.get(0).get("credit_gl_account")).isEqualTo(GLAccounts.ASSET_CUSTOMER_SETTLEMENT);
+        assertThat(rows.get(0).get("credit_gl_account")).isEqualTo(GLAccounts.LIABILITY_INTEREST_PAYABLE);
 
-        assertThat(rows.get(1).get("txn_type")).isEqualTo("MATURITY_PAYOUT");
-        assertThat((BigDecimal) rows.get(1).get("amount")).isEqualByComparingTo("100000.00");
-        assertThat(rows.get(1).get("debit_gl_account")).isEqualTo(GLAccounts.LIABILITY_FD_DEPOSITS);
+        assertThat(rows.get(1).get("txn_type")).isEqualTo("INTEREST");
+        assertThat((BigDecimal) rows.get(1).get("amount")).isEqualByComparingTo(expectedInterest);
+        assertThat(rows.get(1).get("debit_gl_account")).isEqualTo(GLAccounts.LIABILITY_INTEREST_PAYABLE);
         assertThat(rows.get(1).get("credit_gl_account")).isEqualTo(GLAccounts.ASSET_CUSTOMER_SETTLEMENT);
+        assertThat(rows.get(2).get("txn_type")).isEqualTo("MATURITY_PAYOUT");
+        assertThat((BigDecimal) rows.get(2).get("amount")).isEqualByComparingTo("100000.00");
+        assertThat(rows.get(2).get("debit_gl_account")).isEqualTo(GLAccounts.LIABILITY_FD_DEPOSITS);
+        assertThat(rows.get(2).get("credit_gl_account")).isEqualTo(GLAccounts.ASSET_CUSTOMER_SETTLEMENT);
         assertThat(rows).allSatisfy(r -> assertThat(r.get("status")).isEqualTo("POSTED"));
 
         // Interest sub-ledger is settled and the authoritative balance state is emptied.
@@ -131,7 +135,7 @@ class MaturityIntegrationTest {
         var second = maturity.run(today, ACTOR);
 
         assertThat(second.matured()).isZero();
-        assertThat(ledger("BR001MAT")).hasSize(2);
+        assertThat(ledger("BR001MAT")).hasSize(3);
     }
 
     @Test
@@ -233,12 +237,16 @@ class MaturityIntegrationTest {
                 "BR001CMP");
         BigDecimal finalInterest = decimal("SELECT amount FROM fd_transactions WHERE fd_account_no=? AND txn_type='INTEREST' "
                 + "AND debit_gl_account=? AND credit_gl_account=?", "BR001CMP",
-                GLAccounts.EXPENSE_INTEREST, GLAccounts.ASSET_CUSTOMER_SETTLEMENT);
+                GLAccounts.LIABILITY_INTEREST_PAYABLE, GLAccounts.ASSET_CUSTOMER_SETTLEMENT);
 
         assertThat(payout).isGreaterThan(new BigDecimal("100000"));
         // Everything accrued is paid out: capitalized part via deposits, remainder as interest.
         assertThat(payout.add(finalInterest).subtract(new BigDecimal("100000")).subtract(accrued).abs())
                 .isLessThanOrEqualTo(new BigDecimal("0.005"));
+        assertThat(decimal("SELECT current_balance FROM fd_interest_state WHERE fd_account_no=?", "BR001CMP"))
+                .isEqualByComparingTo("0.00");
+        assertThat(decimal("SELECT accrued_precise FROM fd_interest_state WHERE fd_account_no=?", "BR001CMP"))
+                .isEqualByComparingTo("0.000000");
     }
 
     @Test

@@ -31,10 +31,13 @@ export class DashboardComponent implements OnInit {
   isDarkMode = false;
 
   fdAccounts = signal<any[]>([]);
+  interestAccounts = signal<any[]>([]);
+  interestAccountsError = signal('');
   products = signal<any[]>([]);
   isLoading = signal(true);
   error = signal('');
   userRole = signal('');
+  currentUserId = signal('');
 
   activeTab = signal('portfolio');
 
@@ -46,7 +49,7 @@ export class DashboardComponent implements OnInit {
   activeApplications = signal<any[]>([]);
   
   // User's preferred currency for display
-  preferredCurrency = signal('INR');
+  readonly preferredCurrency = this.currencyService.preferredCurrency;
   
   // Recommended FD packages - will be dynamically built from loaded products
   recommendedPackages = signal<any[]>([]);
@@ -136,61 +139,57 @@ export class DashboardComponent implements OnInit {
 
     // Customer stays on this dashboard
     this.userRole.set('CUSTOMER');
+    this.apiClient.getCurrentUser().subscribe({
+      next: user => this.currentUserId.set(user?.id == null ? '' : String(user.id)),
+      error: error => console.warn('Could not load the signed-in user ID:', error)
+    });
     this.loadDashboardData();
     this.loadSettings();
     this.loadClockStatus();
   }
 
   private async loadDashboardData(): Promise<void> {
+    this.isLoading.set(true);
+
+    // These are independent dashboard resources. A catalog/chart error must not
+    // prevent account data from loading or clear contracts that already loaded.
+    this.apiClient.getActiveProducts('FD').subscribe({
+      next: products => {
+        this.products.set(products || []);
+        this.buildRecommendedPackages(products || []);
+      },
+      error: error => console.error('Could not load FD products:', error)
+    });
+    this.apiClient.getPortfolioSummary().subscribe({
+      next: summary => console.log('Portfolio summary loaded:', summary),
+      error: error => console.warn('Portfolio summary is unavailable:', error)
+    });
+    this.apiClient.getMyInterestAccounts().subscribe({
+      next: rows => this.interestAccounts.set(rows || []),
+      error: error => this.interestAccountsError.set(error.error?.message || 'Could not load interest account details.')
+    });
+
     try {
-      const products = await this.apiClient.getActiveProducts('FD').toPromise();
-      this.products.set(products || []);
-
-      // Build recommended packages dynamically from valid products
-      this.buildRecommendedPackages(products || []);
-
-      // Load customer's FD applications from backend
+      // Fetch customer applications immediately; do not wait for product or chart APIs.
       const applications = await this.apiClient.getMyApplications().toPromise();
-      console.log('Raw applications from API:', applications);
-      console.log('Sample application structure:', applications?.[0]);
-      // Filter out only rejected applications - show all others including closed/matured
-      const activeApps = (applications || []).filter(app => {
-        console.log(`Checking app ${app.fdAccountNo}: status=${app.status}, approvalStatus=${app.approvalStatus}`);
-        return app.approvalStatus !== 'REJECTED' &&
-               app.status !== 'REJECTED' &&
-               app.approvalStatus !== 'WITHDRAWN' &&
-               app.status !== 'WITHDRAWN';
-      });
-      // Sort: ACTIVE and PENDING first, then closed/matured at the bottom
-      const sortedApps = activeApps.sort((a, b) => {
+      const visibleApps = (applications || []).filter(app =>
+        app.approvalStatus !== 'REJECTED' && app.status !== 'REJECTED' &&
+        app.approvalStatus !== 'WITHDRAWN' && app.status !== 'WITHDRAWN'
+      );
+      const sortedApps = visibleApps.sort((a, b) => {
         const aActive = a.status === 'ACTIVE' || a.status === 'PENDING';
         const bActive = b.status === 'ACTIVE' || b.status === 'PENDING';
-        if (aActive && !bActive) return -1;
-        if (!aActive && bActive) return 1;
-        return 0;
+        return aActive === bActive ? 0 : aActive ? -1 : 1;
       });
-      console.log('Filtered and sorted apps:', sortedApps);
-      // Pending requests already have a dedicated Applications tab. Keep them out of
-      // Contracts so an unapproved FD is not shown as an extra contract.
       this.fdAccounts.set(sortedApps.filter(app =>
         app.status !== 'PENDING' && app.approvalStatus !== 'PENDING_APPROVAL'
       ));
-      // Applications tab should only show PENDING applications
-      const pendingApps = activeApps.filter(app =>
+      this.activeApplications.set(visibleApps.filter(app =>
         app.status === 'PENDING' || app.approvalStatus === 'PENDING_APPROVAL'
-      );
-      console.log('Pending applications:', pendingApps);
-      this.activeApplications.set(pendingApps);
-
-      // Load chart data for visualization
-      const chartData = await this.apiClient.getPortfolioSummary().toPromise();
-      console.log('Chart data loaded:', chartData);
-
+      ));
     } catch (error: any) {
-      console.error('Dashboard data load error:', error);
-      this.products.set([]);
-      this.fdAccounts.set([]);
-      this.activeApplications.set([]);
+      console.error('Could not load customer applications:', error);
+      this.error.set(error.error?.message || 'Could not load your applications. Please refresh and try again.');
     } finally {
       this.isLoading.set(false);
     }
@@ -202,52 +201,52 @@ export class DashboardComponent implements OnInit {
       return;
     }
 
-    // Get the first valid product code as default
-    const defaultProduct = products[0];
-    const defaultProductCode = defaultProduct.productCode;
+    const periodsPerYear = (frequency: any): number => {
+      const key = String(frequency || '').trim().toUpperCase();
+      const named: Record<string, number> = { ANNUAL: 1, ANNUALLY: 1, YEARLY: 1, ON_MATURITY: 1, SEMI_ANNUAL: 2, 'SEMI-ANNUAL': 2, HALF_YEARLY: 2, QUARTERLY: 4, MONTHLY: 12, DAILY: 365 };
+      const value = named[key] ?? Number(key);
+      return Number.isFinite(value) && value > 0 ? value : 0;
+    };
+    const eligibleProduct = (amount: number, months: number): any => products.find(product =>
+      months >= Number(product.termLimit?.min) && months <= Number(product.termLimit?.max) &&
+      amount >= Number(product.minDeposit ?? 0) && amount <= Number(product.maxDeposit ?? Number.POSITIVE_INFINITY) &&
+      Number.isFinite(Number(product.rateLimit?.min)) && Number.isFinite(Number(product.rateLimit?.max)) &&
+      periodsPerYear(product.compoundingFrequency) > 0
+    );
+    const createPackage = (id: number, name: string, description: string, badge: string,
+                          specs: Array<{ amount: number; tenure: number }>): any => {
+      const items = specs.map(spec => {
+        const product = eligibleProduct(spec.amount, spec.tenure);
+        return product ? { productCode: product.productCode, amount: spec.amount, tenure: spec.tenure, product } : null;
+      });
+      if (items.some(item => !item)) return null;
+      const totalAmount = items.reduce((sum, item: any) => sum + item.amount, 0);
+      const estimatedReturn = items.reduce((sum, item: any) => {
+        const product = item.product;
+        const minRate = Number(product.rateLimit.min);
+        const maxRate = Number(product.rateLimit.max);
+        const generalBonus = (product.rateVariations || []).find((variation: any) =>
+          String(variation.customerCategory).trim().toUpperCase() === 'GENERAL'
+        )?.rateModifier || 0;
+        const annualRate = Math.min(maxRate, Math.max(minRate, minRate + Number(generalBonus)));
+        const periods = periodsPerYear(product.compoundingFrequency);
+        return sum + item.amount * Math.pow(1 + annualRate / (100 * periods), periods * item.tenure / 12);
+      }, 0);
+      return { id, name, description, badge, products: items.map(({ product: _product, ...item }: any) => item), totalAmount,
+        estimatedReturn: Math.round(estimatedReturn * 100) / 100 };
+    };
 
-    // Build packages using valid product codes and tenures within valid range (6-24 months)
     const packages = [
-      {
-        id: 1,
-        name: 'Starter Pack',
-        description: 'Perfect for beginners - 3 FDs with varying tenures',
-        products: [
-          { productCode: defaultProductCode, amount: 25000, tenure: 6 },
-          { productCode: defaultProductCode, amount: 25000, tenure: 12 },
-          { productCode: defaultProductCode, amount: 50000, tenure: 24 }
-        ],
-        totalAmount: 100000,
-        estimatedReturn: 115000,
-        badge: 'Popular'
-      },
-      {
-        id: 2,
-        name: 'Senior Citizen Bundle',
-        description: 'Special rates for senior citizens with tax benefits',
-        products: [
-          { productCode: defaultProductCode, amount: 50000, tenure: 12 },
-          { productCode: defaultProductCode, amount: 150000, tenure: 24 }
-        ],
-        totalAmount: 200000,
-        estimatedReturn: 245000,
-        badge: 'Best Value'
-      },
-      {
-        id: 3,
-        name: 'High Growth Portfolio',
-        description: 'Maximize returns with longer tenures',
-        products: [
-          { productCode: defaultProductCode, amount: 100000, tenure: 18 },
-          { productCode: defaultProductCode, amount: 100000, tenure: 24 },
-          { productCode: defaultProductCode, amount: 100000, tenure: 24 }
-        ],
-        totalAmount: 300000,
-        estimatedReturn: 390000,
-        badge: 'High Returns'
-      }
-    ];
-
+      createPackage(1, 'Starter Pack', 'Perfect for beginners - 3 FDs with varying tenures', 'Popular', [
+        { amount: 25000, tenure: 6 }, { amount: 25000, tenure: 12 }, { amount: 50000, tenure: 24 }
+      ]),
+      createPackage(2, 'Flexible Saver Bundle', 'A balanced mix of short and medium term deposits', 'Best Value', [
+        { amount: 50000, tenure: 12 }, { amount: 150000, tenure: 24 }
+      ]),
+      createPackage(3, 'Long Term Portfolio', 'Invest across longer deposit tenures', 'Long Term', [
+        { amount: 100000, tenure: 18 }, { amount: 100000, tenure: 24 }, { amount: 100000, tenure: 24 }
+      ])
+    ].filter(Boolean);
     this.recommendedPackages.set(packages);
   }
 
@@ -309,6 +308,7 @@ export class DashboardComponent implements OnInit {
 
   // Settings methods
   saveSettings(): void {
+    this.currencyService.setPreferredCurrency(this.settingsData.defaultCurrency);
     const defaultDetails = {
       firstName: this.settingsData.firstName,
       middleName: this.settingsData.middleName,
@@ -384,11 +384,12 @@ export class DashboardComponent implements OnInit {
           defaultCurrency: details.defaultCurrency || 'INR',
           profilePicture: details.profilePicture || ''
         };
-        this.preferredCurrency.set(details.defaultCurrency || 'INR');
+        this.currencyService.setPreferredCurrency(details.defaultCurrency || 'INR');
       } catch (e) {
         console.error('Error loading settings:', e);
       }
     }
+    this.currencyService.setPreferredCurrency(this.settingsData.defaultCurrency);
   }
 
   // Helper method to convert INR amount to preferred currency for display
@@ -398,6 +399,11 @@ export class DashboardComponent implements OnInit {
 
   formatCurrency(amount: number): string {
     const converted = this.convertForDisplay(amount);
+    return this.currencyService.formatCurrency(converted, this.preferredCurrency());
+  }
+
+  formatCurrencyFrom(amount: number, sourceCurrency: string = 'INR'): string {
+    const converted = this.currencyService.convertCurrency(Number(amount) || 0, sourceCurrency || 'INR', this.preferredCurrency());
     return this.currencyService.formatCurrency(converted, this.preferredCurrency());
   }
 

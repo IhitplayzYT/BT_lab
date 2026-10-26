@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.UUID;
 
 /** Test hook for Lab L20 lifecycle testing - available to all roles for testing. */
 @RestController
@@ -40,19 +39,21 @@ public class ClockController {
         clock.advance(days);
 
         // Trigger interest accrual and maturity checks after time advance
-        LocalDate newBusinessDate = clock.today();
+        // Accrual is for completed banking days. The current business date is
+        // still in progress, just as it is for the daily scheduler.
+        LocalDate completedBusinessDate = clock.today().minusDays(1);
         String actor = auth.getName();
 
         try {
-            // Process interest accrual for the new business date
+            // Process completed-day interest under a clock-specific request path.
             if (interest != null) {
-                String requestId = UUID.randomUUID().toString();
-                interest.processBatch(requestId, newBusinessDate, actor);
+                String requestId = java.util.UUID.randomUUID().toString();
+                interest.processClockAdvance(requestId, completedBusinessDate, actor);
             }
 
             // Process maturity checks for the new business date
             if (maturity != null) {
-                maturity.run(newBusinessDate, actor);
+                maturity.run(clock.today(), actor);
             }
         } catch (Exception e) {
             // Log but don't fail the time advance - accrual/maturity can be run separately

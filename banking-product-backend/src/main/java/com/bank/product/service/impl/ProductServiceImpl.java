@@ -74,6 +74,14 @@ public class ProductServiceImpl implements ProductService {
         if (dto.getAllowedTransactionTypes() == null) dto.setAllowedTransactionTypes(previous.getAllowedTransactionTypes());
         if (dto.getBalanceTypes() == null) dto.setBalanceTypes(previous.getBalanceTypes());
         if (dto.getCharges() == null) dto.setCharges(previous.getCharges());
+        if (dto.getChargeDetails() == null) dto.setChargeDetails(previous.getChargeDetails());
+        if (dto.getTaxRate() == null) dto.setTaxRate(previous.getTaxRate());
+        if (dto.getServiceFeeRate() == null) dto.setServiceFeeRate(previous.getServiceFeeRate());
+        if (dto.getServiceFeeFlat() == null) dto.setServiceFeeFlat(previous.getServiceFeeFlat());
+        if (dto.getDocumentationFee() == null) dto.setDocumentationFee(previous.getDocumentationFee());
+        if (dto.getGstRate() == null) dto.setGstRate(previous.getGstRate());
+        if (dto.getPrematurePenaltyRate() == null) dto.setPrematurePenaltyRate(previous.getPrematurePenaltyRate());
+        if (dto.getCompoundingFrequency() == null) dto.setCompoundingFrequency(previous.getCompoundingFrequency());
         if (dto.getAllowedRoles() == null) dto.setAllowedRoles(previous.getAllowedRoles());
         if (dto.getRateVariations() == null) dto.setRateVariations(previous.getRateVariations());
         validateProductUpdate(dto, existingProduct);
@@ -90,6 +98,13 @@ public class ProductServiceImpl implements ProductService {
         existingProduct.setEffectiveDate(updated.getEffectiveDate());
         existingProduct.setEndDate(updated.getEndDate());
         existingProduct.setInterestType(updated.getInterestType());
+        existingProduct.setTaxRate(updated.getTaxRate());
+        existingProduct.setServiceFeeRate(updated.getServiceFeeRate());
+        existingProduct.setServiceFeeFlat(updated.getServiceFeeFlat());
+        existingProduct.setDocumentationFee(updated.getDocumentationFee());
+        existingProduct.setGstRate(updated.getGstRate());
+        existingProduct.setPrematurePenaltyRate(updated.getPrematurePenaltyRate());
+        existingProduct.setCompoundingFrequency(updated.getCompoundingFrequency());
         existingProduct.setMinAge(updated.getMinAge());
         existingProduct.setMinDeposit(updated.getMinDeposit());
         existingProduct.setMaxDeposit(updated.getMaxDeposit());
@@ -251,13 +266,18 @@ public class ProductServiceImpl implements ProductService {
 
         Integer minTerm = null;
         Integer maxTerm = null;
-        Double minRate = product.getMinimumInterest() != null ? product.getMinimumInterest() : 5.0;
-        Double maxRate = product.getMaximumInterest() != null ? product.getMaximumInterest() : 8.0;
+        Double minRate = null;
+        Double maxRate = null;
 
         if (product.getBusinessRules() != null && !product.getBusinessRules().isEmpty()) {
             ProductBusinessRule rule = product.getBusinessRules().get(0);
             minTerm = rule.getTermLimitMin();
             maxTerm = rule.getTermLimitMax();
+            minRate = rule.getRateLimitMin();
+            maxRate = rule.getRateLimitMax();
+        }
+        if (minRate == null || maxRate == null || minRate < 0 || maxRate < minRate) {
+            throw new InvalidProductException("Product rate limits are not configured");
         }
 
         if (request.getTermMonths() != null && minTerm != null && maxTerm != null) {
@@ -284,15 +304,6 @@ public class ProductServiceImpl implements ProductService {
                     .map(RateVariation::getRateModifier)
                     .findFirst()
                     .orElse(0.0);
-        } else {
-            // Standard banking defaults
-            if ("SENIOR_CITIZEN".equals(category)) {
-                rateModifier = 1.0;
-            } else if ("EMPLOYEE".equals(category)) {
-                rateModifier = 0.5;
-            } else if ("CORPORATE".equals(category)) {
-                rateModifier = 0.2;
-            }
         }
 
         double calculatedRate = baseRate + rateModifier;
@@ -360,21 +371,20 @@ public class ProductServiceImpl implements ProductService {
 
         Integer minTerm = null;
         Integer maxTerm = null;
-        java.math.BigDecimal minRate = product.getMinimumInterest() != null ? java.math.BigDecimal.valueOf(product.getMinimumInterest()) : java.math.BigDecimal.valueOf(5.0);
-        java.math.BigDecimal maxRate = product.getMaximumInterest() != null ? java.math.BigDecimal.valueOf(product.getMaximumInterest()) : java.math.BigDecimal.valueOf(8.0);
+        java.math.BigDecimal minRate = null;
+        java.math.BigDecimal maxRate = null;
 
         if (product.getBusinessRules() != null && !product.getBusinessRules().isEmpty()) {
             ProductBusinessRule rule = product.getBusinessRules().get(0);
             minTerm = rule.getTermLimitMin();
             maxTerm = rule.getTermLimitMax();
+            minRate = java.math.BigDecimal.valueOf(rule.getRateLimitMin());
+            maxRate = java.math.BigDecimal.valueOf(rule.getRateLimitMax());
         }
+        if (minRate == null || maxRate == null) throw new InvalidProductException("Product rate limits are not configured");
 
         java.util.Map<String, java.math.BigDecimal> bonuses = new java.util.HashMap<>();
-        if (product.getRateVariations().isEmpty()) {
-            bonuses.put("SENIOR_CITIZEN", java.math.BigDecimal.ONE);
-            bonuses.put("EMPLOYEE", java.math.BigDecimal.valueOf(0.5));
-            bonuses.put("CORPORATE", java.math.BigDecimal.valueOf(0.2));
-        } else {
+        if (product.getRateVariations() != null) {
             product.getRateVariations().forEach(v -> bonuses.put(v.getCustomerCategory().trim().toUpperCase(), java.math.BigDecimal.valueOf(v.getRateModifier())));
         }
         return CalculatorConfigDTO.builder()
@@ -396,7 +406,7 @@ public class ProductServiceImpl implements ProductService {
                         .build())
                 .baseRate(minRate)
                 .interestType("COMPOUND")
-                .compoundingFrequency("QUARTERLY")
+                .compoundingFrequency(product.getCompoundingFrequency())
                 .supportsPeriodicPayout("FD".equalsIgnoreCase(product.getProductType()))
                 .build();
     }
@@ -408,6 +418,10 @@ public class ProductServiceImpl implements ProductService {
         if (dto.getRateLimit() == null || dto.getRateLimit().getMin() == null || dto.getRateLimit().getMax() == null || !Double.isFinite(dto.getRateLimit().getMin()) || !Double.isFinite(dto.getRateLimit().getMax()) || dto.getRateLimit().getMin() < 0) throw new InvalidProductException("Invalid rate limits");
         if (dto.getMinDeposit() != null && dto.getMinDeposit() < 0 || dto.getMaxDeposit() != null && dto.getMaxDeposit() < 0 || dto.getMinDeposit() != null && dto.getMaxDeposit() != null && dto.getMinDeposit() > dto.getMaxDeposit()) throw new InvalidProductException("Invalid deposit limits");
         if (dto.getRateVariations() != null && dto.getRateVariations().stream().anyMatch(v -> v == null || v.getCustomerCategory() == null || v.getRateModifier() == null || !Double.isFinite(v.getRateModifier()))) throw new InvalidProductException("Invalid rate variation");
+        if (java.util.stream.Stream.of(dto.getTaxRate(), dto.getServiceFeeRate(), dto.getServiceFeeFlat(), dto.getDocumentationFee(), dto.getGstRate(), dto.getPrematurePenaltyRate())
+                .filter(java.util.Objects::nonNull).anyMatch(value -> !Double.isFinite(value) || value < 0)) throw new InvalidProductException("Charge and tax configuration values must be finite and non-negative");
+        if (dto.getCompoundingFrequency() != null && !java.util.Set.of("ANNUAL", "ANNUALLY", "YEARLY", "SEMI_ANNUAL", "SEMI-ANNUAL", "HALF_YEARLY", "QUARTERLY", "MONTHLY", "DAILY", "ON_MATURITY", "1", "2", "4", "12", "365").contains(dto.getCompoundingFrequency().trim().toUpperCase())) throw new InvalidProductException("Unsupported compounding frequency");
+        if (dto.getChargeDetails() != null && dto.getChargeDetails().stream().anyMatch(charge -> charge == null || charge.getChargeType() == null || charge.getChargeValue() == null || !Double.isFinite(charge.getChargeValue()) || charge.getChargeValue() < 0 || charge.getChargeUnit() == null || !java.util.Set.of("flat", "percentage").contains(charge.getChargeUnit().trim().toLowerCase()))) throw new InvalidProductException("Invalid product charge configuration");
         if (dto.getAllowedRoles() != null) {
             java.util.Set<String> validRoles = java.util.Set.of("OWNER", "CO-OWNER", "NOMINEE");
             java.util.Set<String> configuredRoles = dto.getAllowedRoles().stream()

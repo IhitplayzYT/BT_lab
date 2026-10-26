@@ -220,3 +220,13 @@ INSERT INTO product_rate_variations (product_id, customer_category, rate_modifie
 ((SELECT product_id FROM products WHERE product_code = 'FD_MONTHLY'), 'GENERAL', 0.00),
 ((SELECT product_id FROM products WHERE product_code = 'FD_MONTHLY'), 'SENIOR_CITIZEN', 0.50),
 ((SELECT product_id FROM products WHERE product_code = 'FD_MONTHLY'), 'EMPLOYEE', 0.25);
+
+-- Enable optional joint holders for all FD products, including existing catalogs.
+INSERT INTO product_roles (product_id, role_type, is_mandatory)
+SELECT p.product_id, 'CO-OWNER', FALSE
+FROM products p
+WHERE p.product_type = 'FD'
+  AND NOT EXISTS (
+    SELECT 1 FROM product_roles r
+    WHERE r.product_id = p.product_id AND r.role_type = 'CO-OWNER'
+  );
