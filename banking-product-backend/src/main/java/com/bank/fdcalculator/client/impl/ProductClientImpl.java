@@ -17,10 +17,6 @@ public class ProductClientImpl implements ProductClient {
     @Override
     public ProductResponseDTO getProduct(String productCode) {
         log.info("Fetching product configurations directly from ProductService for code: {}", productCode);
-        
-        // TODO: In a decoupled, multi-instance microservice environment, you would swap this implementation with:
-        // return restTemplate.getForObject("http://localhost:8080/api/product/" + productCode, ProductResponseDTO.class);
-        
         return productService.getProductByCode(productCode);
     }
 }

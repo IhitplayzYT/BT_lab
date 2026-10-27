@@ -100,34 +100,10 @@ export class DashboardComponent implements OnInit {
   showIfscCode = false;
   showPanNumber = false;
 
-  // Notifications
+  // Do not seed customer dashboards with sample notifications containing
+  // another customer's FD identifiers.
   showNotificationsPanel = signal(false);
-  notifications = signal<any[]>([
-    {
-      id: 1,
-      type: 'accrual',
-      title: 'Interest Accrued',
-      message: '₹1,250 interest has been accrued to your FD account BR0010001235',
-      time: '2 hours ago',
-      read: false
-    },
-    {
-      id: 2,
-      type: 'status',
-      title: 'Application Approved',
-      message: 'Your FD application BR0010001236 has been approved',
-      time: '1 day ago',
-      read: false
-    },
-    {
-      id: 3,
-      type: 'maturity',
-      title: 'Maturity Reminder',
-      message: 'Your FD BR0010001234 will mature in 30 days',
-      time: '3 days ago',
-      read: true
-    }
-  ]);
+  notifications = signal<any[]>([]);
 
   ngOnInit(): void {
     // Reload token from localStorage to ensure it's available
@@ -167,6 +143,13 @@ export class DashboardComponent implements OnInit {
   }
 
   private async loadDashboardData(): Promise<void> {
+    // Clear customer-scoped data before fetching so a reused dashboard cannot
+    // briefly retain the previous login's portfolio if the next request fails.
+    this.fdAccounts.set([]);
+    this.activeApplications.set([]);
+    this.interestAccounts.set([]);
+    this.interestAccountsError.set('');
+    this.error.set('');
     this.isLoading.set(true);
 
     // These are independent dashboard resources. A catalog/chart error must not
@@ -195,6 +178,8 @@ export class DashboardComponent implements OnInit {
       this.activeApplications.set(visibleApps.filter(app => this.isPendingApplication(app)));
     } catch (error: any) {
       console.error('Could not load customer applications:', error);
+      this.fdAccounts.set([]);
+      this.activeApplications.set([]);
       this.error.set(error.error?.message || 'Could not load your applications. Please refresh and try again.');
     } finally {
       this.isLoading.set(false);

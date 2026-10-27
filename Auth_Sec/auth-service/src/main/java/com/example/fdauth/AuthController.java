@@ -80,7 +80,7 @@ class AuthApiController {
         return String.format("%06d", new java.util.Random().nextInt(1000000));
     }
 
-    // Hash OTP using SHA-256 for deterministic comparison (BCrypt not suitable for short numeric codes)
+    // Hash OTP using SHA-256 for deterministic comparison
     private String hashOtp(String otp) {
         try {
             java.security.MessageDigest digest = java.security.MessageDigest.getInstance("SHA-256");

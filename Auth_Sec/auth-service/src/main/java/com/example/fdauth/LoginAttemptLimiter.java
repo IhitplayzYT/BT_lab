@@ -29,7 +29,7 @@ public class LoginAttemptLimiter {
     }
 
     public void failed(String username) {
-        states.merge(key(username), new State(1, null), (old, ignored) -> {
+        states.merge(key(username), new State(1, null), (old, _ignored) -> {
             if (old.lockedUntil() != null && Instant.now().isBefore(old.lockedUntil())) return old;
             int failures = old.lockedUntil() != null ? 1 : old.failures() + 1;
             return failures >= maxFailures ? new State(failures, Instant.now().plus(lock)) : new State(failures, null);

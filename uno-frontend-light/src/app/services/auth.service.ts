@@ -41,6 +41,11 @@ export class AuthService {
   }
 
   async login(username: string, password: string): Promise<any> {
+    // A failed account switch must not leave the previous user's token active.
+    this.apiClient.clearToken();
+    this.currentUser.set(null);
+    this.isAuthenticated.set(false);
+
     try {
       console.log('AuthService: Calling API login');
       const response = await this.apiClient.login(username, password).toPromise();
@@ -65,6 +70,10 @@ export class AuthService {
   }
 
   async signup(username: string, password: string, email: string): Promise<any> {
+    this.apiClient.clearToken();
+    this.currentUser.set(null);
+    this.isAuthenticated.set(false);
+
     try {
       console.log('AuthService: Calling API signup');
       const response = await this.apiClient.signup(username, password, email).toPromise();
@@ -89,6 +98,10 @@ export class AuthService {
   }
 
   async signupWithRole(username: string, password: string, email: string, role: string): Promise<void> {
+    this.apiClient.clearToken();
+    this.currentUser.set(null);
+    this.isAuthenticated.set(false);
+
     try {
       const response = await this.apiClient.signupWithRole(username, password, email, role).toPromise();
       

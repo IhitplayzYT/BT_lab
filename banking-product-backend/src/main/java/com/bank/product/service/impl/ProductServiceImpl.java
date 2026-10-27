@@ -9,6 +9,7 @@ import com.bank.product.exception.ProductNotFoundException;
 import com.bank.product.mapper.ProductMapper;
 import com.bank.product.repository.ProductRepository;
 import com.bank.product.repository.ProductSpecifications;
+import com.bank.product.service.ProductChargeDefaults;
 import com.bank.product.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -47,6 +48,7 @@ public class ProductServiceImpl implements ProductService {
                 });
 
         Product product = productMapper.toEntity(dto);
+        ProductChargeDefaults.ensureFdTransactionFee(product);
         Product savedProduct = productRepository.save(product);
         log.info("Successfully created product: {}", savedProduct.getProductCode());
         return productMapper.toResponseDTO(savedProduct);
@@ -307,13 +309,8 @@ public class ProductServiceImpl implements ProductService {
         }
 
         double calculatedRate = baseRate + rateModifier;
-        final String resolvedCategory = category;
-        if (product.getRateVariations() != null && !product.getRateVariations().isEmpty()
-                && !"GENERAL".equals(resolvedCategory)
-                && product.getRateVariations().stream().noneMatch(v -> v.getCustomerCategory() != null
-                    && v.getCustomerCategory().trim().equalsIgnoreCase(resolvedCategory))) {
-            throw new InvalidProductException("Customer category " + resolvedCategory + " is not configured for product " + productCode);
-        }
+        // Rate variations grant category-specific adjustments; their absence does not
+        // make the product unavailable to that customer category. Keep the base rate.
         // Clamp within product rate limits
         double finalRate = Math.max(minRate, Math.min(calculatedRate, maxRate));
 

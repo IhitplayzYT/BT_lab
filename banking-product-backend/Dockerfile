@@ -5,6 +5,7 @@ COPY Auth_Sec/security-common Auth_Sec/security-common
 RUN mvn -B -f Auth_Sec/pom.xml -N install && mvn -B -f Auth_Sec/security-common/pom.xml install -DskipTests
 COPY banking-product-backend banking-product-backend
 RUN mvn -B -f banking-product-backend/pom.xml clean package -DskipTests
+
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup

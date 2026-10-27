@@ -9,8 +9,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
 /**
  * FD Calculator Microservice – Banking Technology Lab.
  *
- * <p>This service is simulation-only. It calculates and explains an estimated
- * FD maturity value. It does NOT create FD accounts, store deposits, debit or
+ * create FD accounts, store deposits, debit or
  * credit money, initiate payouts, or schedule any financial events.
  */
 @SpringBootApplication

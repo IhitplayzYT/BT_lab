@@ -2,6 +2,7 @@ package com.bank.product.config;
 
 import com.bank.product.entity.*;
 import com.bank.product.repository.ProductRepository;
+import com.bank.product.service.ProductChargeDefaults;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
@@ -97,6 +98,7 @@ public class DataInitializer implements CommandLineRunner {
                 updated = true;
             }
             if (!"FD".equalsIgnoreCase(product.getProductType())) continue;
+            updated |= ProductChargeDefaults.ensureFdTransactionFee(product);
             List<ProductRole> roles = product.getAllowedRoles();
             if (roles == null) {
                 roles = new ArrayList<>();
@@ -109,7 +111,7 @@ public class DataInitializer implements CommandLineRunner {
         }
         if (updated) {
             productRepository.saveAll(products);
-            log.info("Enabled optional co-owners on existing FD products");
+            log.info("Applied FD defaults to existing products");
         }
     }
 
