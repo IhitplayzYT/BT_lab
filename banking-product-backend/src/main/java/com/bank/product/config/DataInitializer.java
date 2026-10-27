@@ -10,7 +10,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Component
 @RequiredArgsConstructor
@@ -29,6 +31,61 @@ public class DataInitializer implements CommandLineRunner {
             log.info("Products already exist in database. Skipping initialization.");
         }
         ensureCoOwnerRole();
+        ensureCatalogTaxConfiguration();
+    }
+
+    /** Applies the seeded FD tax configuration on both fresh and existing databases. */
+    private void ensureCatalogTaxConfiguration() {
+        Map<String, Double> taxRates = new LinkedHashMap<>();
+        for (String code : List.of(
+                "FD_SHORT", "FD_MEDIUM", "FD_LONG", "FD_CORP", "FD_FLEXI",
+                "FD_CUMULATIVE", "FD_NRI", "FD_STUDENT", "FD_PREMIUM", "FD_MONTHLY",
+                "FD_STD_SHORT", "FD_STD_MED", "FD_STD_LONG", "FD_NRE", "FD_NRO")) {
+            taxRates.put(code, 10.0);
+        }
+        taxRates.put("FD_SENIOR", 5.0);
+        taxRates.put("FD_TAX_SAVER", 5.0);
+
+        List<Product> products = productRepository.findAll();
+        boolean updated = false;
+        for (Product product : products) {
+            Double taxRate = taxRates.get(product.getProductCode());
+            if (taxRate == null) continue;
+
+            if (!taxRate.equals(product.getTaxRate())) {
+                product.setTaxRate(taxRate);
+                updated = true;
+            }
+            List<ProductCharge> charges = product.getCharges();
+            if (charges == null) {
+                charges = new ArrayList<>();
+                product.setCharges(charges);
+            }
+            ProductCharge taxCharge = charges.stream()
+                    .filter(charge -> "TAX".equalsIgnoreCase(charge.getChargeType()))
+                    .findFirst()
+                    .orElse(null);
+            if (taxCharge == null) {
+                charges.add(ProductCharge.builder()
+                        .chargeType("TAX")
+                        .chargeValue(taxRate)
+                        .chargeUnit("percentage")
+                        .feeType("PERIODIC")
+                        .build());
+                updated = true;
+            } else if (!taxRate.equals(taxCharge.getChargeValue())
+                    || !"percentage".equalsIgnoreCase(taxCharge.getChargeUnit())
+                    || !"PERIODIC".equalsIgnoreCase(taxCharge.getFeeType())) {
+                taxCharge.setChargeValue(taxRate);
+                taxCharge.setChargeUnit("percentage");
+                taxCharge.setFeeType("PERIODIC");
+                updated = true;
+            }
+        }
+        if (updated) {
+            productRepository.saveAll(products);
+            log.info("Applied tax rates and TAX charges to seeded FD catalog products");
+        }
     }
 
     private void ensureCoOwnerRole() {

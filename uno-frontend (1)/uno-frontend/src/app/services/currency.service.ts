@@ -1,7 +1,7 @@
 import { Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of, timer } from 'rxjs';
-import { catchError, map, shareReplay } from 'rxjs/operators';
+import { of, timer } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root'
@@ -56,7 +56,6 @@ export class CurrencyService {
   ];
 
   private readonly API_URL = 'https://api.frankfurter.dev/v1/latest?base=INR';
-  private ratesCache$: Observable<any> | null = null;
 
   constructor(private http: HttpClient) {
     // Delay initial fetch to ensure app is fully loaded
@@ -104,8 +103,7 @@ export class CurrencyService {
   }
 
   private fetchLiveRates(): void {
-    if (!this.ratesCache$) {
-      this.ratesCache$ = this.http.get<any>(this.API_URL).pipe(
+    this.http.get<any>(this.API_URL).pipe(
         map(response => {
           const rates: { [key: string]: number } = {};
           // Convert from API (base INR) to our format
@@ -127,13 +125,10 @@ export class CurrencyService {
           console.error('Failed to fetch live rates, using fallback:', error);
           this.apiError.set('Using fallback rates - API unavailable');
           this.conversionRates.set(this.fallbackRates);
-          this.lastUpdated.set(new Date());
           return of(this.fallbackRates);
-        }),
-        shareReplay(1)
-      );
-    }
-    this.ratesCache$.subscribe();
+        })
+      )
+      .subscribe();
   }
 
   convertToINR(amount: number, fromCurrency: string): number {

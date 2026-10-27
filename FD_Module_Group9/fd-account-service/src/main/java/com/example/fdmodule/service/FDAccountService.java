@@ -94,6 +94,25 @@ public class FDAccountService {
         return category;
     }
 
+    @Transactional(readOnly = true)
+    public Map<String, Object> getCustomerIdentity(String username) {
+        Long userId = authServiceClient.getUserIdByUsername(username);
+        List<CustomerProfile> profiles = userId == null
+                ? List.of()
+                : customerRepository.findAllByUserId(userId);
+        List<String> customerIds = profiles.stream()
+                .map(CustomerProfile::getCustomerId)
+                .filter(customerId -> customerId != null && !customerId.isBlank())
+                .distinct()
+                .toList();
+
+        Map<String, Object> identity = new java.util.LinkedHashMap<>();
+        identity.put("userId", userId);
+        identity.put("customerId", customerIds.isEmpty() ? "" : customerIds.get(0));
+        identity.put("customerIds", customerIds);
+        return identity;
+    }
+
     @Transactional
     public FDAccountResponse create(FDAccountRequest request, String createdBy) {
         if (!customerRepository.existsById(request.getCustomerId())) {

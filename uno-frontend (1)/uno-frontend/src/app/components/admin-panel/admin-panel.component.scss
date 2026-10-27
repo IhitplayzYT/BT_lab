@@ -610,3 +610,22 @@
 
 .api-doc-links { display: flex; align-items: center; gap: .65rem; flex-wrap: wrap; margin-top: 1rem; }
 .api-doc-links strong { margin-right: .3rem; color: var(--text-2); font-size: .9rem; }
+
+.contract-search-section, .statement-search-section { display: grid; gap: 1.25rem; }
+.contract-search-section .section-header, .statement-search-section .section-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+.contract-filters { display: grid; grid-template-columns: minmax(220px, 2fr) repeat(2, minmax(180px, 1fr)); gap: 1rem; padding: 1.25rem; }
+.contract-filters label, .statement-lookup label { display: grid; gap: .45rem; color: var(--text-2); }
+.contract-filters input, .contract-filters select, .statement-lookup select { width: 100%; min-height: 44px; }
+.contract-table { overflow-x: auto; }
+.contract-table table { min-width: 900px; }
+.contract-table td:first-child { font-weight: 700; color: var(--text-1); }
+.contract-status { display: inline-flex; padding: .3rem .65rem; border-radius: 999px; font-size: .78rem; font-weight: 700; background: color-mix(in srgb, var(--accent) 14%, transparent); }
+.contract-status[data-status="ACTIVE"] { color: #25c99a; }
+.contract-status[data-status="MATURED"] { color: #68a8ff; }
+.contract-status[data-status="PREMATURELY_CLOSED"] { color: #ff9c70; }
+.statement-lookup { display: grid; grid-template-columns: minmax(260px, 1fr) auto auto; align-items: end; gap: .85rem; padding: 1.25rem; }
+.statement-search-section .analytics-grid { margin: 0; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); align-items: stretch; }
+.statement-search-section .analytics-card { min-width: 0; overflow-wrap: anywhere; }
+.statement-search-section .users-table { overflow-x: auto; }
+.statement-search-section .users-table table { min-width: 850px; }
+@media (max-width: 760px) { .contract-filters, .statement-lookup { grid-template-columns: 1fr; } }

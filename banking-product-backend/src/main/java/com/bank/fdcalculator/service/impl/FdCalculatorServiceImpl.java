@@ -203,6 +203,7 @@ public class FdCalculatorServiceImpl implements FdCalculatorService {
         FdCalculationRequestDTO basicRequest = new FdCalculationRequestDTO();
         basicRequest.setPrincipal(dto.getPrincipal());
         basicRequest.setTerm(dto.getTerm());
+        basicRequest.setBaseRate(dto.getBaseRate());
         basicRequest.setProductCode(dto.getProductCode());
         basicRequest.setCategories(dto.getCategories());
         basicRequest.setInterestType(dto.getInterestType());
@@ -218,6 +219,9 @@ public class FdCalculatorServiceImpl implements FdCalculatorService {
         BigDecimal totalDeductions = BigDecimal.ZERO;
         
         BigDecimal taxRate = decimal(product.getTaxRate());
+        if (taxRate.signum() <= 0) {
+            taxRate = configuredChargeRate(product, "TAX");
+        }
         BigDecimal taxDeduction = grossInterest.multiply(taxRate).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
         if (taxDeduction.compareTo(BigDecimal.ZERO) > 0) {
             charges.add(new ChargeItemDTO(
@@ -311,6 +315,17 @@ public class FdCalculatorServiceImpl implements FdCalculatorService {
                             ? principal.multiply(value).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP)
                             : value;
                 }).orElse(null);
+    }
+
+    private BigDecimal configuredChargeRate(ProductResponseDTO product, String type) {
+        if (product.getChargeDetails() == null) return BigDecimal.ZERO;
+        return product.getChargeDetails().stream()
+                .filter(charge -> charge.getChargeType() != null
+                        && type.equalsIgnoreCase(charge.getChargeType().trim().replace(' ', '_'))
+                        && "percentage".equalsIgnoreCase(charge.getChargeUnit()))
+                .findFirst()
+                .map(charge -> decimal(charge.getChargeValue()))
+                .orElse(BigDecimal.ZERO);
     }
 
     private void addCharge(List<ChargeItemDTO> charges, String code, String category, String description, BigDecimal amount) {

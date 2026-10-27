@@ -18,7 +18,18 @@ import java.math.*;import java.time.*;import java.util.*;
   if(!Set.of("SIMPLE","MONTHLY_COMPOUND").contains(mode)) throw new IllegalArgumentException("Unsupported interest mode");
   var fd=lock(account); if(!"ACTIVE".equals(fd.get("status")))throw new IllegalArgumentException("Account must be ACTIVE");
   ensureState(fd);var s=state(account);
-  if(s.get("last_accrual_date")!=null)throw new IllegalArgumentException("Cannot change mode after accrual begins");
+  String currentMode=Objects.toString(s.get("interest_mode"),"SIMPLE");
+  if(currentMode.equalsIgnoreCase(mode))return;
+  if("MONTHLY_COMPOUND".equals(mode)&&s.get("last_accrual_date")!=null){
+   LocalDate start=date(fd.get("created_at"));
+   LocalDate effectiveDate=today();
+   LocalDate lastAccrual=date(s.get("last_accrual_date"));
+   if(lastAccrual.isAfter(effectiveDate))effectiveDate=lastAccrual;
+   long elapsedMonths=java.time.temporal.ChronoUnit.MONTHS.between(start.withDayOfMonth(1),effectiveDate.withDayOfMonth(1));
+   LocalDate nextCapitalization=start.plusMonths(Math.max(1,elapsedMonths+1));
+   jdbc.update("UPDATE fd_interest_state SET interest_mode=?,next_capitalization_date=? WHERE fd_account_no=?",mode,nextCapitalization,account);
+   return;
+  }
   jdbc.update("UPDATE fd_interest_state SET interest_mode=? WHERE fd_account_no=?",mode,account);
  }
  @Transactional public Map<String,Object> processBatch(String requestId,LocalDate target,String actor){

@@ -327,10 +327,11 @@ export class FdCalculatorComponent implements AfterViewInit {
         }).toPromise();
         const maturityDate = new Date();
         maturityDate.setMonth(maturityDate.getMonth() + this.termMonths());
+        const configuredResult = this.ensureConfiguredTaxDeduction(result, this.selectedProduct());
         this.calculationResult.set({
-          ...result,
+          ...configuredResult,
           principal: this.principal(),
-          interestEarned: result.grossInterest,
+          interestEarned: configuredResult.grossInterest,
           termMonths: this.termMonths(),
           maturityDate: maturityDate.toISOString().split('T')[0]
         });
@@ -349,6 +350,40 @@ export class FdCalculatorComponent implements AfterViewInit {
     } finally {
       this.isCalculating.set(false);
     }
+  }
+
+  private ensureConfiguredTaxDeduction(result: any, product: any): any {
+    if (!result || !product) return result;
+    const explicitRate = Number(product.taxRate);
+    const taxCharge = (Array.isArray(product.chargeDetails) ? product.chargeDetails : []).find((charge: any) =>
+      String(charge.chargeType || '').trim().toUpperCase() === 'TAX'
+    );
+    const taxRate = explicitRate > 0 ? explicitRate : Number(taxCharge?.chargeValue) || 0;
+    if (taxRate <= 0) return result;
+
+    const charges = Array.isArray(result.charges) ? [...result.charges] : [];
+    const alreadyHasTax = charges.some((charge: any) =>
+      String(charge.chargeType || '').trim().toUpperCase() === 'TDS'
+    );
+    if (alreadyHasTax) return { ...result, charges };
+
+    const grossInterest = Number(result.grossInterest ?? result.interestEarned) || 0;
+    const taxAmount = Math.round(grossInterest * taxRate) / 100;
+    if (taxAmount <= 0) return { ...result, charges };
+
+    const totalDeductions = (Number(result.totalDeductions) || 0) + taxAmount;
+    const netInterest = (Number(result.netInterest ?? grossInterest) || 0) - taxAmount;
+    const maturityAmount = (Number(result.maturityAmount) || this.principal() + grossInterest) - taxAmount;
+    charges.push({
+      chargeType: 'TDS',
+      chargeCategory: 'TAX',
+      description: 'Tax Deducted at Source',
+      chargeAmount: taxAmount,
+      chargeUnit: 'PERCENTAGE',
+      chargeRate: taxRate,
+      isDeductible: true
+    });
+    return { ...result, charges, totalDeductions, netInterest, maturityAmount };
   }
 
   private calculateClientSide(): void {
@@ -373,7 +408,51 @@ export class FdCalculatorComponent implements AfterViewInit {
       maturityAmount = principal * (1 + (interestRate / 100) * termYears);
     }
 
-    interestEarned = maturityAmount - principal;
+    const grossInterest = maturityAmount - principal;
+    const charges: any[] = [];
+    const chargeDetails = product?.chargeDetails || [];
+    const findCharge = (types: string[]) => chargeDetails.find((charge: any) =>
+      types.includes(String(charge.chargeType || '').trim().toUpperCase().replace(/\s+/g, '_'))
+    );
+    const chargeAmount = (types: string[], amountBase: number): number => {
+      const charge = findCharge(types);
+      if (!charge) return 0;
+      const value = Number(charge.chargeValue || 0);
+      return String(charge.chargeUnit || '').toLowerCase() === 'percentage'
+        ? amountBase * value / 100
+        : value;
+    };
+    const addCharge = (chargeType: string, description: string, amount: number): void => {
+      if (amount > 0) charges.push({ chargeType, description, chargeAmount: Math.round(amount * 100) / 100 });
+    };
+
+    const taxCharge = findCharge(['TAX']);
+    const explicitTaxRate = Number(product?.taxRate);
+    const taxRate = explicitTaxRate > 0 ? explicitTaxRate : Number(taxCharge?.chargeValue ?? 0);
+    const taxDeduction = grossInterest * taxRate / 100;
+    addCharge('TDS', 'Tax Deducted at Source', taxDeduction);
+
+    const processingFee = chargeAmount(
+      ['PROCESSING_FEE', 'TRANSACTION_FEE', 'DEPOSIT_FEE', 'ACCOUNT_OPENING_FEE', 'APPLICATION_FEE'], principal);
+    const serviceCharge = findCharge(['SERVICE_FEE']);
+    const serviceFee = serviceCharge
+      ? chargeAmount(['SERVICE_FEE'], principal)
+      : Number(product?.serviceFeeRate || 0) > 0
+        ? principal * Number(product.serviceFeeRate) / 100
+        : Number(product?.serviceFeeFlat || 0);
+    const documentationFee = findCharge(['DOCUMENTATION_FEE'])
+      ? chargeAmount(['DOCUMENTATION_FEE'], principal)
+      : Number(product?.documentationFee || 0);
+    addCharge('PROCESSING_FEE', 'Configured processing fee', processingFee);
+    addCharge('SERVICE_FEE', 'Configured service fee', serviceFee);
+    addCharge('DOCUMENTATION_FEE', 'Configured documentation fee', documentationFee);
+
+    const gstAmount = (processingFee + serviceFee + documentationFee) * Number(product?.gstRate || 0) / 100;
+    addCharge('GST', 'GST on configured service charges', gstAmount);
+    const totalDeductions = charges.reduce((sum, charge) => sum + charge.chargeAmount, 0);
+    const netInterest = grossInterest - totalDeductions;
+    interestEarned = grossInterest;
+    maturityAmount = principal + netInterest;
 
     // Calculate maturity date
     const maturityDate = new Date();
@@ -385,6 +464,10 @@ export class FdCalculatorComponent implements AfterViewInit {
       interestRate,
       effectiveRate: interestRate,
       interestType,
+      grossInterest: Math.round(grossInterest * 100) / 100,
+      netInterest: Math.round(netInterest * 100) / 100,
+      totalDeductions: Math.round(totalDeductions * 100) / 100,
+      charges,
       maturityAmount: Math.round(maturityAmount * 100) / 100,
       interestEarned: Math.round(interestEarned * 100) / 100,
       maturityDate: maturityDate.toISOString().split('T')[0],

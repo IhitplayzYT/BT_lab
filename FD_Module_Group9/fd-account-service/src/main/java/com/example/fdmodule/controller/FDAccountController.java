@@ -65,6 +65,12 @@ public class FDAccountController {
         return ResponseEntity.ok(Map.of("customerCategory", category));
     }
 
+    @GetMapping("/profile")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public ResponseEntity<Map<String, Object>> getCustomerIdentity(Authentication authentication) {
+        return ResponseEntity.ok(fdAccountService.getCustomerIdentity(authentication.getName()));
+    }
+
     @PostMapping("/approve")
     @PreAuthorize("hasAnyRole('BANK_OFFICER','ADMIN')")
     public ResponseEntity<Map<String, String>> approveOrReject(

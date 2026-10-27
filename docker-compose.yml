@@ -103,6 +103,7 @@ services:
       - product_mysql_data:/var/lib/mysql
       - ./banking-product-backend/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
       - ./banking-product-backend/insert_dummy_data.sql:/docker-entrypoint-initdb.d/02-insert_dummy_data.sql
+      - ./banking-product-backend/migration_configure_fd_tax.sql:/docker-entrypoint-initdb.d/03-configure-fd-tax.sql
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "product_user", "--password=${DB_PASSWORD:-product_secret}"]
       interval: 10s

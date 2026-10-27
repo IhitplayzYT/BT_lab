@@ -1,5 +1,56 @@
 :host { display: block; }
 
+.customer-id-group {
+  .customer-id-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: var(--text-2);
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+
+  .customer-id-display {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    min-height: 2.5rem;
+    color: var(--text);
+  }
+
+  .customer-id-display span {
+    font-family: var(--font-mono, monospace);
+    letter-spacing: 0.06em;
+    overflow-wrap: anywhere;
+  }
+
+  .customer-id-toggle {
+    display: inline-grid;
+    place-items: center;
+    flex: 0 0 2.25rem;
+    width: 2.25rem;
+    height: 2.25rem;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--text-2);
+    cursor: pointer;
+  }
+
+  .customer-id-toggle:hover,
+  .customer-id-toggle:focus-visible {
+    color: var(--gold);
+    background: color-mix(in srgb, var(--gold) 10%, transparent);
+    outline: none;
+  }
+
+  .customer-id-toggle svg {
+    width: 1.15rem;
+    height: 1.15rem;
+  }
+}
+
 .dashboard {
   position: relative;
   isolation: isolate;

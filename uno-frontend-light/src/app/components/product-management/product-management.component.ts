@@ -45,6 +45,14 @@ export class ProductManagementComponent implements OnInit {
     minAge: 18,
     interestType: 'COMPOUND',
     compoundingFrequency: 'QUARTERLY',
+    taxRate: 10,
+    processingFee: 0,
+    processingFeeUnit: 'flat',
+    serviceFeeRate: 0,
+    serviceFeeFlat: 0,
+    documentationFee: 0,
+    gstRate: 18,
+    prematurePenaltyRate: 1,
     allowedRoles: ['OWNER', 'CO-OWNER', 'NOMINEE'],
     rateVariations: [
       { customerCategory: 'SENIOR_CITIZEN', rateModifier: 1.0 },
@@ -169,7 +177,15 @@ export class ProductManagementComponent implements OnInit {
       maxDeposit: product.maxDeposit || 10000000,
       minAge: product.minAge || 18,
       interestType: product.interestType || 'COMPOUND',
-      compoundingFrequency: product.charges?.interestCreditFrequency || 'QUARTERLY',
+      compoundingFrequency: product.compoundingFrequency || product.charges?.interestCreditFrequency || 'QUARTERLY',
+      taxRate: Number(product.taxRate ?? this.getProductCharge(product, 'TAX')?.chargeValue ?? 10),
+      processingFee: Number(this.getProductCharge(product, 'PROCESSING_FEE')?.chargeValue ?? 0),
+      processingFeeUnit: this.getProductCharge(product, 'PROCESSING_FEE')?.chargeUnit || 'flat',
+      serviceFeeRate: Number(product.serviceFeeRate ?? 0),
+      serviceFeeFlat: Number(product.serviceFeeFlat ?? 0),
+      documentationFee: Number(product.documentationFee ?? 0),
+      gstRate: Number(product.gstRate ?? 18),
+      prematurePenaltyRate: Number(product.prematurePenaltyRate ?? this.getProductCharge(product, 'PREMATURE_WITHDRAWAL')?.chargeValue ?? 1),
       allowedRoles: product.allowedRoles?.length ? [...product.allowedRoles] : ['OWNER'],
       rateVariations: product.rateVariations?.map((variation: any) => ({ ...variation })) || [],
       status: product.status || 'ACTIVE'
@@ -205,6 +221,14 @@ export class ProductManagementComponent implements OnInit {
       minAge: 18,
       interestType: 'COMPOUND',
       compoundingFrequency: 'QUARTERLY',
+      taxRate: 10,
+      processingFee: 0,
+      processingFeeUnit: 'flat',
+      serviceFeeRate: 0,
+      serviceFeeFlat: 0,
+      documentationFee: 0,
+      gstRate: 18,
+      prematurePenaltyRate: 1,
       allowedRoles: ['OWNER', 'CO-OWNER', 'NOMINEE'],
       rateVariations: [
         { customerCategory: 'SENIOR_CITIZEN', rateModifier: 1.0 },
@@ -274,6 +298,11 @@ export class ProductManagementComponent implements OnInit {
       this.formErrors['maxDeposit'] = 'Maximum deposit must be greater than minimum deposit';
     }
 
+    for (const field of ['taxRate', 'processingFee', 'serviceFeeRate', 'serviceFeeFlat', 'documentationFee', 'gstRate', 'prematurePenaltyRate']) {
+      const value = Number((this.productForm as any)[field]);
+      if (!Number.isFinite(value) || value < 0) this.formErrors[field] = 'Value must be zero or greater';
+    }
+
     // Age validation
     if (this.productForm.minAge < 18) {
       this.formErrors['minAge'] = 'Minimum age must be at least 18';
@@ -320,11 +349,14 @@ export class ProductManagementComponent implements OnInit {
       maxDeposit: this.productForm.maxDeposit,
       minAge: this.productForm.minAge,
       interestType: this.productForm.interestType,
-      charges: {
-        interestCreditFrequency: this.productForm.compoundingFrequency,
-        taxDeduction: true,
-        withdrawalFees: 1.0
-      },
+      compoundingFrequency: this.productForm.compoundingFrequency,
+      taxRate: Number(this.productForm.taxRate),
+      serviceFeeRate: Number(this.productForm.serviceFeeRate),
+      serviceFeeFlat: Number(this.productForm.serviceFeeFlat),
+      documentationFee: Number(this.productForm.documentationFee),
+      gstRate: Number(this.productForm.gstRate),
+      prematurePenaltyRate: Number(this.productForm.prematurePenaltyRate),
+      chargeDetails: this.buildChargeDetails(),
       allowedRoles: [...this.productForm.allowedRoles],
       rateVariations: this.productForm.rateVariations.map(v => ({ customerCategory: v.customerCategory.trim().toUpperCase(), rateModifier: Number(v.rateModifier) })),
       status: this.productForm.status
@@ -371,11 +403,14 @@ export class ProductManagementComponent implements OnInit {
       maxDeposit: this.productForm.maxDeposit,
       minAge: this.productForm.minAge,
       interestType: this.productForm.interestType,
-      charges: {
-        interestCreditFrequency: this.productForm.compoundingFrequency,
-        taxDeduction: true,
-        withdrawalFees: 1.0
-      },
+      compoundingFrequency: this.productForm.compoundingFrequency,
+      taxRate: Number(this.productForm.taxRate),
+      serviceFeeRate: Number(this.productForm.serviceFeeRate),
+      serviceFeeFlat: Number(this.productForm.serviceFeeFlat),
+      documentationFee: Number(this.productForm.documentationFee),
+      gstRate: Number(this.productForm.gstRate),
+      prematurePenaltyRate: Number(this.productForm.prematurePenaltyRate),
+      chargeDetails: this.buildChargeDetails(),
       allowedRoles: [...this.productForm.allowedRoles],
       rateVariations: this.productForm.rateVariations.map(v => ({ customerCategory: v.customerCategory.trim().toUpperCase(), rateModifier: Number(v.rateModifier) })),
       status: this.productForm.status
@@ -482,6 +517,21 @@ export class ProductManagementComponent implements OnInit {
 
   formatCurrency(value: number): string {
     return '₹' + value.toLocaleString();
+  }
+
+  private getProductCharge(product: any, type: string): any | undefined {
+    return product.chargeDetails?.find((charge: any) => String(charge.chargeType || '').toUpperCase() === type);
+  }
+
+  private buildChargeDetails(): any[] {
+    const charges = [
+      { chargeType: 'TAX', chargeValue: Number(this.productForm.taxRate), chargeUnit: 'percentage', feeType: 'PERIODIC' },
+      { chargeType: 'PREMATURE_WITHDRAWAL', chargeValue: Number(this.productForm.prematurePenaltyRate), chargeUnit: 'percentage', feeType: 'EVENT_BASED' }
+    ];
+    if (Number(this.productForm.processingFee) > 0) {
+      charges.push({ chargeType: 'PROCESSING_FEE', chargeValue: Number(this.productForm.processingFee), chargeUnit: this.productForm.processingFeeUnit, feeType: 'ONE_TIME' });
+    }
+    return charges;
   }
 
   formatRateVariations(variations: any[] | null | undefined): string {

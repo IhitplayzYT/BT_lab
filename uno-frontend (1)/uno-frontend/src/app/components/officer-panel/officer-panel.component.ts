@@ -715,6 +715,7 @@ export class OfficerPanelComponent implements AfterViewInit, OnInit, OnDestroy {
       this.journalError = 'Could not load journal transactions. Please retry.';
     } finally {
       this.journalLoading = false;
+      this.cdr.detectChanges();
     }
   }
 
@@ -723,8 +724,10 @@ export class OfficerPanelComponent implements AfterViewInit, OnInit, OnDestroy {
       this.apiClient.loadToken();
       const data = await this.apiClient.getJournalSummary().toPromise();
       this.journalSummary = data || this.journalSummary;
+      this.cdr.detectChanges();
     } catch (error: any) {
       console.error('Error loading journal summary:', error);
+      this.cdr.detectChanges();
     }
   }
 
@@ -750,6 +753,7 @@ export class OfficerPanelComponent implements AfterViewInit, OnInit, OnDestroy {
       this.ledgerAccountsError = 'Could not load FD ledgers. Please retry.';
     } finally {
       this.ledgerAccountsLoading = false;
+      this.cdr.detectChanges();
     }
   }
 
@@ -767,6 +771,7 @@ export class OfficerPanelComponent implements AfterViewInit, OnInit, OnDestroy {
       this.ledgerAccountsError = 'Could not load FD ledgers. Please retry.';
     } finally {
       this.ledgerAccountsLoading = false;
+      this.cdr.detectChanges();
     }
   }
 
@@ -808,6 +813,7 @@ export class OfficerPanelComponent implements AfterViewInit, OnInit, OnDestroy {
       }
     } finally {
       if (requestId === this.ledgerHistoryRequestId) this.ledgerHistoryLoading = false;
+      if (requestId === this.ledgerHistoryRequestId) this.cdr.detectChanges();
     }
   }
 

@@ -443,6 +443,10 @@ export class ApiClientService {
     );
   }
 
+  getMyCustomerIdentity(): Observable<any> {
+    return this.request(':8086/api/fd/account/profile');
+  }
+
   withdrawApplication(fdAccountNo: string): Observable<any> {
     return this.request(`:8086/api/fd/account/${fdAccountNo}/withdraw`, {
       method: 'POST'
@@ -568,8 +572,10 @@ export class ApiClientService {
     });
   }
 
-  getNotificationLogs(limit = 100): Observable<any[]> {
-    return this.request(`:8083/api/notifications?limit=${Math.min(Math.max(limit, 1), 200)}`);
+  getNotificationLogs(limit = 100, offset = 0): Observable<any[]> {
+    const boundedLimit = Math.min(Math.max(limit, 1), 200);
+    const boundedOffset = Math.max(Math.floor(offset), 0);
+    return this.request(`:8083/api/notifications?limit=${boundedLimit}&offset=${boundedOffset}`);
   }
 
   getStatementSummary(): Observable<any> {

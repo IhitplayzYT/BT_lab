@@ -963,8 +963,34 @@ export class ApplyFdComponent implements AfterViewInit {
           const result = results[index] || {};
           const principal = Number(item.principalAmount) || 0;
           const grossInterest = Number(result.grossInterest) || 0;
-          const deductions = Number(result.totalDeductions) || 0;
-          const maturity = Number(result.maturityAmount) || principal + grossInterest - deductions;
+          const charges = Array.isArray(result.charges) ? [...result.charges] : [];
+          const hasTaxDeduction = charges.some((charge: any) =>
+            String(charge.chargeType || '').trim().toUpperCase() === 'TDS'
+          );
+          const explicitTaxRate = Number(product?.taxRate);
+          const taxCharge = (Array.isArray(product?.chargeDetails) ? product.chargeDetails : []).find((charge: any) =>
+            String(charge.chargeType || '').trim().toUpperCase() === 'TAX'
+          );
+          const taxRate = explicitTaxRate > 0 ? explicitTaxRate : Number(taxCharge?.chargeValue) || 0;
+          const taxDeduction = !hasTaxDeduction && taxRate > 0
+            ? Math.round(grossInterest * taxRate) / 100
+            : 0;
+          if (taxDeduction > 0) {
+            charges.push({
+              chargeType: 'TDS',
+              chargeCategory: 'TAX',
+              description: 'Tax Deducted at Source',
+              chargeAmount: taxDeduction,
+              chargeUnit: 'PERCENTAGE',
+              chargeRate: taxRate,
+              isDeductible: true
+            });
+          }
+          const deductions = (Number(result.totalDeductions) || 0) + taxDeduction;
+          const apiMaturity = Number(result.maturityAmount);
+          const maturity = apiMaturity > 0
+            ? apiMaturity - taxDeduction
+            : principal + grossInterest - deductions;
           totalPrincipal += principal;
           maturityTotal += maturity;
           totalDeductions += deductions;
@@ -975,7 +1001,7 @@ export class ApplyFdComponent implements AfterViewInit {
             grossInterest,
             totalDeductions: deductions,
             maturityAmount: maturity,
-            charges: Array.isArray(result.charges) ? result.charges : []
+            charges
           };
         });
         this.bundleBreakdown.set(breakdown);
@@ -1074,7 +1100,12 @@ export class ApplyFdComponent implements AfterViewInit {
     const gstRate = Number(product.gstRate) || 0;
     const totalFeesINR = processingFeeINR + serviceFeeINR + documentationFeeINR;
     const gstINR = totalFeesINR * (gstRate / 100);
-    const taxINR = interest * (Number(product.taxRate) || 0) / 100;
+    const taxCharge = getCharge('TAX');
+    // Product responses can store tax either in taxRate or as a TAX charge.
+    // Prefer a positive explicit rate, then fall back to the charge value.
+    const configuredTaxRate = Number(product.taxRate);
+    const taxRate = configuredTaxRate > 0 ? configuredTaxRate : Number(taxCharge?.chargeValue) || 0;
+    const taxINR = interest * taxRate / 100;
 
     // Convert to selected currency
     const interestInSelectedCurrency = this.currencyService.convertFromINR(interest, this.formData.currency);

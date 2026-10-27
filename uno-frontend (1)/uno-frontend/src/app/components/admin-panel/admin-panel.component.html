@@ -33,6 +33,7 @@
         <button class="tab-btn" [class.active]="activeTab === 'visualizations'" (click)="activeTab = 'visualizations'">{{ 'Visualizations' | translate }}</button>
         <button class="tab-btn" [class.active]="activeTab === 'reports'" (click)="activeTab = 'reports'">{{ 'Reports' | translate }}</button>
         <button class="tab-btn" [class.active]="activeTab === 'interest'" (click)="activeTab = 'interest'">{{ 'Interest Accounts' | translate }}</button>
+        <button class="tab-btn" [class.active]="activeTab === 'contracts'" (click)="activeTab = 'contracts'">{{ 'FD Contracts' | translate }}</button>
         <button class="tab-btn" [class.active]="activeTab === 'statements'" (click)="activeTab = 'statements'">{{ 'Statements' | translate }}</button>
         <button class="tab-btn" [class.active]="activeTab === 'notifications'" (click)="activeTab = 'notifications'">{{ 'Notification Log' | translate }}</button>
         <button class="tab-btn" [class.active]="activeTab === 'relation-nets'" (click)="activeTab = 'relation-nets'">{{ 'Relation Nets' | translate }}</button>
@@ -595,7 +596,7 @@
     } @else if (activeTab === 'interest') {
       <section class="user-management-section">
         <div class="section-header">
-          <div><h2 class="text-gradient">{{ 'Interest Accounts' | translate }}</h2><p>{{ 'Review daily accrual state and choose an account interest mode before accrual begins.' | translate }}</p></div>
+          <div><h2 class="text-gradient">{{ 'Interest Accounts' | translate }}</h2><p>{{ 'Change the interest mode for active accounts. Accrued interest is retained and the selected mode applies going forward.' | translate }}</p></div>
           <button class="btn btn-secondary" (click)="loadInterestAccounts()" [disabled]="interestLoading">{{ 'Refresh' | translate }}</button>
         </div>
         @if (interestError) { <div class="error-message">{{ interestError | translate }}</div> }
@@ -605,22 +606,39 @@
           <div class="users-table card"><table><thead><tr><th>{{ 'FD Account' | translate }}</th><th>{{ 'Status' | translate }}</th><th>{{ 'Principal' | translate }}</th><th>{{ 'Current Balance' | translate }}</th><th>{{ 'Accrued Interest' | translate }}</th><th>{{ 'Last Accrual' | translate }}</th><th>{{ 'Interest Mode' | translate }}</th><th>{{ 'Action' | translate }}</th></tr></thead>
             <tbody>@for (account of interestAccounts; track account.fd_account_no) {<tr>
               <td>{{ account.fd_account_no }}</td><td>{{ account.status }}</td><td>{{ account.currency }} {{ account.principal_amount | number:'1.2-2' }}</td><td>{{ account.currency }} {{ account.current_balance | number:'1.2-2' }}</td><td>{{ account.currency }} {{ account.accrued_interest | number:'1.2-2' }}</td><td>{{ account.last_accrual_date || '—' }}</td>
-              <td><select [(ngModel)]="account.interest_mode" [disabled]="account.status !== 'ACTIVE' || !!account.last_accrual_date"><option value="SIMPLE">SIMPLE</option><option value="MONTHLY_COMPOUND">MONTHLY_COMPOUND</option></select></td>
-              <td><button class="btn btn-secondary" (click)="saveInterestMode(account)" [disabled]="account.status !== 'ACTIVE' || !!account.last_accrual_date">{{ 'Save' | translate }}</button></td>
+              <td><select [(ngModel)]="account.interest_mode" [disabled]="account.status !== 'ACTIVE'"><option value="SIMPLE">SIMPLE</option><option value="MONTHLY_COMPOUND">MONTHLY_COMPOUND</option></select></td>
+              <td><button class="btn btn-secondary" (click)="saveInterestMode(account)" [disabled]="account.status !== 'ACTIVE'">{{ 'Save' | translate }}</button></td>
             </tr>}</tbody>
           </table></div>
         }
       </section>
+    } @else if (activeTab === 'contracts') {
+      <section class="user-management-section contract-search-section">
+        <div class="section-header"><div><h2 class="text-gradient">{{ 'FD Contracts' | translate }}</h2><p>{{ 'Search and review active, matured, and prematurely withdrawn fixed deposits.' | translate }}</p></div><button class="btn btn-secondary" (click)="loadContracts()" [disabled]="contractsLoading">{{ 'Refresh contracts' | translate }}</button></div>
+        <div class="contract-filters card">
+          <label>{{ 'Search account, customer, product, or name' | translate }}<input type="search" [(ngModel)]="contractSearchQuery" [attr.placeholder]="'Start typing to filter contracts' | translate"></label>
+          <label>{{ 'Status' | translate }}<select [(ngModel)]="contractStatusFilter"><option value="ALL">{{ 'All statuses' | translate }}</option><option value="ACTIVE">{{ 'Active' | translate }}</option><option value="MATURED">{{ 'Matured' | translate }}</option><option value="PREMATURELY_CLOSED">{{ 'Prematurely withdrawn' | translate }}</option></select></label>
+          <label>{{ 'Sort by' | translate }}<select [(ngModel)]="contractSortBy"><option value="maturity-desc">{{ 'Maturity date (latest)' | translate }}</option><option value="maturity-asc">{{ 'Maturity date (earliest)' | translate }}</option><option value="principal-desc">{{ 'Principal (high to low)' | translate }}</option><option value="principal-asc">{{ 'Principal (low to high)' | translate }}</option><option value="account-asc">{{ 'Account number' | translate }}</option></select></label>
+        </div>
+        @if (contractsError) { <div class="error-message">{{ contractsError | translate }}</div> }
+        @if (contractsLoading) { <div class="empty-state card"><p>{{ 'Loading FD contracts...' | translate }}</p></div> }
+        @else if (filteredContracts.length === 0) { <div class="empty-state card"><p>{{ 'No contracts match your search.' | translate }}</p></div> }
+        @else { <div class="users-table card contract-table"><table><thead><tr><th>{{ 'FD Account' | translate }}</th><th>{{ 'Customer' | translate }}</th><th>{{ 'Product' | translate }}</th><th>{{ 'Principal' | translate }}</th><th>{{ 'Rate' | translate }}</th><th>{{ 'Maturity Date' | translate }}</th><th>{{ 'Status' | translate }}</th><th>{{ 'Action' | translate }}</th></tr></thead><tbody>
+          @for (contract of filteredContracts; track contract.fdAccountNo) { <tr><td>{{ contract.fdAccountNo }}</td><td>{{ contract.applicantFullName || contract.customerId || contract.userId || '—' }}</td><td>{{ contract.productCode || '—' }}</td><td>{{ contract.principalAmount || '0' | number:'1.2-2' }}</td><td>{{ contract.interestRate || '—' }}{{ contract.interestRate ? '%' : '' }}</td><td>{{ contract.maturityDate | date:'mediumDate' }}</td><td><span class="contract-status" [attr.data-status]="contract.status">{{ contract.status }}</span></td><td><button class="btn btn-sm btn-primary" (click)="openContractStatement(contract)">{{ 'View statement' | translate }}</button></td></tr> }
+        </tbody></table></div> }
+      </section>
     } @else if (activeTab === 'statements') {
-      <section class="user-management-section">
-        <div class="section-header"><div><h2 class="text-gradient">{{ 'Statements' | translate }}</h2><p>{{ 'View projected daily statement rows.' | translate }}</p></div><button class="btn btn-secondary" (click)="loadStatementSummary()" [disabled]="statementsLoading">{{ 'Refresh summary' | translate }}</button></div>
+      <section class="user-management-section statement-search-section">
+        <div class="section-header"><div><h2 class="text-gradient">{{ 'Statements' | translate }}</h2><p>{{ 'Choose an FD contract to view its projected daily statement rows.' | translate }}</p></div><button class="btn btn-secondary" (click)="loadStatementSummary()" [disabled]="statementsLoading">{{ 'Refresh summary' | translate }}</button></div>
         @if (statementSummary) {
           <div class="analytics-grid"><div class="analytics-card card"><span class="card-label">{{ 'Projected statement rows' | translate }}</span><span class="card-value">{{ statementSummary.statements }}</span></div>
             @for (total of statementSummary.totalsByCurrency || []; track total.currency) {<div class="analytics-card card"><span class="card-label">{{ 'Interest totals' | translate }} · {{ total.currency }}</span><span class="card-value">{{ total.total_interest_accrued | number:'1.2-2' }}</span><small>{{ 'Capitalized' | translate }} {{ total.total_interest_capitalized | number:'1.2-2' }} · {{ 'Paid' | translate }} {{ total.total_interest_paid | number:'1.2-2' }}</small></div>}
           </div>
         }
-        <div class="filter-controls card"><div class="filter-row"><div class="filter-group"><label>{{ 'FD Account Number' | translate }}</label><input [(ngModel)]="statementAccount" (keyup.enter)="loadStatements()" [attr.placeholder]="'Enter FD account number' | translate"></div><button class="btn btn-primary" (click)="loadStatements()" [disabled]="statementsLoading">{{ 'Load Statements' | translate }}</button></div></div>
+        <div class="statement-lookup card"><label>{{ 'Select an FD account' | translate }}<select [(ngModel)]="statementAccount"><option value="">{{ 'Choose an account number' | translate }}</option>@for (contract of contracts; track contract.fdAccountNo) {<option [value]="contract.fdAccountNo">{{ contract.fdAccountNo }} · {{ contract.productCode }} · {{ contract.status }}</option>}</select></label><button class="btn btn-primary" (click)="loadStatements()" [disabled]="statementsLoading || !statementAccount">{{ statementsLoading ? ('Loading...' | translate) : ('Load statements' | translate) }}</button><button class="btn btn-secondary" (click)="activeTab = 'contracts'">{{ 'Browse contracts' | translate }}</button></div>
         @if (statementsError) { <div class="error-message">{{ statementsError | translate }}</div> }
+        @if (statementsLoading) { <div class="empty-state card"><p>{{ 'Loading statement rows...' | translate }}</p></div> }
+        @else if (statementAccount && statementRows.length === 0 && !statementsError) { <div class="empty-state card"><p>{{ 'No projected statement rows are available for this account yet.' | translate }}</p></div> }
         @if (statementRows.length) { <div class="users-table card"><table><thead><tr><th>{{ 'Date' | translate }}</th><th>{{ 'Opening Balance' | translate }}</th><th>{{ 'Interest Accrued' | translate }}</th><th>{{ 'Capitalized' | translate }}</th><th>{{ 'Paid' | translate }}</th><th>{{ 'Closing Balance' | translate }}</th><th>{{ 'Outstanding Interest' | translate }}</th></tr></thead><tbody>
           @for (row of statementRows; track row.statement_id) {<tr><td>{{ row.statement_date | date:'mediumDate' }}</td><td>{{ row.currency }} {{ row.opening_balance | number:'1.2-2' }}</td><td>{{ row.currency }} {{ row.interest_accrued | number:'1.2-2' }}</td><td>{{ row.currency }} {{ row.interest_credited | number:'1.2-2' }}</td><td>{{ row.currency }} {{ row.interest_paid | number:'1.2-2' }}</td><td>{{ row.currency }} {{ row.closing_balance | number:'1.2-2' }}</td><td>{{ row.currency }} {{ row.outstanding_interest | number:'1.2-2' }}</td></tr>}
         </tbody></table></div>}
@@ -633,7 +651,8 @@
         @else if (notificationLogs.length === 0) { <div class="empty-state card"><p>{{ 'No notification attempts found.' | translate }}</p></div> }
         @else { <div class="users-table card"><table><thead><tr><th>{{ 'Time' | translate }}</th><th>{{ 'Event' | translate }}</th><th>{{ 'FD Account' | translate }}</th><th>{{ 'Channel' | translate }}</th><th>{{ 'Recipient' | translate }}</th><th>{{ 'Subject' | translate }}</th><th>{{ 'Status' | translate }}</th><th>{{ 'Error' | translate }}</th></tr></thead><tbody>
           @for (log of notificationLogs; track log.id) {<tr><td>{{ log.created_at | date:'medium' }}</td><td>{{ log.event_type }}</td><td>{{ log.fd_account_no || '—' }}</td><td>{{ log.channel }}</td><td>{{ log.recipient }}</td><td>{{ log.subject }}</td><td>{{ log.status }}</td><td>{{ log.error || '—' }}</td></tr>}
-        </tbody></table></div>}
+        </tbody></table></div>
+        <div class="audit-log-pagination"><button class="btn btn-secondary" (click)="previousNotificationPage()" [disabled]="notificationsPage === 0 || notificationsLoading">{{ 'Previous' | translate }}</button><span>{{ 'Page' | translate }} {{ notificationsPage + 1 }}</span><button class="btn btn-secondary" (click)="nextNotificationPage()" [disabled]="!notificationsHasMore || notificationsLoading">{{ 'Next' | translate }}</button></div>}
       </section>
     } @else if (activeTab === 'logs') {
       <div class="audit-log-section">

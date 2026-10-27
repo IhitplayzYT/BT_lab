@@ -1,5 +1,5 @@
 import { TranslatePipe } from '../../pipes/translate.pipe';
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
@@ -38,7 +38,15 @@ export class DashboardComponent implements OnInit {
   isLoading = signal(true);
   error = signal('');
   userRole = signal('');
-  currentUserId = signal('');
+  currentCustomerId = signal('');
+  showCustomerId = signal(false);
+  readonly maskedCustomerId = computed(() => {
+    const customerId = this.currentCustomerId();
+    if (!customerId || customerId === 'Not linked' || customerId === 'Not available') {
+      return customerId || 'Loading…';
+    }
+    return `${'•'.repeat(Math.max(1, customerId.length - 1))}${customerId.slice(-1)}`;
+  });
 
   activeTab = signal('portfolio');
 
@@ -48,6 +56,10 @@ export class DashboardComponent implements OnInit {
   
   // Active applications data
   activeApplications = signal<any[]>([]);
+  readonly activeFdAccounts = computed(() => this.fdAccounts().filter(account =>
+    this.normalizeStatus(account.status) === 'ACTIVE' &&
+    this.normalizeStatus(account.approvalStatus) !== 'PENDING_APPROVAL'
+  ));
   
   // User's preferred currency for display
   readonly preferredCurrency = this.currencyService.preferredCurrency;
@@ -140,9 +152,15 @@ export class DashboardComponent implements OnInit {
 
     // Customer stays on this dashboard
     this.userRole.set('CUSTOMER');
-    this.apiClient.getCurrentUser().subscribe({
-      next: user => this.currentUserId.set(user?.id == null ? '' : String(user.id)),
-      error: error => console.warn('Could not load the signed-in user ID:', error)
+    this.apiClient.getMyCustomerIdentity().subscribe({
+      next: identity => {
+        const customerIds = Array.isArray(identity?.customerIds) ? identity.customerIds : [];
+        this.currentCustomerId.set(String(identity?.customerId || customerIds.join(', ') || 'Not linked'));
+      },
+      error: error => {
+        console.warn('Could not load the signed-in customer ID:', error);
+        this.currentCustomerId.set('Not available');
+      }
     });
     this.loadDashboardData();
     this.loadSettings();
@@ -173,21 +191,9 @@ export class DashboardComponent implements OnInit {
     try {
       // Fetch customer applications immediately; do not wait for product or chart APIs.
       const applications = await this.apiClient.getMyApplications().toPromise();
-      const visibleApps = (applications || []).filter(app =>
-        app.approvalStatus !== 'REJECTED' && app.status !== 'REJECTED' &&
-        app.approvalStatus !== 'WITHDRAWN' && app.status !== 'WITHDRAWN'
-      );
-      const sortedApps = visibleApps.sort((a, b) => {
-        const aActive = a.status === 'ACTIVE' || a.status === 'PENDING';
-        const bActive = b.status === 'ACTIVE' || b.status === 'PENDING';
-        return aActive === bActive ? 0 : aActive ? -1 : 1;
-      });
-      this.fdAccounts.set(sortedApps.filter(app =>
-        app.status !== 'PENDING' && app.approvalStatus !== 'PENDING_APPROVAL'
-      ));
-      this.activeApplications.set(visibleApps.filter(app =>
-        app.status === 'PENDING' || app.approvalStatus === 'PENDING_APPROVAL'
-      ));
+      const visibleApps = (applications || []).filter(app => !this.isRejectedOrWithdrawn(app));
+      this.fdAccounts.set(visibleApps.filter(app => !this.isPendingApplication(app)));
+      this.activeApplications.set(visibleApps.filter(app => this.isPendingApplication(app)));
     } catch (error: any) {
       console.error('Could not load customer applications:', error);
       this.error.set(error.error?.message || 'Could not load your applications. Please refresh and try again.');
@@ -195,6 +201,28 @@ export class DashboardComponent implements OnInit {
       this.isLoading.set(false);
     }
   };
+
+  private normalizeStatus(value: any): string {
+    return String(value || '').trim().toUpperCase().replace(/[ -]+/g, '_');
+  }
+
+  private isPendingApplication(application: any): boolean {
+    const status = this.normalizeStatus(application.status);
+    const approvalStatus = this.normalizeStatus(application.approvalStatus);
+    return ['PENDING', 'PENDING_APPROVAL', 'SUBMITTED', 'PROCESSING'].includes(status) ||
+      ['PENDING', 'PENDING_APPROVAL'].includes(approvalStatus);
+  }
+
+  private isRejectedOrWithdrawn(application: any): boolean {
+    const status = this.normalizeStatus(application.status);
+    const approvalStatus = this.normalizeStatus(application.approvalStatus);
+    return ['REJECTED', 'WITHDRAWN', 'CANCELLED', 'CANCELED'].includes(status) ||
+      ['REJECTED', 'WITHDRAWN', 'CANCELLED', 'CANCELED'].includes(approvalStatus);
+  }
+
+  toggleCustomerIdVisibility(): void {
+    this.showCustomerId.update(visible => !visible);
+  }
 
   private buildRecommendedPackages(products: any[]): void {
     if (!products || products.length === 0) {

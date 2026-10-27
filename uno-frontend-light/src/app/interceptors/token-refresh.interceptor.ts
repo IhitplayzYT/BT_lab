@@ -13,8 +13,16 @@ export class TokenRefreshInterceptor implements HttpInterceptor {
   constructor(private apiClient: ApiClientService) {}
 
   intercept(request: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
-    // Skip authorization for currency API (CORS proxy doesn't allow it)
-    if (request.url.includes('api.allorigins.win') || request.url.includes('exchangerate-api.com')) {
+    // Public currency-rate APIs do not need the application's bearer token.
+    // Keeping this request anonymous also avoids an unnecessary CORS preflight.
+    const requestHost = this.getRequestHost(request.url);
+    if (
+      requestHost === 'api.allorigins.win' ||
+      requestHost === 'exchangerate-api.com' ||
+      requestHost.endsWith('.exchangerate-api.com') ||
+      requestHost === 'api.frankfurter.app' ||
+      requestHost === 'api.frankfurter.dev'
+    ) {
       return next.handle(request);
     }
 
@@ -32,5 +40,13 @@ export class TokenRefreshInterceptor implements HttpInterceptor {
     }
 
     return next.handle(request);
+  }
+
+  private getRequestHost(url: string): string {
+    try {
+      return new URL(url, 'http://localhost').hostname.toLowerCase();
+    } catch {
+      return '';
+    }
   }
 }

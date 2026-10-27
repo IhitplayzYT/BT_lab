@@ -29,6 +29,7 @@ export class AdminPanelComponent implements AfterViewInit, OnInit, OnDestroy {
     if (value === 'interest') this.loadInterestAccounts();
     if (value === 'notifications') this.loadNotificationLogs();
     if (value === 'statements') this.loadStatementSummary();
+    if (value === 'statements' || value === 'contracts') this.loadContracts();
     setTimeout(() => this.animateCards(), 50);
   }
 
@@ -77,11 +78,20 @@ export class AdminPanelComponent implements AfterViewInit, OnInit, OnDestroy {
   notificationLogs: any[] = [];
   notificationsLoading = false;
   notificationsError = '';
+  readonly notificationsPageSize = 100;
+  notificationsPage = 0;
+  notificationsHasMore = false;
   statementSummary: any = null;
   statementRows: any[] = [];
   statementAccount = '';
   statementsLoading = false;
   statementsError = '';
+  contracts: any[] = [];
+  contractsLoading = false;
+  contractsError = '';
+  contractSearchQuery = '';
+  contractStatusFilter = 'ALL';
+  contractSortBy = 'maturity-desc';
   readonly operationLogTypes = [
     'USER_CREATED', 'USER_DELETED', 'USER_ROLE_UPDATED', 'USER_DEACTIVATED', 'USER_REACTIVATED',
     'PRODUCT_CREATED', 'PRODUCT_UPDATED', 'PRODUCT_RETIRED', 'PRODUCT_REACTIVATED', 'PRODUCT_DELETED',
@@ -463,7 +473,10 @@ export class AdminPanelComponent implements AfterViewInit, OnInit, OnDestroy {
 
   saveInterestMode(account: any): void {
     this.apiClient.updateInterestMode(account.fd_account_no, account.interest_mode).subscribe({
-      next: () => alert(`Interest mode updated for ${account.fd_account_no}`),
+      next: () => {
+        alert(`Interest mode updated for ${account.fd_account_no}`);
+        this.loadInterestAccounts();
+      },
       error: error => {
         this.interestError = error.error?.message || 'Could not update interest mode.';
         this.loadInterestAccounts();
@@ -474,11 +487,27 @@ export class AdminPanelComponent implements AfterViewInit, OnInit, OnDestroy {
   loadNotificationLogs(): void {
     this.notificationsLoading = true;
     this.notificationsError = '';
-    this.apiClient.getNotificationLogs().subscribe({
-      next: rows => this.notificationLogs = rows || [],
-      error: error => { this.notificationsError = error.error?.message || 'Could not load notification logs.'; this.notificationLogs = []; this.notificationsLoading = false; },
+    this.apiClient.getNotificationLogs(this.notificationsPageSize + 1, this.notificationsPage * this.notificationsPageSize).subscribe({
+      next: rows => {
+        const batch = rows || [];
+        this.notificationLogs = batch.slice(0, this.notificationsPageSize);
+        this.notificationsHasMore = batch.length > this.notificationsPageSize;
+      },
+      error: error => { this.notificationsError = error.error?.message || 'Could not load notification logs.'; this.notificationLogs = []; this.notificationsHasMore = false; this.notificationsLoading = false; },
       complete: () => this.notificationsLoading = false
     });
+  }
+
+  previousNotificationPage(): void {
+    if (this.notificationsPage === 0 || this.notificationsLoading) return;
+    this.notificationsPage--;
+    this.loadNotificationLogs();
+  }
+
+  nextNotificationPage(): void {
+    if (!this.notificationsHasMore || this.notificationsLoading) return;
+    this.notificationsPage++;
+    this.loadNotificationLogs();
   }
 
   loadStatementSummary(): void {
@@ -501,6 +530,41 @@ export class AdminPanelComponent implements AfterViewInit, OnInit, OnDestroy {
       error: error => { this.statementsError = error.error?.message || 'Could not load statements for this account.'; this.statementRows = []; this.statementsLoading = false; },
       complete: () => this.statementsLoading = false
     });
+  }
+
+  loadContracts(): void {
+    this.contractsLoading = true;
+    this.contractsError = '';
+    this.apiClient.getAllApplications().subscribe({
+      next: rows => { this.contracts = rows || []; },
+      error: error => { this.contractsError = error.error?.message || 'Could not load FD contracts.'; this.contracts = []; this.contractsLoading = false; },
+      complete: () => this.contractsLoading = false
+    });
+  }
+
+  get filteredContracts(): any[] {
+    const query = this.contractSearchQuery.trim().toLowerCase();
+    const rows = this.contracts.filter(contract => {
+      const status = String(contract.status || '').toUpperCase();
+      if (!['ACTIVE', 'MATURED', 'PREMATURELY_CLOSED'].includes(status)) return false;
+      const matchesStatus = this.contractStatusFilter === 'ALL' || status === this.contractStatusFilter;
+      const matchesQuery = !query || [contract.fdAccountNo, contract.customerId, contract.userId, contract.productCode, contract.applicantFullName]
+        .some(value => String(value ?? '').toLowerCase().includes(query));
+      return matchesStatus && matchesQuery;
+    });
+    const direction = this.contractSortBy.endsWith('-asc') ? 1 : -1;
+    const field = this.contractSortBy.split('-')[0];
+    return rows.sort((a, b) => {
+      const av = field === 'principal' ? Number(a.principalAmount || 0) : String(a[field === 'maturity' ? 'maturityDate' : field === 'account' ? 'fdAccountNo' : 'productCode'] || '').toLowerCase();
+      const bv = field === 'principal' ? Number(b.principalAmount || 0) : String(b[field === 'maturity' ? 'maturityDate' : field === 'account' ? 'fdAccountNo' : 'productCode'] || '').toLowerCase();
+      return (typeof av === 'number' ? av - (bv as number) : av.localeCompare(bv as string)) * direction;
+    });
+  }
+
+  openContractStatement(contract: any): void {
+    this.statementAccount = contract.fdAccountNo;
+    this.activeTab = 'statements';
+    this.loadStatements();
   }
 
   applyOperationLogFilters(): void {
