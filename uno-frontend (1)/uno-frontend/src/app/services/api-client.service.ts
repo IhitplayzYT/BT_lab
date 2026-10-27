@@ -578,6 +578,12 @@ export class ApiClientService {
     return this.request(`:8083/api/notifications?limit=${boundedLimit}&offset=${boundedOffset}`);
   }
 
+  getMyNotificationLogs(limit = 50, offset = 0): Observable<any[]> {
+    const boundedLimit = Math.min(Math.max(limit, 1), 200);
+    const boundedOffset = Math.max(Math.floor(offset), 0);
+    return this.request(`:8083/api/notifications/mine?limit=${boundedLimit}&offset=${boundedOffset}`);
+  }
+
   getStatementSummary(): Observable<any> {
     return this.request(':8082/api/statements/summary/all');
   }

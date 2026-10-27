@@ -44,7 +44,11 @@
                 <button class="mark-read-btn" (click)="markAllAsRead()">{{ 'Mark all as read' | translate }}</button>
               </div>
               <div class="notifications-list">
-                @if (notifications().length === 0) {
+                @if (notificationLoadError()) {
+                  <div class="no-notifications">
+                    <p>{{ 'Could not load notifications. Please try again.' | translate }}</p>
+                  </div>
+                } @else if (notifications().length === 0) {
                   <div class="no-notifications">
                     <p>{{ 'No notifications' | translate }}</p>
                   </div>
@@ -261,7 +265,7 @@
                           <td>{{ account.fdAccountNo }}</td>
                           <td>{{ formatCurrency(account.principalAmount || 0) }}</td>
                           <td>{{ account.interestRate }}%</td>
-                          <td>{{ '{0} months' | translate:[account.termMonths] }}</td>
+                          <td>{{ '{0} months' | translate:[account.tenureMonths ?? account.termMonths] }}</td>
                           <td>{{ account.maturityDate }}</td>
                           <td>
                             <span class="badge" [class.active]="account.status === 'ACTIVE'">

@@ -12,8 +12,15 @@ public interface CustomerProfileRepository extends JpaRepository<CustomerProfile
     @org.springframework.data.jpa.repository.Query(value = "SELECT c.* FROM customer_profile c JOIN users u ON u.id=c.user_id WHERE u.username=:username LIMIT 1", nativeQuery = true)
     Optional<CustomerProfile> findByUsername(@org.springframework.data.repository.query.Param("username") String username);
 
-    @org.springframework.data.jpa.repository.Query(value = "SELECT MAX(customer_id) FROM customer_profile WHERE customer_id LIKE 'CUST%'", nativeQuery = true)
-    String findMaxCustomerId();
+    // Never hand out an ID that already exists: customer_id is an assigned @Id, so save() on a
+    // reused ID silently merges over the other user's profile (the old string MAX(customer_id)
+    // ranked 'CUST001' above 'CUST000002' and gave every new user CUST000002).
+    // ponytail: two concurrent signups can still pick the same ID; use a DB sequence if that matters.
+    default String nextCustomerId() {
+        long next = count() + 1;
+        while (existsById(String.format("CUST%06d", next))) next++;
+        return String.format("CUST%06d", next);
+    }
 
     default Optional<CustomerProfile> findByUserIdString(String userIdStr) {
         try {

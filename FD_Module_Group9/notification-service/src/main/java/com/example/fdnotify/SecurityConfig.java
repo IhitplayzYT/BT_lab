@@ -19,6 +19,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.client.RestTemplate;
 import java.util.List;
 
 /** Callers log in with a JWT from auth-service (Bearer) or, in demo mode, HTTP Basic with the users below. */
@@ -26,6 +27,8 @@ import java.util.List;
 @EnableMethodSecurity
 @Import(JwtBeans.class)
 public class SecurityConfig {
+    @Bean RestTemplate restTemplate() { return new RestTemplate(); }
+
     @Bean PasswordEncoder encoder() { return new BCryptPasswordEncoder(); }
 
     @Bean InMemoryUserDetailsManager users(PasswordEncoder e) {

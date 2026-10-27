@@ -182,6 +182,38 @@ class NotificationServiceIntegrationTest {
     }
 
     @Test
+    void flushedAccrualsLeaveNoRowBatched() {
+        service.handle(event("FdCreated", created()));
+        var data = created();
+        data.put("interestAccrued", "17.50");
+        service.handle(event("InterestAccrued", data));
+        service.handle(event("InterestAccrued", data));
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM notifications_log WHERE status='BATCHED'", Integer.class)).isEqualTo(4);
+
+        service.flushBatchedAccruals("CUST001");
+
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM notifications_log WHERE status='BATCHED'", Integer.class)).isZero();
+        assertThat(jdbc.queryForList("SELECT status FROM notifications_log WHERE event_type='InterestAccruedBatch' AND channel='EMAIL'", String.class))
+                .containsExactly("MOCKED", "MOCKED"); // one digest, its result stamped on both accrual rows
+        assertThat(jdbc.queryForList("SELECT status FROM notifications_log WHERE event_type='InterestAccrued' AND channel='WHATSAPP'", String.class))
+                .containsExactly("SKIPPED", "SKIPPED");
+    }
+
+    @Test
+    void accrualAddedDuringAFlushStaysPending() {
+        var batch = new InterestAccrualBatch();
+        var first = new InterestAccrualBatch.AccrualEntry("e1", "FD001", "-", "1", "1", "INR");
+        var late = new InterestAccrualBatch.AccrualEntry("e2", "FD001", "-", "1", "2", "INR");
+        batch.add("CUST001", first);
+        var sending = batch.getAccruals("CUST001");
+        batch.add("CUST001", late); // arrives while the digest is being sent
+        batch.removeSent("CUST001", sending);
+        assertThat(batch.getAccruals("CUST001")).containsExactly(late);
+        batch.removeSent("CUST001", java.util.List.of(late));
+        assertThat(batch.getCustomersWithPendingAccruals()).isEmpty();
+    }
+
+    @Test
     void notificationLogRequiresLogin() throws Exception {
         mvc.perform(get("/api/notifications")).andExpect(status().isUnauthorized());
         mvc.perform(get("/api/notifications").with(httpBasic("officer1", "officer123"))).andExpect(status().isOk());

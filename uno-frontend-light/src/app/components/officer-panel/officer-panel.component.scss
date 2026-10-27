@@ -24,6 +24,25 @@
 
 @keyframes officer-spinner { to { transform: rotate(360deg); } }
 
+.panel-header .tab-navigation {
+  width: 100%;
+  max-width: 100%;
+  overflow: visible;
+  flex-wrap: wrap;
+  justify-content: center;
+  box-sizing: border-box;
+  gap: .5rem;
+}
+
+.panel-header .tab-navigation .tab-btn {
+  flex: 0 1 auto;
+  min-width: 0;
+  padding: .65rem 1rem;
+  line-height: 1.2;
+  text-align: center;
+  white-space: normal;
+}
+
 .analytics-card.clickable-card {
   cursor: pointer;
   transition: transform 0.2s ease, border-color 0.2s ease;

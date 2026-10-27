@@ -138,7 +138,13 @@ public class NotificationService {
             }
         }
 
-        accrualBatch.clear(customerId);
+        // Accruals go out only as the e-mail digest: any row still BATCHED (WhatsApp, or e-mail without an address) is closed as SKIPPED
+        for (InterestAccrualBatch.AccrualEntry entry : accruals) {
+            jdbc.update("UPDATE notifications_log SET subject=?, body=?, status='SKIPPED' WHERE event_id=? AND status='BATCHED'",
+                    "Interest Accrued (Skipped)", "Accruals are delivered only as one combined e-mail digest; nothing was sent on this channel.", entry.eventId());
+        }
+
+        accrualBatch.removeSent(customerId, accruals);
     }
 
     /**

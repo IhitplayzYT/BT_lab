@@ -104,6 +104,7 @@ export class DashboardComponent implements OnInit {
   // another customer's FD identifiers.
   showNotificationsPanel = signal(false);
   notifications = signal<any[]>([]);
+  notificationLoadError = signal(false);
 
   ngOnInit(): void {
     // Reload token from localStorage to ensure it's available
@@ -137,6 +138,7 @@ export class DashboardComponent implements OnInit {
         this.currentCustomerId.set('Not available');
       }
     });
+    this.loadCustomerNotifications();
     this.loadDashboardData();
     this.loadSettings();
     this.loadClockStatus();
@@ -659,17 +661,17 @@ export class DashboardComponent implements OnInit {
     });
   }
 
-  // Calculate remaining months until maturity using business date if available
+  // Calendar months until maturity (a part month counts as one), using business date if available.
+  // Dividing days by 30 overcounted: a 3-month FD spans 92 days -> 4, a 12-month FD 365 days -> 13.
   getRemainingMonths(account: any): number {
     if (!account.maturityDate) return 0;
-    const maturityDate = new Date(account.maturityDate);
-    // Use business date from clock if available, otherwise use real date
-    const businessDate = this.clockStatus()?.businessDate;
-    const today = businessDate ? new Date(businessDate) : new Date();
-    const diffTime = maturityDate.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    const remainingMonths = Math.ceil(diffDays / 30);
-    return remainingMonths > 0 ? remainingMonths : 0;
+    const now = new Date();
+    const today: string = this.clockStatus()?.businessDate
+      ?? `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
+    const [ty, tm, td] = today.split('-').map(Number);
+    const [my, mm, md] = String(account.maturityDate).slice(0, 10).split('-').map(Number);
+    const months = (my - ty) * 12 + (mm - tm) + (md > td ? 1 : 0);
+    return Math.max(months, 0);
   }
 
   // Get premature closure charges for an account
@@ -844,6 +846,53 @@ export class DashboardComponent implements OnInit {
   // Notification methods
   toggleNotifications(): void {
     this.showNotificationsPanel.set(!this.showNotificationsPanel());
+    if (this.showNotificationsPanel()) this.loadCustomerNotifications();
+  }
+
+  private loadCustomerNotifications(): void {
+    this.notificationLoadError.set(false);
+    this.apiClient.getMyNotificationLogs().subscribe({
+      next: rows => {
+        this.notificationLoadError.set(false);
+        this.notifications.set((rows || []).map((row: any) => {
+          const eventType = String(row.event_type || '');
+          const title = row.subject || eventType.replace(/([a-z])([A-Z])/g, '$1 $2') || 'Notification';
+          const account = row.fd_account_no ? `FD account ${row.fd_account_no}` : 'Your FD account';
+          const status = row.status ? `Status: ${row.status}` : '';
+          const body = this.notificationPreview(row.body);
+          const createdAt = row.created_at ? new Date(row.created_at) : null;
+          return {
+            id: row.id,
+            type: /interest|accrual/i.test(eventType) ? 'accrual' : /matur/i.test(eventType) ? 'maturity' : 'status',
+            title,
+            message: body || [account, status].filter(Boolean).join(' · '),
+            time: createdAt && !Number.isNaN(createdAt.getTime()) ? createdAt.toLocaleString() : '',
+            read: true
+          };
+        }));
+      },
+      error: error => {
+        this.notificationLoadError.set(true);
+        console.error('Could not load customer notifications:', error);
+      }
+    });
+  }
+
+  private notificationPreview(body: unknown): string {
+    if (typeof body !== 'string' || !body.trim()) return '';
+    const text = body
+      .replace(/<(style|script)\b[^>]*>[\s\S]*?<\/\1>/gi, ' ')
+      .replace(/<br\s*\/?>|<\/(?:p|div|li|tr|h[1-6])>/gi, ' ')
+      .replace(/<[^>]*>/g, ' ')
+      .replace(/&nbsp;/gi, ' ')
+      .replace(/&amp;/gi, '&')
+      .replace(/&lt;/gi, '<')
+      .replace(/&gt;/gi, '>')
+      .replace(/&quot;/gi, '"')
+      .replace(/&#39;|&apos;/gi, "'")
+      .replace(/\s+/g, ' ')
+      .trim();
+    return text.length > 220 ? `${text.slice(0, 217)}…` : text;
   }
 
   showNotifications(): boolean {

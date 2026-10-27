@@ -1,3 +1,7 @@
+# Low-RAM tuning (8 GB laptops): capped JVM heaps, slim MySQL.
+x-jvm-lowmem: &jvm_lowmem "-Xms32m -Xmx256m -Xss512k -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -XX:ReservedCodeCacheSize=32m -XX:+ExitOnOutOfMemoryError"
+x-mysql-lowmem: &mysql_lowmem ["--performance-schema=OFF", "--innodb-buffer-pool-size=32M"]
+
 services:
   # ── FD Calculator Service ──────────────────────────────────────────────
   fd-calculator:
@@ -8,6 +12,7 @@ services:
     ports:
       - "8084:8084"
     environment:
+      JAVA_TOOL_OPTIONS: *jvm_lowmem
       SPRING_PROFILES_ACTIVE: prod
       SERVER_PORT: 8084
       DB_URL: jdbc:mysql://fd-mysql:3306/fd_calculator?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
@@ -38,6 +43,7 @@ services:
   fd-mysql:
     image: mysql:8.0
     container_name: fd-mysql
+    command: *mysql_lowmem
     ports:
       - "3307:3306"
     environment:
@@ -66,6 +72,7 @@ services:
     ports:
       - "8080:8080"
     environment:
+      JAVA_TOOL_OPTIONS: *jvm_lowmem
       SPRING_PROFILES_ACTIVE: prod
       SERVER_PORT: 8080
       DB_URL: jdbc:mysql://product-mysql:3306/banking_product_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
@@ -92,6 +99,7 @@ services:
   product-mysql:
     image: mysql:8.0
     container_name: product-mysql
+    command: *mysql_lowmem
     ports:
       - "3308:3306"
     environment:
@@ -118,6 +126,7 @@ services:
   auth-mysql:
     image: mysql:8.0
     container_name: auth-mysql
+    command: *mysql_lowmem
     ports:
       - "3309:3306"
     environment:
@@ -150,6 +159,7 @@ services:
       auth-mysql:
         condition: service_healthy
     environment:
+      JAVA_TOOL_OPTIONS: *jvm_lowmem
       JWT_SECRET: ${JWT_SECRET:-test-secret-key-minimum-32-characters-for-hmac256}
       JWT_ISSUER: ${JWT_ISSUER:-fd-platform-auth}
       ACCOUNT_SERVICE_URL: http://fd-account-service:8086
@@ -187,6 +197,7 @@ services:
       kafka:
         condition: service_started
     environment:
+      JAVA_TOOL_OPTIONS: *jvm_lowmem
       FD_DB_URL: jdbc:mysql://fd-group9-mysql:3306/banking_technology_lab?serverTimezone=Asia/Kolkata
       DB_USER: root
       DB_PASSWORD: ${DB_PASSWORD:-12345}
@@ -213,6 +224,7 @@ services:
   fd-group9-mysql:
     image: mysql:8.0
     container_name: fd-group9-mysql
+    command: *mysql_lowmem
     ports:
       - "3310:3306"
     environment:
@@ -245,6 +257,7 @@ services:
       - "9092:9092"
       - "19092:19092"
     environment:
+      KAFKA_HEAP_OPTS: "-Xms128m -Xmx256m"
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,EXTERNAL://localhost:19092
@@ -263,6 +276,7 @@ services:
     ports:
       - "2181:2181"
     environment:
+      KAFKA_HEAP_OPTS: "-Xms32m -Xmx64m"
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
     networks:
@@ -306,6 +320,7 @@ services:
       kafka:
         condition: service_started
     environment:
+      JAVA_TOOL_OPTIONS: *jvm_lowmem
       SERVICE_DB_URL: jdbc:mysql://fd-group9-mysql:3306/fd_batch?serverTimezone=Asia/Kolkata
       DB_USER: root
       DB_PASSWORD: ${DB_PASSWORD:-12345}
@@ -330,6 +345,7 @@ services:
       kafka:
         condition: service_started
     environment:
+      JAVA_TOOL_OPTIONS: *jvm_lowmem
       SERVICE_DB_URL: jdbc:mysql://fd-group9-mysql:3306/fd_statements?serverTimezone=Asia/Kolkata
       DB_USER: root
       DB_PASSWORD: ${DB_PASSWORD:-12345}
@@ -357,7 +373,9 @@ services:
       mailpit:
         condition: service_started
     environment:
+      JAVA_TOOL_OPTIONS: *jvm_lowmem
       SERVICE_DB_URL: jdbc:mysql://fd-group9-mysql:3306/fd_notifications?serverTimezone=Asia/Kolkata
+      ACCOUNT_SERVICE_URL: http://fd-account-service:8086
       DB_USER: root
       DB_PASSWORD: ${DB_PASSWORD:-12345}
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092

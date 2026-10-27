@@ -111,17 +111,8 @@ public class UserDataCleanupService {
             return;
         }
 
-        String maxCustomerId = customerRepository.findMaxCustomerId();
-        int nextNumber = 1;
-        if (maxCustomerId != null && maxCustomerId.startsWith("CUST")) {
-            try {
-                nextNumber = Integer.parseInt(maxCustomerId.substring(4)) + 1;
-            } catch (NumberFormatException ignored) {
-                nextNumber = 1;
-            }
-        }
         CustomerProfile profile = new CustomerProfile();
-        profile.setCustomerId(String.format("CUST%06d", nextNumber));
+        profile.setCustomerId(customerRepository.nextCustomerId());
         profile.setUserId(userId);
         profile.setFullName(username);
         profile.setCategory("GENERAL");

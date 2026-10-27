@@ -77,14 +77,8 @@ public class FDAccountService {
         Long userId = authServiceClient.getUserIdByUsername(username);
         if (userId == null) throw new IllegalStateException("Customer profile could not be linked to the signed-in user");
         CustomerProfile profile = customerRepository.findByUserId(userId).orElseGet(() -> {
-            String maxCustomerId = customerRepository.findMaxCustomerId();
-            int nextNum = 1;
-            if (maxCustomerId != null && maxCustomerId.startsWith("CUST")) {
-                try { nextNum = Integer.parseInt(maxCustomerId.substring(4)) + 1; }
-                catch (NumberFormatException ignored) { nextNum = 1; }
-            }
             CustomerProfile created = new CustomerProfile();
-            created.setCustomerId(String.format("CUST%06d", nextNum));
+            created.setCustomerId(customerRepository.nextCustomerId());
             created.setUserId(userId);
             created.setCategory("GENERAL");
             return created;
@@ -203,17 +197,8 @@ public class FDAccountService {
             customerRepository.save(profile);
         } else {
             // Create new customer profile with generated customer_id
-            String maxCustomerId = customerRepository.findMaxCustomerId();
-            int nextNum = 1;
-            if (maxCustomerId != null && maxCustomerId.startsWith("CUST")) {
-                try {
-                    nextNum = Integer.parseInt(maxCustomerId.substring(4)) + 1;
-                } catch (NumberFormatException e) {
-                    nextNum = 1;
-                }
-            }
-            customerId = String.format("CUST%06d", nextNum);
-            
+            customerId = customerRepository.nextCustomerId();
+
             CustomerProfile newProfile = new CustomerProfile();
             newProfile.setCustomerId(customerId);
             newProfile.setUserId(userId); // userId is guaranteed non-null here
@@ -241,7 +226,7 @@ public class FDAccountService {
         if (username == null) throw new IllegalArgumentException("Enabled user not found: " + userIdValue);
         CustomerProfile profile = customerRepository.findByUserId(userId).orElseGet(() -> {
             CustomerProfile created = new CustomerProfile();
-            created.setCustomerId(nextCustomerId());
+            created.setCustomerId(customerRepository.nextCustomerId());
             created.setUserId(userId);
             created.setCategory("GENERAL");
             return customerRepository.save(created);
@@ -250,19 +235,6 @@ public class FDAccountService {
         profile.setPhone(request.getApplicantPhone());
         customerRepository.save(profile);
         return createPendingApplication(request, profile, createdBy);
-    }
-
-    private String nextCustomerId() {
-        String maxCustomerId = customerRepository.findMaxCustomerId();
-        int nextNum = 1;
-        if (maxCustomerId != null && maxCustomerId.startsWith("CUST")) {
-            try {
-                nextNum = Integer.parseInt(maxCustomerId.substring(4)) + 1;
-            } catch (NumberFormatException ignored) {
-                nextNum = 1;
-            }
-        }
-        return String.format("CUST%06d", nextNum);
     }
 
     public Map<String, String> getCustomerSummary(String customerId) {
@@ -534,17 +506,8 @@ public class FDAccountService {
             customerId = profileOpt.get().getCustomerId();
         } else {
             // Create new customer profile with generated customer_id
-            String maxCustomerId = customerRepository.findMaxCustomerId();
-            int nextNum = 1;
-            if (maxCustomerId != null && maxCustomerId.startsWith("CUST")) {
-                try {
-                    nextNum = Integer.parseInt(maxCustomerId.substring(4)) + 1;
-                } catch (NumberFormatException e) {
-                    nextNum = 1;
-                }
-            }
-            customerId = String.format("CUST%06d", nextNum);
-            
+            customerId = customerRepository.nextCustomerId();
+
             CustomerProfile newProfile = new CustomerProfile();
             newProfile.setCustomerId(customerId);
             newProfile.setUserId(userId);

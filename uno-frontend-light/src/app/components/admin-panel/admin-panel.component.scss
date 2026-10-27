@@ -1,5 +1,24 @@
 :host { display: block; }
 
+.panel-header .tab-navigation {
+  width: 100%;
+  max-width: 100%;
+  overflow: visible;
+  flex-wrap: wrap;
+  justify-content: center;
+  box-sizing: border-box;
+  gap: .5rem;
+}
+
+.panel-header .tab-navigation .tab-btn {
+  flex: 0 1 auto;
+  min-width: 0;
+  padding: .65rem 1rem;
+  line-height: 1.2;
+  text-align: center;
+  white-space: normal;
+}
+
 .api-doc-links { display: flex; align-items: center; gap: .65rem; flex-wrap: wrap; margin-top: 1rem; }
 .api-doc-links strong { margin-right: .3rem; color: var(--text-2); font-size: .9rem; }
 
